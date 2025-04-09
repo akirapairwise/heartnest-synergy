@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import MoodTracker from '@/components/moods/MoodTracker';
 import MoodHistory from '@/components/moods/MoodHistory';
 import { useMoodHistory } from '@/hooks/useMoodHistory';
@@ -7,11 +7,20 @@ import { useDailyMood } from '@/hooks/useDailyMood';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const MoodsPage = () => {
   const { moodHistory, isFetchingHistory, fetchMoodHistory } = useMoodHistory();
   const { dailyMood, isLoading: isLoadingDailyMood, fetchDailyMood } = useDailyMood();
   const { user, isLoading: isAuthLoading } = useAuth();
+  const navigate = useNavigate();
+  
+  // Check authentication on mount
+  useEffect(() => {
+    if (!isAuthLoading && !user) {
+      navigate('/auth', { replace: true });
+    }
+  }, [user, isAuthLoading, navigate]);
   
   const handleMoodSaved = () => {
     fetchMoodHistory();

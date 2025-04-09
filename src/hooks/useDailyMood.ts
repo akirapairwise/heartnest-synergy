@@ -27,7 +27,9 @@ export const useDailyMood = () => {
       
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       
-      // Using rpc call to avoid typing issues with the newly created table
+      console.log('Fetching mood for user:', user.id, 'date:', today);
+      
+      // Using explicit select to avoid typing issues with the newly created table
       const { data, error } = await supabase
         .from('daily_moods')
         .select('id, mood_date, mood_value, note')
@@ -37,6 +39,7 @@ export const useDailyMood = () => {
         
       if (error) throw error;
       
+      console.log('Daily mood fetch result:', data);
       setDailyMood(data as DailyMood | null);
     } catch (error) {
       console.error('Error fetching daily mood:', error);
@@ -59,6 +62,8 @@ export const useDailyMood = () => {
         note: note || null
       };
       
+      console.log('Saving mood data:', moodData, 'Existing mood:', dailyMood);
+      
       // Check if we already have a mood for today
       if (dailyMood?.id) {
         // Update existing mood - using casting to bypass type issues
@@ -70,6 +75,8 @@ export const useDailyMood = () => {
           .single();
           
         if (error) throw error;
+        
+        console.log('Updated mood result:', data);
         setDailyMood(data as DailyMood);
         return { data: data as DailyMood, error: null };
       } else {
@@ -81,6 +88,8 @@ export const useDailyMood = () => {
           .single();
           
         if (error) throw error;
+        
+        console.log('Inserted mood result:', data);
         setDailyMood(data as DailyMood);
         return { data: data as DailyMood, error: null };
       }
@@ -92,7 +101,9 @@ export const useDailyMood = () => {
   }, [user, dailyMood]);
   
   useEffect(() => {
-    fetchDailyMood();
+    if (user) {
+      fetchDailyMood();
+    }
   }, [user, fetchDailyMood]);
   
   return {

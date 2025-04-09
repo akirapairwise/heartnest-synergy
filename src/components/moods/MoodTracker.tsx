@@ -30,9 +30,12 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
   const { user } = useAuth();
   const { saveDailyMood } = useDailyMood();
   
+  console.log("MoodTracker rendered with dailyMood:", dailyMood);
+  
   // Update form when dailyMood changes
   useEffect(() => {
     if (dailyMood) {
+      console.log("Setting form values from dailyMood:", dailyMood);
       setSelectedMood(dailyMood.mood_value);
       setNote(dailyMood.note || "");
     } else {
@@ -57,6 +60,8 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
     setIsLoading(true);
     
     try {
+      console.log("Saving mood:", selectedMood, "note:", note);
+      
       // Save to daily_moods
       const { error } = await saveDailyMood(selectedMood, note);
       if (error) throw error;
@@ -73,6 +78,7 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
           user_id: user.id,
         });
       
+      console.log("Mood saved successfully");
       toast.success(dailyMood ? 'Mood updated successfully!' : 'Mood tracked successfully!');
       
       // Notify parent component

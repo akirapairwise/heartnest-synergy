@@ -17,9 +17,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("AuthProvider initialized");
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -31,12 +34,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setProfile(null);
           setIsOnboardingComplete(null);
+          setIsLoading(false);
         }
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Existing session check:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -53,6 +58,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserProfile = async (userId: string) => {
     try {
       setIsLoading(true);
+      console.log("Fetching user profile for:", userId);
+      
       const { profile, isOnboardingComplete, error } = await authService.fetchUserProfile(userId);
       
       if (error) {
@@ -60,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(null);
         setIsOnboardingComplete(false);
       } else {
+        console.log("Profile fetched:", profile?.id, "Onboarding complete:", isOnboardingComplete);
         setProfile(profile);
         setIsOnboardingComplete(isOnboardingComplete);
       }

@@ -13,7 +13,7 @@ const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
   children, 
   mustBeIncomplete = false 
 }) => {
-  const { isOnboardingComplete, isLoading, user } = useAuth();
+  const { isOnboardingComplete, isLoading, user, profile } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +36,11 @@ const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
   // The useEffect above will handle the redirect
   if (!user) {
     return null;
+  }
+
+  // If profile exists and onboarding is complete, redirect to dashboard
+  if (profile && isOnboardingComplete && mustBeIncomplete) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   // If mustBeIncomplete is true, then only allow access if onboarding is NOT complete

@@ -6,16 +6,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "sonner";
 
 const OnboardingPage = () => {
-  const { isOnboardingComplete } = useAuth();
+  const { isOnboardingComplete, profile } = useAuth();
   const navigate = useNavigate();
   
   // Add effect to handle redirection when onboarding is completed
   useEffect(() => {
-    if (isOnboardingComplete) {
+    if (isOnboardingComplete && profile) {
       toast.success("Onboarding completed! Welcome to your dashboard.");
       navigate('/dashboard', { replace: true });
     }
-  }, [isOnboardingComplete, navigate]);
+  }, [isOnboardingComplete, profile, navigate]);
 
   return (
     <div className="min-h-screen py-6 sm:py-12 px-4 bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50">

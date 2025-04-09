@@ -36,22 +36,53 @@ export const getConflictStatus = (conflict: Conflict, userId: string): ConflictS
 };
 
 export const generateAIResolution = async (conflictId: string): Promise<void> => {
-  // This would connect to an edge function or external AI service
-  // For now, we'll just update with mock data
-  
-  const mockAiSummary = "Both partners have different perspectives on how household chores should be allocated.";
-  const mockAiReflection = "This conflict stems from different expectations about fairness and responsibility.";
-  const mockAiPlan = "1. Create a shared chore schedule\n2. Define what 'clean' means to each person\n3. Schedule a weekly check-in about household management";
-  
-  // Cast the update to any to bypass TypeScript's strict checking
-  const { error } = await supabase
-    .from('conflicts')
-    .update({
-      ai_summary: mockAiSummary,
-      ai_reflection: mockAiReflection,
-      ai_resolution_plan: mockAiPlan
-    } as any)
-    .eq('id', conflictId);
-  
-  if (error) throw error;
+  try {
+    // First, fetch the conflict to get both statements
+    const { data: conflict, error: fetchError } = await supabase
+      .from('conflicts')
+      .select('*')
+      .eq('id', conflictId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    if (!conflict || !conflict.initiator_statement || !conflict.responder_statement) {
+      throw new Error('Conflict not found or missing statements');
+    }
+    
+    // Call the Edge Function to generate the AI resolution
+    const { data, error } = await supabase.functions.invoke('generate-conflict-resolution', {
+      body: {
+        initiatorStatement: conflict.initiator_statement,
+        responderStatement: conflict.responder_statement,
+        conflictId: conflictId
+      }
+    });
+    
+    if (error) {
+      console.error('Error calling generate-conflict-resolution:', error);
+      throw error;
+    }
+    
+    if (!data || !data.success) {
+      throw new Error(data?.error || 'Failed to generate AI resolution');
+    }
+    
+    const { summary, reflection, plan } = data.data;
+    
+    // Update the conflict with the AI resolution
+    const { error: updateError } = await supabase
+      .from('conflicts')
+      .update({
+        ai_summary: summary,
+        ai_reflection: reflection,
+        ai_resolution_plan: plan
+      })
+      .eq('id', conflictId);
+    
+    if (updateError) throw updateError;
+  } catch (error) {
+    console.error('Error in generateAIResolution:', error);
+    throw error;
+  }
 };

@@ -10,6 +10,7 @@ import { Conflict } from '@/types/conflicts';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { generateAIResolution } from '@/services/conflictService';
 
 const formSchema = z.object({
   response: z.string().min(10, "Please provide a detailed response of at least 10 characters"),
@@ -22,6 +23,7 @@ type ConflictResponseFormProps = {
 
 const ConflictResponseForm = ({ conflict, onSuccess }: ConflictResponseFormProps) => {
   const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -37,24 +39,34 @@ const ConflictResponseForm = ({ conflict, onSuccess }: ConflictResponseFormProps
     }
 
     try {
-      // Update the conflict with the responder's statement using type assertion
+      setIsSubmitting(true);
+      
+      // Update the conflict with the responder's statement
       const { error } = await supabase
         .from('conflicts')
         .update({
           responder_statement: data.response
-        } as any)
+        })
         .eq('id', conflict.id);
 
       if (error) throw error;
       
-      // Here you would typically trigger the AI to generate a resolution
-      // This is a placeholder for that functionality
+      // Generate AI resolution once the response is submitted
+      toast.promise(
+        generateAIResolution(conflict.id),
+        {
+          loading: 'Generating AI resolution...',
+          success: 'AI resolution generated successfully',
+          error: 'Failed to generate AI resolution'
+        }
+      );
       
-      toast.success("Response submitted successfully");
       form.reset();
       onSuccess();
     } catch (error: any) {
       toast.error(error.message || "Failed to submit response");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -84,8 +96,8 @@ const ConflictResponseForm = ({ conflict, onSuccess }: ConflictResponseFormProps
           )}
         />
         
-        <Button type="submit" className="w-full">
-          Submit Response
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? 'Submitting...' : 'Submit Response'}
         </Button>
       </form>
     </Form>

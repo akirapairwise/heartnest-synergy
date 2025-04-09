@@ -17,6 +17,23 @@ export interface PartnerInvite {
  */
 export const createInvitation = async (user: User): Promise<{ data: PartnerInvite | null, error: any }> => {
   try {
+    // Check if user already has a partner
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('partner_id')
+      .eq('id', user.id)
+      .single();
+      
+    if (profileError) throw profileError;
+    
+    if (userProfile?.partner_id) {
+      console.log('User already has a partner, cannot create invitation');
+      return { 
+        data: null, 
+        error: new Error('You already have a partner. You must unlink your current partner before creating a new invitation.') 
+      };
+    }
+    
     // Generate a random token
     const token = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
     
@@ -105,6 +122,8 @@ export const getUserInvitations = async (userId: string): Promise<{ data: Partne
  */
 export const acceptInvitation = async (token: string, currentUserId: string): Promise<{ error: any }> => {
   try {
+    console.log('Starting invitation acceptance process...');
+    
     // First get the invitation
     const { data: invite, error: fetchError } = await getInvitationByToken(token);
     
@@ -122,7 +141,7 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
     // Check if either user already has a partner
     const { data: users, error: usersError } = await supabase
       .from('user_profiles')
-      .select('id, partner_id')
+      .select('id, partner_id, full_name')
       .in('id', [invite.inviter_id, currentUserId]);
       
     if (usersError) {
@@ -134,13 +153,13 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
     const currentUserProfile = users?.find(u => u.id === currentUserId);
     
     if (inviterProfile?.partner_id) {
-      console.error('Inviter already has a partner');
-      return { error: new Error('The inviter already has a partner') };
+      console.error('Inviter already has a partner:', inviterProfile.partner_id);
+      return { error: new Error(`The inviter (${inviterProfile.full_name || 'User'}) already has a partner`) };
     }
     
     if (currentUserProfile?.partner_id) {
-      console.error('Current user already has a partner');
-      return { error: new Error('You already have a partner') };
+      console.error('Current user already has a partner:', currentUserProfile.partner_id);
+      return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }
     
     console.log('Starting partner linking process...');

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Heart, UserPlus, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { getInvitationByToken } from '@/services/partnerInviteService';
+import { toast } from 'sonner';
 
 const InvitePage = () => {
   const [searchParams] = useSearchParams();
@@ -13,6 +15,7 @@ const InvitePage = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { acceptInvitation } = usePartnerInvite();
   const [status, setStatus] = useState<'loading' | 'valid' | 'invalid' | 'accepted' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState('');
   const [inviterName, setInviterName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
@@ -30,6 +33,7 @@ const InvitePage = () => {
       validateToken(token);
     } else if (!token) {
       setStatus('invalid');
+      setErrorMessage('No invitation token provided');
     }
   }, [token, user, authLoading]);
 
@@ -41,6 +45,7 @@ const InvitePage = () => {
       if (error || !data) {
         console.error('Invalid token:', error);
         setStatus('invalid');
+        setErrorMessage(error?.message || 'This invitation link is invalid or has expired');
         return;
       }
       
@@ -55,6 +60,7 @@ const InvitePage = () => {
       if (data.inviter_id === user?.id) {
         console.log('User tried to accept their own invitation');
         setStatus('error');
+        setErrorMessage('You cannot accept your own invitation');
         return;
       }
       
@@ -68,6 +74,7 @@ const InvitePage = () => {
     } catch (error) {
       console.error('Error validating token:', error);
       setStatus('error');
+      setErrorMessage('There was a problem processing this invitation');
     }
   };
 
@@ -83,13 +90,17 @@ const InvitePage = () => {
       if (error) {
         console.error('Failed to accept invitation:', error);
         setStatus('error');
+        setErrorMessage(error.message || 'There was a problem accepting this invitation');
+        toast.error(error.message || 'Failed to accept invitation');
       } else {
         console.log('Invitation accepted successfully');
         setStatus('accepted');
+        toast.success('Partner connection successful!');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting invitation:', error);
       setStatus('error');
+      setErrorMessage(error.message || 'There was a problem accepting this invitation');
     } finally {
       setIsProcessing(false);
     }
@@ -129,7 +140,7 @@ const InvitePage = () => {
             {status === 'valid' && `You've been invited by ${inviterName || 'someone'} to connect as partners`}
             {status === 'accepted' && 'You have successfully connected with your partner!'}
             {status === 'invalid' && 'This invitation link is invalid or expired'}
-            {status === 'error' && 'There was a problem with this invitation'}
+            {status === 'error' && errorMessage}
           </CardDescription>
         </CardHeader>
         
@@ -198,7 +209,7 @@ const InvitePage = () => {
             <div className="py-8">
               <XCircle className="h-16 w-16 text-red-500 mx-auto" />
               <p className="mt-4 text-muted-foreground">
-                The invitation link you're trying to use is invalid or has already been used.
+                {errorMessage || 'The invitation link you\'re trying to use is invalid or has already been used.'}
               </p>
               <p className="mt-2 text-muted-foreground">
                 Please ask your partner to send you a new invitation.
@@ -210,10 +221,10 @@ const InvitePage = () => {
             <div className="py-8">
               <XCircle className="h-16 w-16 text-red-500 mx-auto" />
               <p className="mt-4 text-muted-foreground">
-                There was a problem processing this invitation.
+                {errorMessage || 'There was a problem processing this invitation.'}
               </p>
               <p className="mt-2 text-muted-foreground">
-                It may be your own invitation, or one of you might already have a partner.
+                {errorMessage ? '' : 'It may be your own invitation, or one of you might already have a partner.'}
               </p>
             </div>
           )}

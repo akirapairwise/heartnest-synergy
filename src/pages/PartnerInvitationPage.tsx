@@ -13,6 +13,7 @@ const PartnerInvitationPage = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { acceptInvitation } = usePartnerInvite();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
 
@@ -34,15 +35,17 @@ const PartnerInvitationPage = () => {
       
       if (error) {
         setStatus('error');
-        toast.error('Failed to accept invitation');
+        setErrorMessage(error.message || 'Failed to accept invitation');
+        toast.error(error.message || 'Failed to accept invitation');
         console.error('Error accepting invitation:', error);
       } else {
         setStatus('success');
         toast.success('Partner connected successfully!');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting invitation:', error);
       setStatus('error');
+      setErrorMessage(error.message || 'An unexpected error occurred');
     } finally {
       setIsProcessing(false);
     }
@@ -71,7 +74,9 @@ const PartnerInvitationPage = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Heart className="h-12 w-12 text-love-500" />
+            {status === 'loading' && <Loader2 className="h-12 w-12 text-love-500 animate-spin" />}
+            {status === 'success' && <CheckCircle className="h-12 w-12 text-green-500" />}
+            {status === 'error' && <XCircle className="h-12 w-12 text-red-500" />}
           </div>
           <CardTitle className="text-xl sm:text-2xl gradient-heading">
             Partner Invitation
@@ -79,7 +84,7 @@ const PartnerInvitationPage = () => {
           <CardDescription>
             {status === 'loading' && 'Processing your invitation...'}
             {status === 'success' && 'You have successfully connected with your partner!'}
-            {status === 'error' && 'There was a problem with this invitation.'}
+            {status === 'error' && (errorMessage || 'There was a problem with this invitation.')}
           </CardDescription>
         </CardHeader>
         
@@ -104,10 +109,10 @@ const PartnerInvitationPage = () => {
             <div className="py-8">
               <XCircle className="h-16 w-16 text-red-500 mx-auto" />
               <p className="mt-4 text-muted-foreground">
-                This invitation may have expired, already been used, or is invalid.
+                {errorMessage || 'This invitation may have expired, already been used, or is invalid.'}
               </p>
               <p className="mt-2 text-muted-foreground">
-                Please ask your partner to send you a new invitation.
+                {errorMessage ? '' : 'Please ask your partner to send you a new invitation.'}
               </p>
             </div>
           )}

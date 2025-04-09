@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { Heart, UserPlus, Copy, Check, ArrowRight } from "lucide-react";
+import { Heart, UserPlus, Copy, Check, ArrowRight, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePartnerInvite } from "@/hooks/usePartnerInvite";
+import { toast } from 'sonner';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const ConnectPartner = () => {
   const [copied, setCopied] = useState(false);
   const [token, setToken] = useState('');
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
+  const { toast: uiToast } = useToast();
   const navigate = useNavigate();
   
   const {
@@ -27,7 +30,7 @@ const ConnectPartner = () => {
     
     navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
-    toast({
+    uiToast({
       title: "Copied to clipboard!",
       description: "Your invitation link has been copied.",
     });
@@ -37,35 +40,44 @@ const ConnectPartner = () => {
   
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!token) {
-      toast({
-        title: "Error",
-        description: "Please enter an invitation token",
-      });
+      setError("Please enter an invitation token");
       return;
     }
     
-    const { error } = await acceptInvitation(token);
-    
-    if (!error) {
-      toast({
-        title: "Connection successful!",
-        description: "You're now connected with your partner.",
-      });
+    try {
+      const { error } = await acceptInvitation(token);
+      
+      if (error) {
+        setError(error.message || "Failed to accept invitation");
+        return;
+      }
+      
+      toast.success("Partner connected successfully!");
       navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
     }
   };
   
   const handleCreateInvite = async () => {
-    await createInvitation();
+    setError(null);
+    try {
+      const url = await createInvitation();
+      
+      if (!url) {
+        // If createInvitation returns no url, there was likely an error
+        setError("Failed to create invitation. You may already have a partner.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to create invitation");
+    }
   };
   
   const handleSkip = () => {
-    toast({
-      title: "Skipped for now",
-      description: "You can connect with your partner anytime from your profile.",
-    });
+    toast.info("You can connect with your partner anytime from your profile.");
     navigate('/dashboard');
   };
   
@@ -85,6 +97,13 @@ const ConnectPartner = () => {
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         {inviteUrl ? (
           <div className="space-y-4 animate-fade-in">
             <div className="p-4 bg-muted rounded-lg text-center">

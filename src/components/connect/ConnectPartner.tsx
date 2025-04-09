@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { Heart, UserPlus, Copy, Check, ArrowRight, AlertTriangle, Clock } from "lucide-react";
+import { Heart, UserPlus, Copy, Check, ArrowRight, AlertTriangle, Clock, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePartnerInvite } from "@/hooks/usePartnerInvite";
 import { toast } from 'sonner';

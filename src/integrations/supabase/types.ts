@@ -213,6 +213,7 @@ export type Database = {
       partner_invites: {
         Row: {
           created_at: string
+          expires_at: string
           id: string
           inviter_id: string
           is_accepted: boolean
@@ -220,6 +221,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          expires_at: string
           id?: string
           inviter_id: string
           is_accepted?: boolean
@@ -227,6 +229,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          expires_at?: string
           id?: string
           inviter_id?: string
           is_accepted?: boolean

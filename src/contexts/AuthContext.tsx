@@ -90,8 +90,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (data.mood_settings) {
           try {
-            // Make sure we handle mood_settings as a proper object
-            const settings = data.mood_settings as Record<string, any>;
+            // Convert the JSON to a proper object we can safely access
+            const settings = typeof data.mood_settings === 'object' 
+              ? data.mood_settings as Record<string, any>
+              : {};
+              
             moodSettings = {
               showAvatar: typeof settings.showAvatar === 'boolean' 
                 ? settings.showAvatar 

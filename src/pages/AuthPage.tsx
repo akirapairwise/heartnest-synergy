@@ -1,14 +1,21 @@
 
 import React, { useEffect, useState } from 'react';
 import AuthForm from '@/components/auth/AuthForm';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 const AuthPage = () => {
   const { user, isLoading, isOnboardingComplete } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [pageLoading, setPageLoading] = useState(true);
+  
+  // Get the returnUrl from query params (if any)
+  const getReturnUrl = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get('returnUrl') || '/dashboard';
+  };
 
   useEffect(() => {
     // Only redirect if loading is complete and we have authentication information
@@ -17,11 +24,12 @@ const AuthPage = () => {
       
       if (user) {
         // If user is authenticated, redirect to appropriate page
-        const redirectPath = isOnboardingComplete ? '/dashboard' : '/onboarding';
+        const returnUrl = getReturnUrl();
+        const redirectPath = isOnboardingComplete ? returnUrl : '/onboarding';
         navigate(redirectPath, { replace: true });
       }
     }
-  }, [user, isLoading, isOnboardingComplete, navigate]);
+  }, [user, isLoading, isOnboardingComplete, navigate, location.search]);
 
   // Show loading screen while checking authentication
   if (isLoading || pageLoading) {

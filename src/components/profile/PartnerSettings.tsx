@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,14 +33,13 @@ const PartnerSettings = () => {
   const [partnerEmail, setPartnerEmail] = useState('');
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [copied, setCopied] = useState(false);
-  const [activeInvitation, setActiveInvitation] = useState<any>(null);
   
   const {
     isLoading,
     sendInvitation,
     unlinkPartner,
     fetchInvitations,
-    invitations
+    activeInvitation
   } = usePartnerInvitations();
   
   const hasPartner = Boolean(profile?.partner_id);
@@ -51,7 +49,7 @@ const PartnerSettings = () => {
       fetchInvitations();
       fetchPartnerProfile();
     }
-  }, [user, profile?.partner_id]);
+  }, [user, profile?.partner_id, fetchInvitations]);
   
   const fetchPartnerProfile = async () => {
     if (!profile?.partner_id) return;
@@ -70,16 +68,6 @@ const PartnerSettings = () => {
       console.error('Error fetching partner profile:', error);
     }
   };
-  
-  useEffect(() => {
-    // Get the most recent pending invitation
-    if (invitations && invitations.length > 0) {
-      const pending = invitations.find(inv => inv.status === 'pending');
-      setActiveInvitation(pending);
-    } else {
-      setActiveInvitation(null);
-    }
-  }, [invitations]);
   
   const handleInvitePartner = async (e: React.FormEvent) => {
     e.preventDefault();

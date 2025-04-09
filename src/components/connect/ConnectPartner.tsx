@@ -24,7 +24,9 @@ const ConnectPartner = () => {
   } = usePartnerInvitations();
   
   const handleCopyInvite = () => {
-    navigator.clipboard.writeText(activeInvitation?.invitation_code || '');
+    if (!activeInvitation) return;
+    
+    navigator.clipboard.writeText(activeInvitation.invitation_code);
     setCopied(true);
     toast({
       title: "Copied to clipboard!",

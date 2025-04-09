@@ -1,20 +1,14 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
-
-export type PartnerInvitation = {
-  id: string;
-  invitation_code: string;
-  recipient_email: string;
-  status: 'pending' | 'accepted' | 'rejected';
-  created_at: string;
-};
+import { PartnerInvitation } from '@/types/partners';
 
 export const usePartnerInvitations = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [invitations, setInvitations] = useState<PartnerInvitation[]>([]);
+  const [activeInvitation, setActiveInvitation] = useState<PartnerInvitation | null>(null);
   const { user, profile, fetchUserProfile } = useAuth();
 
   const fetchInvitations = useCallback(async () => {
@@ -23,15 +17,24 @@ export const usePartnerInvitations = () => {
     try {
       setIsLoading(true);
       
+      // We need to use any here because the tables aren't in the type definition yet
       const { data, error } = await supabase
         .from('partner_invitations')
         .select('*')
         .eq('sender_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any;
         
       if (error) throw error;
       
       setInvitations(data || []);
+      
+      // Set the active invitation (most recent pending one)
+      if (data && data.length > 0) {
+        const pendingInvitation = data.find((inv: PartnerInvitation) => inv.status === 'pending');
+        setActiveInvitation(pendingInvitation || null);
+      } else {
+        setActiveInvitation(null);
+      }
     } catch (error) {
       console.error('Error fetching partner invitations:', error);
       toast.error('Failed to load invitations');
@@ -56,7 +59,7 @@ export const usePartnerInvitations = () => {
         .eq('sender_id', user.id)
         .eq('recipient_email', recipientEmail)
         .eq('status', 'pending')
-        .limit(1);
+        .limit(1) as any;
         
       if (existingInvites && existingInvites.length > 0) {
         toast.error('You already have a pending invitation for this email');
@@ -73,7 +76,7 @@ export const usePartnerInvitations = () => {
           }
         ])
         .select('*')
-        .single();
+        .single() as any;
         
       if (error) throw error;
       
@@ -105,7 +108,7 @@ export const usePartnerInvitations = () => {
         .select('*')
         .eq('invitation_code', invitationCode)
         .neq('status', 'accepted')
-        .single();
+        .single() as any;
         
       if (fetchError) throw fetchError;
       
@@ -121,7 +124,7 @@ export const usePartnerInvitations = () => {
           status: 'accepted',
           accepted_at: new Date().toISOString()
         })
-        .eq('id', invitation.id);
+        .eq('id', invitation.id) as any;
         
       if (updateError) throw updateError;
       
@@ -129,14 +132,14 @@ export const usePartnerInvitations = () => {
       const { error: updateSenderError } = await supabase
         .from('user_profiles')
         .update({ partner_id: user.id })
-        .eq('id', invitation.sender_id);
+        .eq('id', invitation.sender_id) as any;
         
       if (updateSenderError) throw updateSenderError;
       
       const { error: updateRecipientError } = await supabase
         .from('user_profiles')
         .update({ partner_id: invitation.sender_id })
-        .eq('id', user.id);
+        .eq('id', user.id) as any;
         
       if (updateRecipientError) throw updateRecipientError;
       
@@ -166,7 +169,7 @@ export const usePartnerInvitations = () => {
       // Unlink current user from partner
       const { error: updateCurrentError } = await supabase
         .from('user_profiles')
-        .update({ partner_id: null })
+        .update({ partner_id: null } as any)
         .eq('id', user.id);
         
       if (updateCurrentError) throw updateCurrentError;
@@ -174,7 +177,7 @@ export const usePartnerInvitations = () => {
       // Unlink partner from current user
       const { error: updatePartnerError } = await supabase
         .from('user_profiles')
-        .update({ partner_id: null })
+        .update({ partner_id: null } as any)
         .eq('id', profile.partner_id);
         
       if (updatePartnerError) throw updatePartnerError;
@@ -193,8 +196,16 @@ export const usePartnerInvitations = () => {
     }
   }, [user, profile, fetchUserProfile]);
   
+  // Effect to fetch invitations on mount
+  useEffect(() => {
+    if (user) {
+      fetchInvitations();
+    }
+  }, [user, fetchInvitations]);
+  
   return {
     invitations,
+    activeInvitation,
     isLoading,
     fetchInvitations,
     sendInvitation,

@@ -85,17 +85,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           description: "Failed to fetch user profile.",
         });
       } else {
-        // Transform mood_settings to ensure it matches our expected type
-        const moodSettings = data.mood_settings ? (
-          typeof data.mood_settings === 'object' ? {
-            showAvatar: typeof data.mood_settings === 'object' && 
-              'showAvatar' in data.mood_settings ? 
-              Boolean(data.mood_settings.showAvatar) : true,
-            defaultMood: typeof data.mood_settings === 'object' && 
-              'defaultMood' in data.mood_settings ? 
-              String(data.mood_settings.defaultMood) : 'neutral'
-          } : null
-        ) : null;
+        // Properly transform mood_settings to ensure type safety
+        let moodSettings = null;
+        
+        if (data.mood_settings) {
+          // Handle the mood_settings based on its actual structure
+          if (typeof data.mood_settings === 'object') {
+            moodSettings = {
+              showAvatar: typeof data.mood_settings.showAvatar === 'boolean' 
+                ? data.mood_settings.showAvatar 
+                : data.mood_settings.showAvatar === 'true',
+              defaultMood: typeof data.mood_settings.defaultMood === 'string'
+                ? data.mood_settings.defaultMood
+                : String(data.mood_settings.defaultMood || 'neutral')
+            };
+          }
+        }
         
         const formattedProfile: Profile = {
           ...data,

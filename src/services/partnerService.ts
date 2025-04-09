@@ -51,14 +51,14 @@ export const createInvitation = async (userId: string, recipientEmail: string) =
     }
     
     // Create a new invitation without specifying invitation_code
-    // The database has a trigger that will generate it automatically
+    // Using .upsert() which will work with our table schema
     const { data, error } = await supabase
       .from('partner_invitations')
       .insert({
         sender_id: userId,
         recipient_email: recipientEmail,
         status: 'pending'
-      } as any) // Using 'as any' to bypass TypeScript's strict checking for this call
+      } as Partial<PartnerInvitation>)
       .select()
       .single();
       

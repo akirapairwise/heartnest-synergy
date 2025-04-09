@@ -1,19 +1,16 @@
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
-import { Plus, RefreshCw } from "lucide-react";
 import { Goal } from '@/types/goals';
-import { fetchMyGoals, fetchPartnerGoals, updateGoalStatus } from '@/services/goalService';
+import { fetchMyGoals, fetchPartnerGoals } from '@/services/goalService';
 import { useToast } from '@/components/ui/use-toast';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 import { GoalModal } from '@/components/goals/GoalModal';
-import { GoalsList } from '@/components/goals/GoalsList';
 import { supabase } from '@/integrations/supabase/client';
+import { GoalPageHeader } from '@/components/goals/GoalPageHeader';
+import { GoalProgressCard } from '@/components/goals/GoalProgressCard';
+import { GoalTabsSection } from '@/components/goals/GoalTabsSection';
 
 const GoalsPage = () => {
   const [myGoals, setMyGoals] = useState<Goal[]>([]);
@@ -124,119 +121,43 @@ const GoalsPage = () => {
   const overallProgress = totalGoals > 0 
     ? Math.round((totalCompleted / totalGoals) * 100) 
     : 0;
-    
-  // Wrapper component to handle mobile vs desktop modal
-  const GoalFormWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (isDesktop) {
-      return (
+
+  return (
+    <div className="space-y-6">
+      <GoalPageHeader 
+        isLoading={isLoading}
+        goalModalOpen={goalModalOpen}
+        setGoalModalOpen={setGoalModalOpen}
+        handleOpenNewGoal={handleOpenNewGoal}
+        fetchGoals={fetchGoals}
+        handleCloseModal={handleCloseModal}
+        onSuccess={fetchGoals}
+      />
+      
+      <GoalProgressCard 
+        totalGoals={totalGoals} 
+        totalCompleted={totalCompleted} 
+        overallProgress={overallProgress} 
+      />
+      
+      <GoalTabsSection 
+        myGoals={myGoals}
+        sharedGoals={sharedGoals}
+        isLoading={isLoading}
+        onEdit={handleEditGoal}
+        onDelete={handleDeleteGoal}
+        onRefresh={fetchGoals}
+      />
+      
+      {!isDesktop && goalModalOpen && (
         <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
-          <DialogTrigger asChild>{children}</DialogTrigger>
-          {goalModalOpen && (
-            <GoalModal
-              goal={selectedGoal}
-              onClose={handleCloseModal}
-              onSuccess={fetchGoals}
-            />
-          )}
-        </Dialog>
-      );
-    }
-    
-    return (
-      <Drawer open={goalModalOpen} onOpenChange={setGoalModalOpen}>
-        <DrawerTrigger asChild>{children}</DrawerTrigger>
-        {goalModalOpen && (
+          <DialogTrigger asChild><div></div></DialogTrigger>
           <GoalModal
             goal={selectedGoal}
             onClose={handleCloseModal}
             onSuccess={fetchGoals}
           />
-        )}
-      </Drawer>
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Relationship Goals</h1>
-          <p className="text-muted-foreground">Track and achieve your relationship aspirations together</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <GoalFormWrapper>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add New Goal
-            </Button>
-          </GoalFormWrapper>
-          
-          <Button variant="outline" size="icon" onClick={fetchGoals} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </div>
-      
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Goal Progress</CardTitle>
-          <CardDescription>
-            {totalCompleted} of {totalGoals} goals completed
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Overall Progress</span>
-              <span>{overallProgress}%</span>
-            </div>
-            <Progress value={overallProgress} className="h-2" />
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Tabs defaultValue="my-goals">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="my-goals">My Goals ({myGoals.length})</TabsTrigger>
-          <TabsTrigger value="shared-goals">Shared Goals ({sharedGoals.length})</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="my-goals" className="mt-6">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <p className="text-muted-foreground">Loading goals...</p>
-            </div>
-          ) : (
-            <GoalsList 
-              goals={myGoals} 
-              onEdit={handleEditGoal} 
-              onDelete={handleDeleteGoal}
-              onRefresh={fetchGoals}
-            />
-          )}
-        </TabsContent>
-        
-        <TabsContent value="shared-goals" className="mt-6">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <p className="text-muted-foreground">Loading shared goals...</p>
-            </div>
-          ) : (
-            <GoalsList 
-              goals={sharedGoals} 
-              onEdit={handleEditGoal} 
-              onDelete={handleDeleteGoal}
-              onRefresh={fetchGoals}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
-      
-      {!isDesktop && goalModalOpen && (
-        <GoalFormWrapper>
-          <div></div>
-        </GoalFormWrapper>
+        </Dialog>
       )}
     </div>
   );

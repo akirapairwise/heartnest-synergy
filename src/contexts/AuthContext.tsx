@@ -31,26 +31,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-      setSession(session);
-      setUser(session?.user ?? null);
+        setSession(session);
+        setUser(session?.user ?? null);
 
-      if (session?.user) {
-        await fetchUserProfile(session.user.id);
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error('Error getting session:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     getSession();
 
-    supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      setUser(session?.user ?? null);
-      setSession(session);
-      if (session?.user) {
-        await fetchUserProfile(session.user.id);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, session: Session | null) => {
+        setUser(session?.user ?? null);
+        setSession(session);
+        
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        } else {
+          // Clear profile when logged out
+          setProfile(null);
+          setIsOnboardingComplete(null);
+        }
       }
-    });
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = useCallback(async (userId: string) => {
@@ -70,15 +86,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
       } else {
         // Transform mood_settings to ensure it matches our expected type
+        const moodSettings = data.mood_settings ? (
+          typeof data.mood_settings === 'object' ? {
+            showAvatar: typeof data.mood_settings === 'object' && 
+              'showAvatar' in data.mood_settings ? 
+              Boolean(data.mood_settings.showAvatar) : true,
+            defaultMood: typeof data.mood_settings === 'object' && 
+              'defaultMood' in data.mood_settings ? 
+              String(data.mood_settings.defaultMood) : 'neutral'
+          } : null
+        ) : null;
+        
         const formattedProfile: Profile = {
           ...data,
-          mood_settings: data.mood_settings ? 
-            {
-              showAvatar: typeof data.mood_settings === 'object' && data.mood_settings !== null && 
-                'showAvatar' in data.mood_settings ? data.mood_settings.showAvatar : true,
-              defaultMood: typeof data.mood_settings === 'object' && data.mood_settings !== null && 
-                'defaultMood' in data.mood_settings ? data.mood_settings.defaultMood : 'neutral'
-            } : null
+          mood_settings: moodSettings
         };
         
         setProfile(formattedProfile);

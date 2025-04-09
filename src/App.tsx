@@ -15,6 +15,7 @@ import ConnectPage from "./pages/ConnectPage";
 import DashboardPage from "./pages/DashboardPage";
 import MoodsPage from "./pages/MoodsPage";
 import GoalsPage from "./pages/GoalsPage";
+import CheckInsPage from "./pages/CheckInsPage";
 import AppLayout from "./components/layout/AppLayout";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/moods" element={<MoodsPage />} />
               <Route path="/goals" element={<GoalsPage />} />
+              <Route path="/check-ins" element={<CheckInsPage />} />
             </Route>
             
             {/* Routes that require authentication but not completed onboarding */}

@@ -19,7 +19,7 @@ export const fetchMyGoals = async (): Promise<Goal[]> => {
     ...goal,
     progress: getGoalProgress(goal.status),
     completed: goal.status === 'completed'
-  }));
+  })) as Goal[];
 };
 
 export const fetchPartnerGoals = async (): Promise<Goal[]> => {
@@ -40,7 +40,7 @@ export const fetchPartnerGoals = async (): Promise<Goal[]> => {
     ...goal,
     progress: getGoalProgress(goal.status),
     completed: goal.status === 'completed'
-  }));
+  })) as Goal[];
 };
 
 export const createGoal = async (goal: Partial<Goal>): Promise<{ goal: Goal | null; error: any }> => {
@@ -50,13 +50,15 @@ export const createGoal = async (goal: Partial<Goal>): Promise<{ goal: Goal | nu
     return { goal: null, error: 'User not authenticated' };
   }
 
+  const newGoal = {
+    ...goal,
+    owner_id: userId,
+    status: goal.status || 'pending'
+  };
+
   const { data, error } = await supabase
     .from('goals')
-    .insert({
-      ...goal,
-      owner_id: userId,
-      status: goal.status || 'pending'
-    })
+    .insert(newGoal)
     .select()
     .single();
 
@@ -70,7 +72,7 @@ export const createGoal = async (goal: Partial<Goal>): Promise<{ goal: Goal | nu
       ...data,
       progress: getGoalProgress(data.status),
       completed: data.status === 'completed'
-    }, 
+    } as Goal, 
     error: null 
   };
 };

@@ -79,9 +79,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (error) {
@@ -137,12 +137,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({ 
           is_onboarding_complete: isComplete, 
           updated_at: new Date().toISOString() 
         })
-        .eq('user_id', user.id);
+        .eq('id', user.id);
         
       if (error) {
         console.error('Error updating onboarding status:', error);
@@ -166,12 +166,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({
           ...data,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', user.id);
+        .eq('id', user.id);
         
       if (error) {
         console.error('Error updating profile:', error);

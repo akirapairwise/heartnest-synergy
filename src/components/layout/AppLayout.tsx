@@ -2,14 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
-import { Sidebar, MobileSidebar } from './Sidebar';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 const AppLayout = () => {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   const { user, isLoading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -44,12 +41,9 @@ const AppLayout = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <div className="flex flex-1 overflow-hidden">
-        {isDesktop && <Sidebar />}
-        <main className="flex-1 p-4 sm:p-6 overflow-auto">
-          <Outlet />
-        </main>
-      </div>
+      <main className="flex-1 p-4 sm:p-6 overflow-auto">
+        <Outlet />
+      </main>
     </div>
   );
 };

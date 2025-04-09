@@ -18,7 +18,7 @@ const AuthPage = () => {
   };
 
   useEffect(() => {
-    // Only redirect if loading is complete and we have authentication information
+    // Only redirect if we have a user and loading is complete
     if (!isLoading) {
       setPageLoading(false);
       
@@ -32,7 +32,7 @@ const AuthPage = () => {
   }, [user, isLoading, isOnboardingComplete, navigate, location.search]);
 
   // Show loading screen while checking authentication
-  if (isLoading || pageLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50 p-4">
         <Loader2 className="h-10 w-10 text-love-500 animate-spin mb-4" />
@@ -41,7 +41,7 @@ const AuthPage = () => {
     );
   }
 
-  // Only show auth form if user is not authenticated
+  // Show auth form if user is not authenticated
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50 p-4">
       <div className="w-full max-w-md">

@@ -1,27 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import LoginForm from './LoginForm';
+import RegisterForm from './RegisterForm';
 
 const AuthForm = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   
-  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, user, isOnboardingComplete } = useAuth();
+  const { user, isOnboardingComplete } = useAuth();
   
   // Redirect if already authenticated
   useEffect(() => {
@@ -30,91 +22,6 @@ const AuthForm = () => {
       navigate(redirectPath, { replace: true });
     }
   }, [user, isOnboardingComplete, navigate]);
-
-  const validateForm = (type: 'login' | 'register') => {
-    setError(null);
-    
-    if (!email || !password) {
-      setError('Email and password are required');
-      return false;
-    }
-    
-    if (type === 'register') {
-      if (!fullName) {
-        setError('Full name is required');
-        return false;
-      }
-      
-      if (password !== confirmPassword) {
-        setError('Passwords do not match');
-        return false;
-      }
-      
-      if (password.length < 6) {
-        setError('Password must be at least 6 characters');
-        return false;
-      }
-    }
-    
-    return true;
-  };
-  
-  const handleAuth = async (e: React.FormEvent<HTMLFormElement>, type: 'login' | 'register') => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    
-    if (!validateForm(type)) {
-      setIsLoading(false);
-      return;
-    }
-    
-    try {
-      if (type === 'login') {
-        const { error } = await signIn(email, password);
-        
-        if (error) {
-          setError(error.message);
-          toast({
-            title: "Login failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Welcome back!",
-            description: "You've successfully logged in to HeartNest.",
-          });
-        }
-      } else {
-        const { error } = await signUp(email, password, fullName);
-        
-        if (error) {
-          setError(error.message);
-          toast({
-            title: "Registration failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Account created successfully!",
-            description: "Your account has been created. Let's set up your profile!",
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Authentication error:', error);
-      setError('An unexpected error occurred. Please try again.');
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg border-harmony-100">
@@ -133,125 +40,10 @@ const AuthForm = () => {
           <TabsTrigger value="register" className="text-sm font-medium">Register</TabsTrigger>
         </TabsList>
         <TabsContent value="login">
-          <form onSubmit={(e) => handleAuth(e, 'login')}>
-            <CardContent className="space-y-4 pt-4">
-              {error && (
-                <div className="p-3 text-sm rounded-md bg-destructive/10 text-destructive">
-                  {error}
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="your@email.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="focus:border-harmony-500 focus:ring-harmony-200"
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-gray-700">Password</Label>
-                  <Button variant="link" size="sm" className="px-0 text-xs text-harmony-600">
-                    Forgot password?
-                  </Button>
-                </div>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="focus:border-harmony-500 focus:ring-harmony-200"
-                  required 
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-love-500 to-harmony-500 hover:from-love-600 hover:to-harmony-600 text-white"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="flex items-center">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
-                  </span>
-                ) : "Login"}
-              </Button>
-            </CardFooter>
-          </form>
+          <LoginForm error={error} setError={setError} />
         </TabsContent>
         <TabsContent value="register">
-          <form onSubmit={(e) => handleAuth(e, 'register')}>
-            <CardContent className="space-y-4 pt-4">
-              {error && (
-                <div className="p-3 text-sm rounded-md bg-destructive/10 text-destructive">
-                  {error}
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="reg-name" className="text-gray-700">Full Name</Label>
-                <Input 
-                  id="reg-name" 
-                  placeholder="Your name" 
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="focus:border-harmony-500 focus:ring-harmony-200"
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reg-email" className="text-gray-700">Email</Label>
-                <Input 
-                  id="reg-email" 
-                  type="email" 
-                  placeholder="your@email.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="focus:border-harmony-500 focus:ring-harmony-200"
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reg-password" className="text-gray-700">Password</Label>
-                <Input 
-                  id="reg-password" 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="focus:border-harmony-500 focus:ring-harmony-200"
-                  required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password" className="text-gray-700">Confirm Password</Label>
-                <Input 
-                  id="confirm-password" 
-                  type="password" 
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="focus:border-harmony-500 focus:ring-harmony-200"
-                  required 
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-love-500 to-harmony-500 hover:from-love-600 hover:to-harmony-600 text-white"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="flex items-center">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...
-                  </span>
-                ) : "Create Account"}
-              </Button>
-            </CardFooter>
-          </form>
+          <RegisterForm error={error} setError={setError} />
         </TabsContent>
       </Tabs>
     </Card>

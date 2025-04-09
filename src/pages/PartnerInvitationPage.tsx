@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePartnerInvitations } from '@/hooks/usePartnerInvitations';
+import { usePartnerInvite } from '@/hooks/usePartnerInvite';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Heart, CheckCircle, XCircle } from 'lucide-react';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 const PartnerInvitationPage = () => {
   const { code } = useParams<{ code: string }>();
   const { user, isLoading: authLoading } = useAuth();
-  const { acceptInvitation } = usePartnerInvitations();
+  const { acceptInvitation } = usePartnerInvite();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();

@@ -63,7 +63,10 @@ const Navbar = () => {
           </Button>
           
           <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8" onClick={() => navigate('/profile')}>
+            <Avatar 
+              className="h-8 w-8 cursor-pointer" 
+              onClick={() => navigate('/profile/settings')}
+            >
               <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(initials)}`} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>

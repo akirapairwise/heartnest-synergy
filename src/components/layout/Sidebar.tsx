@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, LineChart, Target, Calendar, MessageSquare, Menu, X, Settings } from 'lucide-react';
+import { Home, LineChart, Target, Calendar, MessageSquare, Menu, X, Settings, User } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SidebarProps {
@@ -16,6 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     { to: '/goals', icon: <Target className="h-5 w-5" />, label: 'Goals' },
     { to: '/check-ins', icon: <Calendar className="h-5 w-5" />, label: 'Check-ins' },
     { to: '/recommendations', icon: <MessageSquare className="h-5 w-5" />, label: 'Recommendations' },
+    { to: '/profile/settings', icon: <User className="h-5 w-5" />, label: 'Profile' },
     { to: '/profile/settings', icon: <Settings className="h-5 w-5" />, label: 'Settings' },
   ];
 
@@ -46,10 +47,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         </div>
 
         <nav className="p-4">
-          <ul className="space-y-2">
-            {navItems.map((item) => (
-              <li key={item.to}>
-                <TooltipProvider>
+          <TooltipProvider>
+            <ul className="space-y-2">
+              {navItems.map((item, index) => (
+                <li key={`${item.to}-${index}`}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <NavLink
@@ -73,10 +74,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                       {item.label}
                     </TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </TooltipProvider>
         </nav>
       </aside>
 

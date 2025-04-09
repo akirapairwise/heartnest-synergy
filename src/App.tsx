@@ -38,6 +38,7 @@ const App = () => (
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/check-ins" element={<CheckInsPage />} />
             <Route path="/recommendations" element={<RecommendationsPage />} />
+            <Route path="/profile" element={<Navigate to="/profile/settings" replace />} />
             <Route path="/profile/settings" element={<ProfileSettingsPage />} />
           </Route>
           

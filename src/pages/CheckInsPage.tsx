@@ -17,9 +17,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMediaQuery } from '@/hooks/use-media-query';
 import {
@@ -30,7 +28,6 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/components/ui/drawer";
 
 // Define types for the check-in data
@@ -40,6 +37,7 @@ type CheckIn = {
   reflection: string | null;
   satisfaction_rating: number;
   timestamp: string;
+  user_id?: string;
 };
 
 type MoodOption = {
@@ -91,10 +89,11 @@ const CheckInsPage = () => {
 
   const fetchCheckIns = async () => {
     try {
+      // Use a more generic approach to work around TypeScript limitations
       const { data, error } = await supabase
         .from('check_ins')
         .select('*')
-        .order('timestamp', { ascending: false });
+        .order('timestamp', { ascending: false }) as { data: CheckIn[] | null, error: any };
 
       if (error) {
         throw error;
@@ -118,6 +117,7 @@ const CheckInsPage = () => {
     setIsLoading(true);
     
     try {
+      // Use type assertions to work around TypeScript limitations
       const { error } = await supabase
         .from('check_ins')
         .insert([
@@ -126,7 +126,7 @@ const CheckInsPage = () => {
             reflection: reflection || null,
             satisfaction_rating: satisfactionRating,
           },
-        ]);
+        ]) as { error: any };
 
       if (error) {
         throw error;

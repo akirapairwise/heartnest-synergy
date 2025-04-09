@@ -162,6 +162,7 @@ export type Database = {
           is_onboarding_complete: boolean
           location: string | null
           love_language: string | null
+          mood_settings: Json | null
           relationship_goals: string | null
           updated_at: string
         }
@@ -176,6 +177,7 @@ export type Database = {
           is_onboarding_complete?: boolean
           location?: string | null
           love_language?: string | null
+          mood_settings?: Json | null
           relationship_goals?: string | null
           updated_at?: string
         }
@@ -190,6 +192,7 @@ export type Database = {
           is_onboarding_complete?: boolean
           location?: string | null
           love_language?: string | null
+          mood_settings?: Json | null
           relationship_goals?: string | null
           updated_at?: string
         }

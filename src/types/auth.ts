@@ -16,6 +16,10 @@ export type Profile = {
   updated_at: string;
   location: string | null;
   bio: string | null;
+  mood_settings: {
+    showAvatar?: boolean;
+    defaultMood?: string;
+  } | null;
 };
 
 export type AuthContextType = {

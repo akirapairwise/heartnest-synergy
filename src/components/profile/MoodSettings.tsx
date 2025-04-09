@@ -14,33 +14,22 @@ const MoodSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAvatar, setShowAvatar] = useState(true);
   const [defaultMood, setDefaultMood] = useState('neutral');
-  const { user } = useAuth();
+  const { user, profile, updateProfile } = useAuth();
   
   // Load saved settings on component mount
   useEffect(() => {
-    if (user) {
+    if (profile) {
       loadSettings();
     }
-  }, [user]);
+  }, [profile]);
   
   const loadSettings = async () => {
-    if (!user) return;
-    
     try {
       setIsLoading(true);
       
-      // Fetch user settings from a user_settings table or profile
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('mood_settings')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) throw error;
-      
-      if (data && data.mood_settings) {
+      if (profile && profile.mood_settings) {
         // If there are saved settings, apply them
-        const settings = data.mood_settings;
+        const settings = profile.mood_settings;
         setShowAvatar(settings.showAvatar ?? true);
         setDefaultMood(settings.defaultMood ?? 'neutral');
       }
@@ -62,15 +51,12 @@ const MoodSettings = () => {
     
     try {
       // Save settings to user profile
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          mood_settings: {
-            showAvatar,
-            defaultMood,
-          }
-        })
-        .eq('id', user.id);
+      const { error } = await updateProfile({
+        mood_settings: {
+          showAvatar,
+          defaultMood,
+        }
+      });
       
       if (error) throw error;
       

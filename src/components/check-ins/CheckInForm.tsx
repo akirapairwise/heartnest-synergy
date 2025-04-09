@@ -22,14 +22,16 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
   const [reflection, setReflection] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
-  // Set default mood if provided
+  // Set default mood from profile settings or from prop
   useEffect(() => {
     if (defaultMood && !mood) {
       setMood(defaultMood);
+    } else if (profile?.mood_settings?.defaultMood && !mood) {
+      setMood(profile.mood_settings.defaultMood);
     }
-  }, [defaultMood]);
+  }, [defaultMood, profile, mood]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

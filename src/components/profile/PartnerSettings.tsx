@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,6 +70,7 @@ const PartnerSettings = () => {
     if (!error) {
       setIsUnlinkDialogOpen(false);
       setPartnerProfile(null);
+      toast.success('Partner connection broken successfully');
     }
   };
   

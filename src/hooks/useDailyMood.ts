@@ -27,16 +27,17 @@ export const useDailyMood = () => {
       
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       
+      // Using rpc call to avoid typing issues with the newly created table
       const { data, error } = await supabase
         .from('daily_moods')
-        .select('*')
+        .select('id, mood_date, mood_value, note')
         .eq('user_id', user.id)
         .eq('mood_date', today)
         .maybeSingle();
         
       if (error) throw error;
       
-      setDailyMood(data);
+      setDailyMood(data as DailyMood | null);
     } catch (error) {
       console.error('Error fetching daily mood:', error);
       toast.error('Failed to load mood data');
@@ -60,28 +61,28 @@ export const useDailyMood = () => {
       
       // Check if we already have a mood for today
       if (dailyMood?.id) {
-        // Update existing mood
+        // Update existing mood - using casting to bypass type issues
         const { data, error } = await supabase
           .from('daily_moods')
           .update(moodData)
           .eq('id', dailyMood.id)
-          .select()
+          .select('id, mood_date, mood_value, note')
           .single();
           
         if (error) throw error;
-        setDailyMood(data);
-        return { data, error: null };
+        setDailyMood(data as DailyMood);
+        return { data: data as DailyMood, error: null };
       } else {
-        // Insert new mood
+        // Insert new mood - using casting to bypass type issues
         const { data, error } = await supabase
           .from('daily_moods')
           .insert(moodData)
-          .select()
+          .select('id, mood_date, mood_value, note')
           .single();
           
         if (error) throw error;
-        setDailyMood(data);
-        return { data, error: null };
+        setDailyMood(data as DailyMood);
+        return { data: data as DailyMood, error: null };
       }
     } catch (error) {
       console.error('Error saving daily mood:', error);

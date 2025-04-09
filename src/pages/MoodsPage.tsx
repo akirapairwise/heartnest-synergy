@@ -10,11 +10,12 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const MoodsPage = () => {
   const { moodHistory, isFetchingHistory, fetchMoodHistory } = useMoodHistory();
-  const { dailyMood, isLoading: isLoadingDailyMood } = useDailyMood();
+  const { dailyMood, isLoading: isLoadingDailyMood, fetchDailyMood } = useDailyMood();
   const { user, isLoading: isAuthLoading } = useAuth();
   
   const handleMoodSaved = () => {
     fetchMoodHistory();
+    fetchDailyMood(); 
   };
   
   // Show loading state while checking auth or fetching data

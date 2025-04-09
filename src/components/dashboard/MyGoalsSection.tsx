@@ -1,13 +1,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Target, CheckCircle2, Circle, PlusCircle, Calendar } from "lucide-react";
+import { Target, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Goal } from '@/types/goals';
 import { fetchMyGoals, updateGoalProgress } from '@/services/goalService';
 import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
+import GoalStats from './goals/GoalStats';
+import GoalList from './goals/GoalList';
 
 const MyGoalsSection = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -84,120 +85,18 @@ const MyGoalsSection = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-full mb-4"></div>
-                <div className="h-2 bg-muted rounded w-full"></div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex gap-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-harmony-600">{goals.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Goals</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600">{completedGoals}</p>
-                  <p className="text-sm text-muted-foreground">Completed</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-amber-600">{inProgressGoals}</p>
-                  <p className="text-sm text-muted-foreground">In Progress</p>
-                </div>
-              </div>
-            </div>
-            
-            {goals.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <p>You don't have any goals yet.</p>
-                <Button 
-                  variant="link" 
-                  className="mt-2" 
-                  onClick={() => navigate('/goals')}
-                >
-                  Create your first goal
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {goals.slice(0, 4).map((goal) => (
-                  <div key={goal.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-start gap-3">
-                        <button 
-                          onClick={() => handleToggleComplete(goal)}
-                          className="flex-shrink-0 mt-0.5 focus:outline-none"
-                        >
-                          {goal.completed ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <Circle className="h-5 w-5 text-muted-foreground" />
-                          )}
-                        </button>
-                        <div>
-                          <h3 className={`font-medium ${goal.completed ? 'line-through text-muted-foreground' : ''}`}>
-                            {goal.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {!goal.completed && (
-                      <div className="mt-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-muted-foreground">Progress</span>
-                          <span className="text-xs font-medium">{goal.progress}%</span>
-                        </div>
-                        <Progress value={goal.progress} className="h-2" />
-                        <div className="flex justify-between mt-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 text-xs"
-                            onClick={() => handleUpdateProgress(goal.id, 0)}
-                          >
-                            0%
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 text-xs"
-                            onClick={() => handleUpdateProgress(goal.id, 50)}
-                          >
-                            50%
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-7 text-xs"
-                            onClick={() => handleUpdateProgress(goal.id, 100)}
-                          >
-                            100%
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {goals.length > 4 && (
-              <div className="mt-6 text-center">
-                <Button variant="outline" onClick={() => navigate('/goals')}>
-                  View all goals
-                </Button>
-              </div>
-            )}
-          </>
-        )}
+        <GoalStats 
+          totalGoals={goals.length}
+          completedGoals={completedGoals}
+          inProgressGoals={inProgressGoals}
+        />
+        
+        <GoalList 
+          goals={goals}
+          isLoading={isLoading}
+          onToggleComplete={handleToggleComplete}
+          onUpdateProgress={handleUpdateProgress}
+        />
       </CardContent>
     </Card>
   );

@@ -63,7 +63,9 @@ export const createGoal = async (goal: Partial<Goal>): Promise<{ goal: Goal | nu
     status: goal.status || 'pending',
     is_shared: goal.is_shared || false,
     owner_id: userId,
-    partner_id: goal.partner_id || null
+    partner_id: goal.partner_id || null,
+    milestones: goal.milestones || null,
+    deadline: goal.deadline || null
   };
 
   const { data, error } = await supabase

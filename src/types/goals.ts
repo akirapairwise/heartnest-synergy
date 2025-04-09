@@ -10,6 +10,9 @@ export type Goal = {
   partner_id: string | null;
   created_at: string;
   updated_at: string;
+  // New fields
+  milestones: string[] | null;
+  deadline: string | null;
   // Computed properties for UI
   progress?: number;
   completed?: boolean;

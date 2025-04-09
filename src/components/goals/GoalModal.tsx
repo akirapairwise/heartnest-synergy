@@ -8,6 +8,7 @@ import { createGoal, updateGoalStatus } from "@/services/goalService";
 import { useToast } from "@/components/ui/use-toast";
 import { GoalModalContent } from './GoalModalContent';
 import { GoalFormValues } from './GoalForm';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GoalModalProps {
   goal?: Goal;
@@ -34,8 +35,22 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
       setIsSubmitting(true);
       
       if (goal) {
-        // Update existing goal
-        await updateGoalStatus(goal.id, formValues.status);
+        // Update existing goal with all form values
+        const { error } = await supabase
+          .from('goals')
+          .update({
+            title: formValues.title,
+            description: formValues.description || null,
+            category: formValues.category || null,
+            status: formValues.status,
+            is_shared: formValues.is_shared,
+            milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
+            deadline: formValues.deadline ? formValues.deadline.toISOString() : null
+          })
+          .eq('id', goal.id);
+          
+        if (error) throw error;
+        
         toast({
           title: "Goal updated",
           description: "Your goal has been updated successfully"
@@ -47,7 +62,9 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
           description: formValues.description,
           category: formValues.category || null,
           is_shared: formValues.is_shared,
-          status: formValues.status
+          status: formValues.status,
+          milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
+          deadline: formValues.deadline ? formValues.deadline.toISOString() : null
         });
         
         if (error) {

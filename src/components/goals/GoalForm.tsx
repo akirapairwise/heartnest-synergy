@@ -7,7 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Goal, GoalCategory, GoalStatus } from "@/types/goals";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon, Plus, X } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface GoalFormProps {
   goal?: Goal;
@@ -22,6 +26,8 @@ export interface GoalFormValues {
   category: GoalCategory | '';
   is_shared: boolean;
   status: GoalStatus;
+  milestones: string[];
+  deadline: Date | null;
 }
 
 export function GoalForm({ goal, onSubmit, onCancel, isSubmitting }: GoalFormProps) {
@@ -30,8 +36,12 @@ export function GoalForm({ goal, onSubmit, onCancel, isSubmitting }: GoalFormPro
     description: goal?.description || '',
     category: (goal?.category as GoalCategory) || '',
     is_shared: goal?.is_shared || false,
-    status: (goal?.status as GoalStatus) || 'pending'
+    status: (goal?.status as GoalStatus) || 'pending',
+    milestones: goal?.milestones || [],
+    deadline: goal?.deadline ? new Date(goal.deadline) : null
   });
+
+  const [newMilestone, setNewMilestone] = useState<string>('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +63,25 @@ export function GoalForm({ goal, onSubmit, onCancel, isSubmitting }: GoalFormPro
     { value: 'completed', label: 'Completed' },
     { value: 'cancelled', label: 'Cancelled' }
   ];
+
+  const addMilestone = () => {
+    if (newMilestone.trim()) {
+      setFormValues({
+        ...formValues,
+        milestones: [...formValues.milestones, newMilestone.trim()]
+      });
+      setNewMilestone('');
+    }
+  };
+
+  const removeMilestone = (index: number) => {
+    const updatedMilestones = [...formValues.milestones];
+    updatedMilestones.splice(index, 1);
+    setFormValues({
+      ...formValues,
+      milestones: updatedMilestones
+    });
+  };
 
   return (
     <form onSubmit={handleSubmit}>
@@ -120,6 +149,88 @@ export function GoalForm({ goal, onSubmit, onCancel, isSubmitting }: GoalFormPro
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+        </div>
+
+        {/* Deadline Field */}
+        <div className="space-y-2">
+          <Label htmlFor="deadline">Deadline (Optional)</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !formValues.deadline && "text-muted-foreground"
+                )}
+                disabled={isSubmitting}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formValues.deadline ? format(formValues.deadline, "PPP") : "Set a deadline"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formValues.deadline || undefined}
+                onSelect={(date) => setFormValues({...formValues, deadline: date})}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Milestones Field */}
+        <div className="space-y-2">
+          <Label htmlFor="milestones">Milestones (Optional)</Label>
+          <div className="flex space-x-2">
+            <Input
+              id="new-milestone"
+              value={newMilestone}
+              onChange={e => setNewMilestone(e.target.value)}
+              placeholder="Add a milestone for your goal"
+              className="flex-1"
+              disabled={isSubmitting}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addMilestone();
+                }
+              }}
+            />
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="icon" 
+              onClick={addMilestone}
+              disabled={isSubmitting || !newMilestone.trim()}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {formValues.milestones.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {formValues.milestones.map((milestone, index) => (
+                <div 
+                  key={index} 
+                  className="flex items-center justify-between bg-secondary/50 rounded-md p-2 text-sm"
+                >
+                  <span>{milestone}</span>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={() => removeMilestone(index)}
+                    disabled={isSubmitting}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
         </div>

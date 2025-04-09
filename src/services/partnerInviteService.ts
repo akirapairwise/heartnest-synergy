@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { User } from '@supabase/supabase-js';
@@ -82,48 +81,48 @@ export const getInvitationByToken = async (token: string): Promise<{ data: Partn
     const now = new Date().toISOString();
     
     // Get the invitation data (must be valid and not expired)
+    // Use maybeSingle instead of single to avoid the "multiple or no rows" error
     const { data: invite, error: inviteError } = await supabase
       .from('partner_invites')
       .select('*')
       .eq('token', token)
       .eq('is_accepted', false)
       .gt('expires_at', now)
-      .single();
+      .maybeSingle();
       
     if (inviteError) {
       console.error('Error fetching invitation:', inviteError);
       return { data: null, error: inviteError };
     }
     
-    // If invite exists, get the inviter's name
-    if (invite) {
-      const { data: inviterProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('full_name')
-        .eq('id', invite.inviter_id)
-        .single();
-        
-      if (!profileError && inviterProfile) {
-        // Add the inviter name to the response
-        return { 
-          data: { ...invite, inviter_name: inviterProfile.full_name } as PartnerInvite, 
-          error: null 
-        };
-      }
-      
-      return { data: invite as PartnerInvite, error: null };
+    // If no invite is found
+    if (!invite) {
+      console.log('No valid invitation found for token:', token);
+      return { data: null, error: new Error('Invitation not found, expired, or already accepted') };
     }
     
-    return { data: null, error: new Error('Invitation not found or expired') };
+    // If invite exists, get the inviter's name
+    const { data: inviterProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('full_name')
+      .eq('id', invite.inviter_id)
+      .single();
+      
+    if (!profileError && inviterProfile) {
+      // Add the inviter name to the response
+      return { 
+        data: { ...invite, inviter_name: inviterProfile.full_name } as PartnerInvite, 
+        error: null 
+      };
+    }
+    
+    return { data: invite as PartnerInvite, error: null };
   } catch (error) {
     console.error('Error fetching invitation:', error);
     return { data: null, error };
   }
 };
 
-/**
- * Gets all partner invitations for a user
- */
 export const getUserInvitations = async (userId: string): Promise<{ data: PartnerInvite[] | null, error: any }> => {
   try {
     const now = new Date().toISOString();
@@ -145,9 +144,6 @@ export const getUserInvitations = async (userId: string): Promise<{ data: Partne
   }
 };
 
-/**
- * Accepts a partner invitation
- */
 export const acceptInvitation = async (token: string, currentUserId: string): Promise<{ error: any }> => {
   try {
     console.log('Starting invitation acceptance process...');
@@ -238,9 +234,6 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
   }
 };
 
-/**
- * Unlinks partners
- */
 export const unlinkPartner = async (userId: string, partnerId: string | null): Promise<{ error: any }> => {
   if (!partnerId) {
     return { error: null }; // Nothing to unlink

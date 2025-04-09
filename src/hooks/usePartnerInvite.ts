@@ -29,6 +29,7 @@ export const usePartnerInvite = () => {
         const url = `${baseUrl}/invite?token=${data.token}`;
         setInviteUrl(url);
         setActiveInvite(data);
+        console.log('Invitation created successfully:', data);
         return url;
       }
     } catch (error) {
@@ -60,11 +61,9 @@ export const usePartnerInvite = () => {
       // Refresh user profile to get updated partner_id
       await fetchUserProfile(user.id);
       
-      toast.success('Partner connected successfully!');
       return { error: null };
     } catch (error: any) {
       console.error('Error in acceptInvitation hook:', error);
-      toast.error(error.message || 'Failed to accept invitation');
       return { error };
     } finally {
       setIsLoading(false);
@@ -115,7 +114,9 @@ export const usePartnerInvite = () => {
         const baseUrl = window.location.origin;
         const url = `${baseUrl}/invite?token=${latestInvite.token}`;
         setInviteUrl(url);
+        console.log('Found existing invitation:', latestInvite);
       } else {
+        console.log('No active invitations found');
         setActiveInvite(null);
         setInviteUrl(null);
       }

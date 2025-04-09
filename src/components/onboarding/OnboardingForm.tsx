@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
 
 const OnboardingForm = () => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { updateOnboardingStatus } = useAuth();
   
   const nextStep = () => {
     setStep(step + 1);
@@ -25,19 +26,29 @@ const OnboardingForm = () => {
     setStep(step - 1);
   };
   
-  const handleComplete = (e: React.FormEvent) => {
+  const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate profile completion
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await updateOnboardingStatus(true);
+      
       toast({
         title: "Profile completed!",
         description: "Your profile has been set up. You're ready to start your relationship journey.",
       });
+      
       navigate('/connect');
-    }, 1500);
+    } catch (error) {
+      console.error('Error updating onboarding status:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem saving your profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (

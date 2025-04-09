@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,34 +7,99 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Heart } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { signIn, signUp, user, isOnboardingComplete } = useAuth();
   
-  const handleAuth = (e: React.FormEvent<HTMLFormElement>, type: 'login' | 'register') => {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      const redirectPath = isOnboardingComplete ? '/dashboard' : '/onboarding';
+      navigate(redirectPath, { replace: true });
+    }
+  }, [user, isOnboardingComplete, navigate]);
+
+  const validateForm = (type: 'login' | 'register') => {
+    setError(null);
+    
+    if (!email || !password) {
+      setError('Email and password are required');
+      return false;
+    }
+    
+    if (type === 'register') {
+      if (!fullName) {
+        setError('Full name is required');
+        return false;
+      }
+      
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return false;
+      }
+      
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters');
+        return false;
+      }
+    }
+    
+    return true;
+  };
+  
+  const handleAuth = async (e: React.FormEvent<HTMLFormElement>, type: 'login' | 'register') => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     
-    // Simulate auth process
-    setTimeout(() => {
+    if (!validateForm(type)) {
       setIsLoading(false);
-      toast({
-        title: type === 'login' ? "Welcome back!" : "Account created successfully!",
-        description: type === 'login' 
-          ? "You've successfully logged in to HeartNest."
-          : "Your account has been created. Let's set up your profile!",
-      });
-      
-      // In a real app, we would have proper auth with Supabase
-      if (type === 'register') {
-        navigate('/onboarding');
+      return;
+    }
+    
+    try {
+      if (type === 'login') {
+        const { error } = await signIn(email, password);
+        
+        if (error) {
+          setError(error.message);
+        } else {
+          toast({
+            title: "Welcome back!",
+            description: "You've successfully logged in to HeartNest.",
+          });
+        }
       } else {
-        navigate('/dashboard');
+        const { error } = await signUp(email, password, fullName);
+        
+        if (error) {
+          setError(error.message);
+        } else {
+          toast({
+            title: "Account created successfully!",
+            description: "Your account has been created. Let's set up your profile!",
+          });
+          navigate('/onboarding');
+        }
       }
-    }, 1500);
+    } catch (error) {
+      console.error('Authentication error:', error);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
@@ -56,9 +121,21 @@ const AuthForm = () => {
         <TabsContent value="login">
           <form onSubmit={(e) => handleAuth(e, 'login')}>
             <CardContent className="space-y-4 pt-4">
+              {error && (
+                <div className="p-3 text-sm rounded-md bg-destructive/10 text-destructive">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="your@email.com" required />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="your@email.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -67,7 +144,13 @@ const AuthForm = () => {
                     Forgot password?
                   </Button>
                 </div>
-                <Input id="password" type="password" required />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required 
+                />
               </div>
             </CardContent>
             <CardFooter>
@@ -80,21 +163,51 @@ const AuthForm = () => {
         <TabsContent value="register">
           <form onSubmit={(e) => handleAuth(e, 'register')}>
             <CardContent className="space-y-4 pt-4">
+              {error && (
+                <div className="p-3 text-sm rounded-md bg-destructive/10 text-destructive">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="reg-name">Full Name</Label>
-                <Input id="reg-name" placeholder="Your name" required />
+                <Input 
+                  id="reg-name" 
+                  placeholder="Your name" 
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="reg-email">Email</Label>
-                <Input id="reg-email" type="email" placeholder="your@email.com" required />
+                <Input 
+                  id="reg-email" 
+                  type="email" 
+                  placeholder="your@email.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="reg-password">Password</Label>
-                <Input id="reg-password" type="password" required />
+                <Input 
+                  id="reg-password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input id="confirm-password" type="password" required />
+                <Input 
+                  id="confirm-password" 
+                  type="password" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required 
+                />
               </div>
             </CardContent>
             <CardFooter>

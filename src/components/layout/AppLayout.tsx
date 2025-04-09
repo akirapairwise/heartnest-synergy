@@ -30,11 +30,13 @@ const AppLayout = () => {
           .on('postgres_changes', 
             { event: '*', schema: 'public' }, 
             (payload) => {
-              // Refresh data based on changes
-              // This will be handled by individual components
+              console.log('Database change detected:', payload);
+              // Specific components will handle their own refresh logic
             }
           )
-          .subscribe();
+          .subscribe((status) => {
+            console.log('Realtime subscription status:', status);
+          });
           
         return () => {
           supabase.removeChannel(channel);

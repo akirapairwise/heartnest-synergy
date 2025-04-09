@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Goal, GoalCategory, GoalStatus } from "@/types/goals";
 import { createGoal, updateGoalStatus } from "@/services/goalService";
 import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface GoalFormValues {
   title: string;
@@ -137,6 +138,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
               value={formValues.title}
               onChange={e => setFormValues({...formValues, title: e.target.value})}
               placeholder="What do you want to achieve?"
+              disabled={isSubmitting}
             />
           </div>
           
@@ -148,6 +150,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
               onChange={e => setFormValues({...formValues, description: e.target.value})}
               placeholder="Add more details about this goal"
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
           
@@ -157,6 +160,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
               <Select 
                 value={formValues.category} 
                 onValueChange={(value) => setFormValues({...formValues, category: value as GoalCategory})}
+                disabled={isSubmitting}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
@@ -177,6 +181,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
                 <Select 
                   value={formValues.status} 
                   onValueChange={(value) => setFormValues({...formValues, status: value as GoalStatus})}
+                  disabled={isSubmitting}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -198,6 +203,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
               id="is_shared" 
               checked={formValues.is_shared}
               onCheckedChange={value => setFormValues({...formValues, is_shared: value})}
+              disabled={isSubmitting}
             />
             <Label htmlFor="is_shared">Share this goal with my partner</Label>
           </div>
@@ -208,7 +214,14 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : goal ? 'Update Goal' : 'Create Goal'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {goal ? 'Updating...' : 'Creating...'}
+              </>
+            ) : (
+              goal ? 'Update Goal' : 'Create Goal'
+            )}
           </Button>
         </Footer>
       </form>

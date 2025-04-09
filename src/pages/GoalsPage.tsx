@@ -4,13 +4,15 @@ import { Goal } from '@/types/goals';
 import { fetchMyGoals, fetchPartnerGoals } from '@/services/goalService';
 import { useToast } from '@/components/ui/use-toast';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
+import { Dialog } from "@/components/ui/dialog";
+import { Drawer } from "@/components/ui/drawer";
 import { GoalModal } from '@/components/goals/GoalModal';
 import { supabase } from '@/integrations/supabase/client';
 import { GoalPageHeader } from '@/components/goals/GoalPageHeader';
 import { GoalProgressCard } from '@/components/goals/GoalProgressCard';
 import { GoalTabsSection } from '@/components/goals/GoalTabsSection';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 const GoalsPage = () => {
   const [myGoals, setMyGoals] = useState<Goal[]>([]);
@@ -18,7 +20,7 @@ const GoalsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | undefined>(undefined);
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   
   const fetchGoals = async () => {
@@ -33,11 +35,7 @@ const GoalsPage = () => {
       setSharedGoals(sharedGoalsData);
     } catch (error) {
       console.error('Error fetching goals:', error);
-      toast({
-        title: 'Error',
-        description: 'There was an error loading your goals. Please try again.',
-        variant: 'destructive'
-      });
+      toast.error('There was an error loading your goals. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -77,21 +75,14 @@ const GoalsPage = () => {
         
       if (error) throw error;
       
-      toast({
-        title: 'Goal deleted',
-        description: 'The goal has been deleted successfully.'
-      });
+      toast.success('The goal has been deleted successfully.');
       
       // Update local state to remove the deleted goal
       setMyGoals(myGoals.filter(g => g.id !== goalId));
       setSharedGoals(sharedGoals.filter(g => g.id !== goalId));
     } catch (error) {
       console.error('Error deleting goal:', error);
-      toast({
-        title: 'Error',
-        description: 'There was an error deleting the goal.',
-        variant: 'destructive'
-      });
+      toast.error('There was an error deleting the goal.');
     }
   };
   
@@ -122,6 +113,18 @@ const GoalsPage = () => {
     ? Math.round((totalCompleted / totalGoals) * 100) 
     : 0;
 
+  // If the app is still initializing and loading data, show a loading state
+  if (isLoading && myGoals.length === 0 && sharedGoals.length === 0) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading your goals...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <GoalPageHeader 
@@ -149,15 +152,31 @@ const GoalsPage = () => {
         onRefresh={fetchGoals}
       />
       
-      {!isDesktop && goalModalOpen && (
-        <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
-          <DialogTrigger asChild><div></div></DialogTrigger>
-          <GoalModal
-            goal={selectedGoal}
-            onClose={handleCloseModal}
-            onSuccess={fetchGoals}
-          />
-        </Dialog>
+      {/* Render the edit goal modal when a goal is selected for editing */}
+      {selectedGoal && (
+        <>
+          {isDesktop ? (
+            <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
+              {goalModalOpen && (
+                <GoalModal
+                  goal={selectedGoal}
+                  onClose={handleCloseModal}
+                  onSuccess={fetchGoals}
+                />
+              )}
+            </Dialog>
+          ) : (
+            <Drawer open={goalModalOpen} onOpenChange={setGoalModalOpen}>
+              {goalModalOpen && (
+                <GoalModal
+                  goal={selectedGoal}
+                  onClose={handleCloseModal}
+                  onSuccess={fetchGoals}
+                />
+              )}
+            </Drawer>
+          )}
+        </>
       )}
     </div>
   );

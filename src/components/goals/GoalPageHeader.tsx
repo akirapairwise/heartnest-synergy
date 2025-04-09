@@ -27,35 +27,6 @@ export function GoalPageHeader({
   onSuccess
 }: GoalPageHeaderProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  
-  // Wrapper component to handle mobile vs desktop modal
-  const GoalFormWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (isDesktop) {
-      return (
-        <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
-          <DialogTrigger asChild>{children}</DialogTrigger>
-          {goalModalOpen && (
-            <GoalModal
-              onClose={handleCloseModal}
-              onSuccess={onSuccess}
-            />
-          )}
-        </Dialog>
-      );
-    }
-    
-    return (
-      <Drawer open={goalModalOpen} onOpenChange={setGoalModalOpen}>
-        <DrawerTrigger asChild>{children}</DrawerTrigger>
-        {goalModalOpen && (
-          <GoalModal
-            onClose={handleCloseModal}
-            onSuccess={onSuccess}
-          />
-        )}
-      </Drawer>
-    );
-  };
 
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -65,12 +36,37 @@ export function GoalPageHeader({
       </div>
       
       <div className="flex items-center gap-2">
-        <GoalFormWrapper>
-          <Button onClick={handleOpenNewGoal}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Goal
-          </Button>
-        </GoalFormWrapper>
+        {isDesktop ? (
+          <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleOpenNewGoal}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Goal
+              </Button>
+            </DialogTrigger>
+            {goalModalOpen && (
+              <GoalModal
+                onClose={handleCloseModal}
+                onSuccess={onSuccess}
+              />
+            )}
+          </Dialog>
+        ) : (
+          <Drawer open={goalModalOpen} onOpenChange={setGoalModalOpen}>
+            <DrawerTrigger asChild>
+              <Button onClick={handleOpenNewGoal}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add New Goal
+              </Button>
+            </DrawerTrigger>
+            {goalModalOpen && (
+              <GoalModal
+                onClose={handleCloseModal}
+                onSuccess={onSuccess}
+              />
+            )}
+          </Drawer>
+        )}
         
         <Button variant="outline" size="icon" onClick={fetchGoals} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />

@@ -11,6 +11,7 @@ export type Profile = {
   emotional_needs: string | null;
   relationship_goals: string | null;
   financial_attitude: string | null;
+  full_name: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -17,12 +17,11 @@ export const usePartnerInvitations = () => {
     try {
       setIsLoading(true);
       
-      // We need to use any here because the tables aren't in the type definition yet
       const { data, error } = await supabase
         .from('partner_invitations')
         .select('*')
         .eq('sender_id', user.id)
-        .order('created_at', { ascending: false }) as any;
+        .order('created_at', { ascending: false });
         
       if (error) throw error;
       
@@ -59,7 +58,7 @@ export const usePartnerInvitations = () => {
         .eq('sender_id', user.id)
         .eq('recipient_email', recipientEmail)
         .eq('status', 'pending')
-        .limit(1) as any;
+        .limit(1);
         
       if (existingInvites && existingInvites.length > 0) {
         toast.error('You already have a pending invitation for this email');
@@ -69,14 +68,12 @@ export const usePartnerInvitations = () => {
       // Create a new invitation
       const { data, error } = await supabase
         .from('partner_invitations')
-        .insert([
-          { 
-            sender_id: user.id,
-            recipient_email: recipientEmail
-          }
-        ])
+        .insert({
+          sender_id: user.id,
+          recipient_email: recipientEmail
+        })
         .select('*')
-        .single() as any;
+        .single();
         
       if (error) throw error;
       
@@ -108,7 +105,7 @@ export const usePartnerInvitations = () => {
         .select('*')
         .eq('invitation_code', invitationCode)
         .neq('status', 'accepted')
-        .single() as any;
+        .single();
         
       if (fetchError) throw fetchError;
       
@@ -124,7 +121,7 @@ export const usePartnerInvitations = () => {
           status: 'accepted',
           accepted_at: new Date().toISOString()
         })
-        .eq('id', invitation.id) as any;
+        .eq('id', invitation.id);
         
       if (updateError) throw updateError;
       
@@ -132,14 +129,14 @@ export const usePartnerInvitations = () => {
       const { error: updateSenderError } = await supabase
         .from('user_profiles')
         .update({ partner_id: user.id })
-        .eq('id', invitation.sender_id) as any;
+        .eq('id', invitation.sender_id);
         
       if (updateSenderError) throw updateSenderError;
       
       const { error: updateRecipientError } = await supabase
         .from('user_profiles')
         .update({ partner_id: invitation.sender_id })
-        .eq('id', user.id) as any;
+        .eq('id', user.id);
         
       if (updateRecipientError) throw updateRecipientError;
       
@@ -169,7 +166,7 @@ export const usePartnerInvitations = () => {
       // Unlink current user from partner
       const { error: updateCurrentError } = await supabase
         .from('user_profiles')
-        .update({ partner_id: null } as any)
+        .update({ partner_id: null })
         .eq('id', user.id);
         
       if (updateCurrentError) throw updateCurrentError;
@@ -177,7 +174,7 @@ export const usePartnerInvitations = () => {
       // Unlink partner from current user
       const { error: updatePartnerError } = await supabase
         .from('user_profiles')
-        .update({ partner_id: null } as any)
+        .update({ partner_id: null })
         .eq('id', profile.partner_id);
         
       if (updatePartnerError) throw updatePartnerError;

@@ -62,13 +62,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
     }
     
     try {
-      const { error } = await signUp(email, password, fullName);
+      const { error: signUpError } = await signUp(email, password, fullName);
       
-      if (error) {
-        setError(error.message);
+      if (signUpError) {
+        setError(signUpError.message);
         toast({
           title: "Registration failed",
-          description: error.message,
+          description: signUpError.message,
           variant: "destructive",
         });
       } else {

@@ -44,13 +44,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ setError, error }) => {
     }
     
     try {
-      const { error } = await signIn(email, password);
+      const { error: signInError } = await signIn(email, password);
       
-      if (error) {
-        setError(error.message);
+      if (signInError) {
+        setError(signInError.message);
         toast({
           title: "Login failed",
-          description: error.message,
+          description: signInError.message,
           variant: "destructive",
         });
       } else {

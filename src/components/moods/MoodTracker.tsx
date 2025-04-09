@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +7,7 @@ import { Heart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
+import { useDailyMood, DailyMood } from '@/hooks/useDailyMood';
 
 const moodLabels = ["Struggling", "Disconnected", "Neutral", "Connected", "Thriving"];
 const moodDescriptions = [
@@ -19,13 +20,26 @@ const moodDescriptions = [
 
 interface MoodTrackerProps {
   onMoodSaved: () => void;
+  dailyMood: DailyMood | null;
 }
 
-const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved }) => {
+const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => {
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const { saveDailyMood } = useDailyMood();
+  
+  // Update form when dailyMood changes
+  useEffect(() => {
+    if (dailyMood) {
+      setSelectedMood(dailyMood.mood_value);
+      setNote(dailyMood.note || "");
+    } else {
+      setSelectedMood(null);
+      setNote("");
+    }
+  }, [dailyMood]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,9 +57,14 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved }) => {
     setIsLoading(true);
     
     try {
+      // Save to daily_moods
+      const { error } = await saveDailyMood(selectedMood, note);
+      if (error) throw error;
+      
+      // Also save to check_ins for backward compatibility
       const moodString = `${selectedMood}_${moodLabels[selectedMood-1].toLowerCase()}`;
       
-      const { error } = await supabase
+      await supabase
         .from('check_ins')
         .insert({
           mood: moodString,
@@ -53,14 +72,8 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved }) => {
           satisfaction_rating: selectedMood * 2,
           user_id: user.id,
         });
-
-      if (error) throw error;
       
-      toast.success('Mood tracked successfully!');
-      
-      // Reset form
-      setSelectedMood(null);
-      setNote("");
+      toast.success(dailyMood ? 'Mood updated successfully!' : 'Mood tracked successfully!');
       
       // Notify parent component
       onMoodSaved();
@@ -76,7 +89,11 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved }) => {
     <Card>
       <CardHeader>
         <CardTitle>How are you feeling about your relationship today?</CardTitle>
-        <CardDescription>Your partner won't see your response until they submit theirs</CardDescription>
+        <CardDescription>
+          {dailyMood 
+            ? "You've already recorded your mood today. You can update it if you'd like."
+            : "Your partner won't see your response until they submit theirs"}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -141,10 +158,10 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved }) => {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                {dailyMood ? 'Updating...' : 'Saving...'}
               </>
             ) : (
-              'Save Mood Entry'
+              dailyMood ? 'Update Mood Entry' : 'Save Mood Entry'
             )}
           </Button>
         </form>

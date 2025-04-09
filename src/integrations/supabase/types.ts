@@ -105,6 +105,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_moods: {
+        Row: {
+          created_at: string
+          id: string
+          mood_date: string
+          mood_value: number
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mood_date?: string
+          mood_value: number
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mood_date?: string
+          mood_value?: number
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           category: string | null

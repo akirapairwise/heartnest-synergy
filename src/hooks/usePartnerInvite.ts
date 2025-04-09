@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -85,11 +86,16 @@ export const usePartnerInvite = () => {
       // Refresh user profile
       await fetchUserProfile(user.id);
       
-      toast.success('Partner unlinked successfully');
+      toast.success('Partner connection broken successfully');
+      
+      // Clear any active invites
+      setActiveInvite(null);
+      setInviteUrl(null);
+      
       return { error: null };
     } catch (error: any) {
       console.error('Error unlinking partner:', error);
-      toast.error('Failed to unlink partner');
+      toast.error('Failed to break partner connection');
       return { error };
     } finally {
       setIsLoading(false);

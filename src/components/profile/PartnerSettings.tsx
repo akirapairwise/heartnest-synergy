@@ -110,12 +110,12 @@ const PartnerSettings = () => {
               )}
             </div>
             <Button 
-              variant="outline" 
+              variant="destructive" 
               onClick={() => setIsUnlinkDialogOpen(true)}
               className="gap-2"
             >
               <UserX className="h-4 w-4" />
-              Unlink Partner
+              Break Partner Connection
             </Button>
           </div>
         </div>
@@ -184,9 +184,9 @@ const PartnerSettings = () => {
       <AlertDialog open={isUnlinkDialogOpen} onOpenChange={setIsUnlinkDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unlink Partner</AlertDialogTitle>
+            <AlertDialogTitle>Break Partner Connection</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to unlink your partner? This will remove access to shared goals and relationship data.
+              Are you sure you want to end your partner connection? This will permanently disconnect you from your partner and affect shared goals and relationship data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -199,10 +199,10 @@ const PartnerSettings = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Unlinking...
+                  Breaking connection...
                 </>
               ) : (
-                'Unlink Partner'
+                'Break Connection'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

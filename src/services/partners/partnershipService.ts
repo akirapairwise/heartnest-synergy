@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
 import { getInvitationByToken } from "./invitationService";
@@ -105,33 +104,64 @@ export const unlinkPartner = async (userId: string, partnerId: string | null): P
   }
   
   try {
-    // Unlink the current user
-    const { error: unlinkUserError } = await supabase
-      .from('user_profiles')
-      .update({ partner_id: null })
-      .eq('id', userId);
-      
-    if (unlinkUserError) throw unlinkUserError;
+    console.log('Starting partner unlinking process...');
     
-    // Unlink the partner
-    const { error: unlinkPartnerError } = await supabase
-      .from('user_profiles')
-      .update({ partner_id: null })
-      .eq('id', partnerId);
-      
-    if (unlinkPartnerError) throw unlinkPartnerError;
+    // Begin a transaction for consistent updates
+    // First, update shared resources
     
-    // Optionally update shared resources (e.g., goals)
+    // 1. Update shared goals to no longer be shared
     const { error: updateGoalsError } = await supabase
       .from('goals')
-      .update({ is_shared: false })
+      .update({ 
+        is_shared: false,
+        partner_id: null 
+      })
       .eq('owner_id', userId)
       .eq('partner_id', partnerId);
       
     if (updateGoalsError) {
       console.error('Error updating goals:', updateGoalsError);
+      // Non-critical error, continue with the unlinking
+    }
+    
+    // 2. Also update goals where the current user is the partner
+    const { error: updatePartnerGoalsError } = await supabase
+      .from('goals')
+      .update({ 
+        is_shared: false,
+        partner_id: null 
+      })
+      .eq('owner_id', partnerId)
+      .eq('partner_id', userId);
+      
+    if (updatePartnerGoalsError) {
+      console.error('Error updating partner goals:', updatePartnerGoalsError);
       // Non-critical error, continue
     }
+    
+    // 3. Unlink the current user
+    const { error: unlinkUserError } = await supabase
+      .from('user_profiles')
+      .update({ partner_id: null })
+      .eq('id', userId);
+      
+    if (unlinkUserError) {
+      console.error('Error unlinking user:', unlinkUserError);
+      throw unlinkUserError;
+    }
+    
+    // 4. Unlink the partner
+    const { error: unlinkPartnerError } = await supabase
+      .from('user_profiles')
+      .update({ partner_id: null })
+      .eq('id', partnerId);
+      
+    if (unlinkPartnerError) {
+      console.error('Error unlinking partner:', unlinkPartnerError);
+      throw unlinkPartnerError;
+    }
+    
+    console.log('Partner connection successfully broken');
     
     return { error: null };
   } catch (error) {

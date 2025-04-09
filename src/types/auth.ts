@@ -3,8 +3,8 @@ import { Session, User } from '@supabase/supabase-js';
 
 export type Profile = {
   id: string;
-  user_id: string;
-  partner_id: string | null;
+  user_id?: string;
+  partner_id?: string | null;
   is_onboarding_complete: boolean;
   love_language: string | null;
   communication_style: string | null;
@@ -14,8 +14,8 @@ export type Profile = {
   full_name: string | null;
   created_at: string;
   updated_at: string;
-  location?: string | null;
-  bio?: string | null;
+  location: string | null;
+  bio: string | null;
 };
 
 export type AuthContextType = {

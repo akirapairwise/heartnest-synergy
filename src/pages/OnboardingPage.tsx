@@ -28,7 +28,15 @@ const OnboardingPage = () => {
       
       // If we have a user but no profile data, try to fetch it
       if (currentUser && !profile && !isLoading) {
-        await fetchUserProfile(currentUser.id);
+        try {
+          await fetchUserProfile(currentUser.id);
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+          toast.error("Error loading profile", {
+            description: "Please try again or contact support.",
+            duration: 3000
+          });
+        }
       }
     }
     

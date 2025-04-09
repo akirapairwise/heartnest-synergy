@@ -146,13 +146,13 @@ export const useOnboardingForm = (totalSteps: number) => {
       
       // Collect all relevant profile data from the form
       const profileData = {
-        location: formData.location,
-        bio: formData.bio,
-        love_language: formData.love_language,
-        communication_style: formData.communication_style,
-        emotional_needs: formData.emotional_needs,
-        relationship_goals: formData.relationship_goals,
-        financial_attitude: formData.financial_attitude,
+        location: formData.location || null,
+        bio: formData.bio || null,
+        love_language: formData.love_language || null,
+        communication_style: formData.communication_style || null,
+        emotional_needs: formData.emotional_needs || null,
+        relationship_goals: formData.relationship_goals || null,
+        financial_attitude: formData.financial_attitude || null,
         // Explicitly set the onboarding flag to true
         is_onboarding_complete: true
       };
@@ -184,12 +184,25 @@ export const useOnboardingForm = (totalSteps: number) => {
             
           if (profileCheckError) {
             console.error('Error verifying profile update:', profileCheckError);
+            // Even if verification fails, still redirect to dashboard
+            navigate('/dashboard', { replace: true });
           } else if (!profileCheck?.is_onboarding_complete) {
             console.warn('Profile update may not have been saved correctly');
+            // Still redirect to dashboard but update the profile again
+            const retryUpdate = await supabase
+              .from('user_profiles')
+              .update({ is_onboarding_complete: true })
+              .eq('id', user.id);
+              
+            if (retryUpdate.error) {
+              console.error('Error on retry update:', retryUpdate.error);
+            }
+            
+            navigate('/dashboard', { replace: true });
+          } else {
+            // Normal successful path
+            navigate('/dashboard', { replace: true });
           }
-          
-          // After successful verification, redirect to dashboard
-          navigate('/dashboard', { replace: true });
         } catch (fetchError) {
           console.error('Error refetching profile after update:', fetchError);
           // Even if verification fails, still redirect to dashboard but show a warning

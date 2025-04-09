@@ -146,21 +146,45 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          bio: string | null
+          communication_style: string | null
           created_at: string
+          emotional_needs: string | null
+          financial_attitude: string | null
+          full_name: string | null
           id: string
           is_onboarding_complete: boolean
+          location: string | null
+          love_language: string | null
+          relationship_goals: string | null
           updated_at: string
         }
         Insert: {
+          bio?: string | null
+          communication_style?: string | null
           created_at?: string
+          emotional_needs?: string | null
+          financial_attitude?: string | null
+          full_name?: string | null
           id: string
           is_onboarding_complete?: boolean
+          location?: string | null
+          love_language?: string | null
+          relationship_goals?: string | null
           updated_at?: string
         }
         Update: {
+          bio?: string | null
+          communication_style?: string | null
           created_at?: string
+          emotional_needs?: string | null
+          financial_attitude?: string | null
+          full_name?: string | null
           id?: string
           is_onboarding_complete?: boolean
+          location?: string | null
+          love_language?: string | null
+          relationship_goals?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -70,6 +70,8 @@ export const updateOnboardingStatus = async (userId: string, isComplete: boolean
 
 export const updateProfile = async (userId: string, data: Partial<Profile>) => {
   try {
+    console.log('Updating profile for user:', userId, 'with data:', data);
+    
     const { error } = await supabase
       .from('user_profiles')
       .update({
@@ -78,6 +80,12 @@ export const updateProfile = async (userId: string, data: Partial<Profile>) => {
       })
       .eq('id', userId);
       
+    if (error) {
+      console.error('Supabase error updating profile:', error);
+    } else {
+      console.log('Profile updated successfully');
+    }
+    
     return { error };
   } catch (error) {
     console.error('Error updating profile:', error);

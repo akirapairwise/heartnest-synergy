@@ -1,121 +1,195 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ThumbsUp, ThumbsDown, Calendar } from "lucide-react";
-
-type Suggestion = {
-  id: number;
-  category: 'activity' | 'habit' | 'conversation';
-  title: string;
-  description: string;
-  difficulty: 'easy' | 'medium' | 'challenging';
-  timeframe: 'now' | 'this week' | 'this month';
-};
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sparkles, ThumbsUp, ThumbsDown, BookOpen, Activity, Calendar } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchRecommendations, generateRecommendation, updateRecommendationFeedback, Recommendation } from '@/services/recommendationService';
+import { toast } from 'sonner';
 
 const SuggestionsSection = () => {
-  // Mock suggestions data
-  const suggestions: Suggestion[] = [
-    {
-      id: 1,
-      category: 'activity',
-      title: "Surprise Breakfast in Bed",
-      description: "Wake up a little earlier and prepare your partner's favorite breakfast. The surprise element will add extra joy.",
-      difficulty: 'easy',
-      timeframe: 'now'
-    },
-    {
-      id: 2,
-      category: 'conversation',
-      title: "Dreams and Aspirations Check-in",
-      description: "Set aside 30 minutes to discuss your individual and shared dreams for the future. What are you both working toward?",
-      difficulty: 'medium',
-      timeframe: 'this week'
-    },
-    {
-      id: 3,
-      category: 'habit',
-      title: "Technology-Free Evening",
-      description: "Designate one evening each week as technology-free. Focus solely on each other without digital distractions.",
-      difficulty: 'challenging',
-      timeframe: 'this month'
-    },
-    {
-      id: 4,
-      category: 'activity',
-      title: "Try a New Restaurant Together",
-      description: "Choose a cuisine you've never tried before and make it an adventure to experience new flavors together.",
-      difficulty: 'easy',
-      timeframe: 'this week'
-    },
-  ];
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const { user } = useAuth();
   
-  const difficultyBadges = {
-    'easy': <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">Easy</span>,
-    'medium': <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded">Medium</span>,
-    'challenging': <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded">Challenging</span>
+  const fetchUserRecommendations = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const data = await fetchRecommendations(user.id, selectedCategory !== 'all' ? selectedCategory : undefined);
+      setRecommendations(data);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      toast.error('Failed to load recommendations');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
-  const timeframeIcons = {
-    'now': <Calendar className="h-4 w-4 text-green-500" />,
-    'this week': <Calendar className="h-4 w-4 text-amber-500" />,
-    'this month': <Calendar className="h-4 w-4 text-blue-500" />
+  useEffect(() => {
+    fetchUserRecommendations();
+  }, [user, selectedCategory]);
+  
+  const handleGenerateRecommendation = async () => {
+    if (!user) return;
+    
+    setIsGenerating(true);
+    try {
+      await generateRecommendation(user.id, selectedCategory);
+      toast.success('New recommendation generated!');
+      fetchUserRecommendations();
+    } catch (error) {
+      console.error('Error generating recommendation:', error);
+      toast.error('Failed to generate recommendation');
+    } finally {
+      setIsGenerating(false);
+    }
   };
   
-  const categoryColors = {
-    'activity': 'border-l-purple-500',
-    'habit': 'border-l-blue-500',
-    'conversation': 'border-l-teal-500'
+  const handleFeedback = async (id: string, isLiked: boolean) => {
+    try {
+      await updateRecommendationFeedback(id, isLiked);
+      
+      // Update local state to reflect the change
+      setRecommendations(prev => 
+        prev.map(rec => 
+          rec.id === id ? { ...rec, is_liked: isLiked } : rec
+        )
+      );
+      
+      toast.success(isLiked ? 'Recommendation liked!' : 'Recommendation noted');
+    } catch (error) {
+      console.error('Error updating feedback:', error);
+      toast.error('Failed to update feedback');
+    }
+  };
+  
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'books':
+        return <BookOpen className="h-4 w-4 text-purple-500" />;
+      case 'activities':
+        return <Activity className="h-4 w-4 text-blue-500" />;
+      case 'date_ideas':
+        return <Calendar className="h-4 w-4 text-green-500" />;
+      default:
+        return <Sparkles className="h-4 w-4 text-amber-500" />;
+    }
+  };
+  
+  const getCategoryColors = (category: string) => {
+    switch (category) {
+      case 'books':
+        return 'border-l-purple-500';
+      case 'activities':
+        return 'border-l-blue-500';
+      case 'date_ideas':
+        return 'border-l-green-500';
+      default:
+        return 'border-l-amber-500';
+    }
   };
   
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          Relationship Suggestions
-        </CardTitle>
-        <CardDescription>AI-powered ideas to strengthen your connection</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              Relationship Suggestions
+            </CardTitle>
+            <CardDescription>AI-powered ideas to strengthen your connection</CardDescription>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="books">Books</SelectItem>
+                <SelectItem value="activities">Activities</SelectItem>
+                <SelectItem value="date_ideas">Date Ideas</SelectItem>
+                <SelectItem value="general">General</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {suggestions.map((suggestion) => (
-            <div 
-              key={suggestion.id} 
-              className={`border-l-4 ${categoryColors[suggestion.category]} rounded-lg p-4 bg-card shadow-sm`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-medium">{suggestion.title}</h3>
-                {difficultyBadges[suggestion.difficulty]}
-              </div>
-              
-              <p className="text-sm text-muted-foreground mb-3">{suggestion.description}</p>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-xs">
-                  {timeframeIcons[suggestion.timeframe]}
-                  <span className="capitalize">{suggestion.timeframe}</span>
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-pulse text-muted-foreground">Loading suggestions...</div>
+          </div>
+        ) : recommendations.length === 0 ? (
+          <div className="text-center py-12 space-y-4">
+            <Sparkles className="h-12 w-12 text-muted-foreground mx-auto" />
+            <p className="text-muted-foreground">No suggestions found for this category</p>
+            <Button onClick={handleGenerateRecommendation} disabled={isGenerating}>
+              {isGenerating ? 'Generating...' : 'Generate a Suggestion'}
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recommendations.map((recommendation) => (
+                <div 
+                  key={recommendation.id} 
+                  className={`border-l-4 ${getCategoryColors(recommendation.category)} rounded-lg p-4 bg-card shadow-sm`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {getCategoryIcon(recommendation.category)}
+                      <h3 className="font-medium capitalize">{recommendation.category}</h3>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(recommendation.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  {recommendation.context && (
+                    <p className="text-xs text-muted-foreground mb-2">{recommendation.context}</p>
+                  )}
+                  
+                  <p className="text-sm mb-3">{recommendation.suggestion}</p>
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant={recommendation.is_liked === false ? "default" : "outline"} 
+                      size="sm" 
+                      className="h-8 px-2"
+                      onClick={() => handleFeedback(recommendation.id, false)}
+                    >
+                      <ThumbsDown className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant={recommendation.is_liked === true ? "default" : "outline"} 
+                      size="sm" 
+                      className="h-8 px-2"
+                      onClick={() => handleFeedback(recommendation.id, true)}
+                    >
+                      <ThumbsUp className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="h-8 px-2">
-                    <ThumbsDown className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-8 px-2">
-                    <ThumbsUp className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-        
-        <div className="mt-6 text-center">
-          <Button>
-            <Sparkles className="mr-2 h-4 w-4" />
-            Generate More Suggestions
-          </Button>
-        </div>
+            
+            <div className="mt-6 text-center">
+              <Button onClick={handleGenerateRecommendation} disabled={isGenerating}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                {isGenerating ? 'Generating...' : 'Generate More Suggestions'}
+              </Button>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

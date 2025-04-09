@@ -47,9 +47,15 @@ export const usePartnerInvite = () => {
     
     setIsLoading(true);
     try {
+      console.log('Accepting invitation with token:', token);
       const { error } = await partnerInviteService.acceptInvitation(token, user.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error from acceptInvitation service:', error);
+        throw error;
+      }
+      
+      console.log('Successfully accepted invitation, refreshing profile...');
       
       // Refresh user profile to get updated partner_id
       await fetchUserProfile(user.id);
@@ -57,7 +63,7 @@ export const usePartnerInvite = () => {
       toast.success('Partner connected successfully!');
       return { error: null };
     } catch (error: any) {
-      console.error('Error accepting invitation:', error);
+      console.error('Error in acceptInvitation hook:', error);
       toast.error(error.message || 'Failed to accept invitation');
       return { error };
     } finally {

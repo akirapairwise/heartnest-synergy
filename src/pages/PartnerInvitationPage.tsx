@@ -25,7 +25,7 @@ const PartnerInvitationPage = () => {
   }, [user, authLoading, code, navigate]);
 
   const handleAcceptInvitation = async () => {
-    if (!code) return;
+    if (!code || !user) return;
     
     setIsProcessing(true);
     
@@ -35,6 +35,7 @@ const PartnerInvitationPage = () => {
       if (error) {
         setStatus('error');
         toast.error('Failed to accept invitation');
+        console.error('Error accepting invitation:', error);
       } else {
         setStatus('success');
         toast.success('Partner connected successfully!');

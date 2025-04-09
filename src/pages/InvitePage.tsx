@@ -35,21 +35,25 @@ const InvitePage = () => {
 
   const validateToken = async (inviteToken: string) => {
     try {
+      console.log('Validating token:', inviteToken);
       const { data, error } = await getInvitationByToken(inviteToken);
       
       if (error || !data) {
+        console.error('Invalid token:', error);
         setStatus('invalid');
         return;
       }
       
       // Check if token is valid and not accepted
       if (data.is_accepted) {
+        console.log('Token already accepted');
         setStatus('accepted');
         return;
       }
       
       // Check if user is trying to accept their own invitation
       if (data.inviter_id === user?.id) {
+        console.log('User tried to accept their own invitation');
         setStatus('error');
         return;
       }
@@ -59,6 +63,7 @@ const InvitePage = () => {
         setInviterName(data.inviter_name);
       }
       
+      console.log('Token is valid');
       setStatus('valid');
     } catch (error) {
       console.error('Error validating token:', error);
@@ -72,11 +77,14 @@ const InvitePage = () => {
     setIsProcessing(true);
     
     try {
+      console.log('Accepting invitation...');
       const { error } = await acceptInvitation(token);
       
       if (error) {
+        console.error('Failed to accept invitation:', error);
         setStatus('error');
       } else {
+        console.log('Invitation accepted successfully');
         setStatus('accepted');
       }
     } catch (error) {

@@ -32,7 +32,7 @@ export const createInvitation = async (user: User): Promise<{ data: PartnerInvit
       
     if (error) throw error;
     
-    return { data, error: null };
+    return { data: data as PartnerInvite, error: null };
   } catch (error) {
     console.error('Error creating partner invitation:', error);
     return { data: null, error };
@@ -65,13 +65,15 @@ export const getInvitationByToken = async (token: string): Promise<{ data: Partn
       if (!profileError && inviterProfile) {
         // Add the inviter name to the response
         return { 
-          data: { ...invite, inviter_name: inviterProfile.full_name }, 
+          data: { ...invite, inviter_name: inviterProfile.full_name } as PartnerInvite, 
           error: null 
         };
       }
+      
+      return { data: invite as PartnerInvite, error: null };
     }
     
-    return { data: invite, error: null };
+    return { data: null, error: new Error('Invitation not found') };
   } catch (error) {
     console.error('Error fetching invitation:', error);
     return { data: null, error };
@@ -91,7 +93,7 @@ export const getUserInvitations = async (userId: string): Promise<{ data: Partne
       
     if (error) throw error;
     
-    return { data, error: null };
+    return { data: data as PartnerInvite[], error: null };
   } catch (error) {
     console.error('Error fetching partner invitations:', error);
     return { data: null, error };
@@ -107,11 +109,13 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
     const { data: invite, error: fetchError } = await getInvitationByToken(token);
     
     if (fetchError || !invite) {
+      console.error('Failed to find invitation:', fetchError || 'Invitation not found');
       return { error: fetchError || new Error('Invitation not found or already accepted') };
     }
     
     // Check that user isn't inviting themselves
     if (invite.inviter_id === currentUserId) {
+      console.error('User tried to accept their own invitation');
       return { error: new Error('You cannot accept your own invitation') };
     }
     
@@ -121,47 +125,68 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       .select('id, partner_id')
       .in('id', [invite.inviter_id, currentUserId]);
       
-    if (usersError) throw usersError;
+    if (usersError) {
+      console.error('Error checking user profiles:', usersError);
+      throw usersError;
+    }
     
     const inviterProfile = users?.find(u => u.id === invite.inviter_id);
     const currentUserProfile = users?.find(u => u.id === currentUserId);
     
     if (inviterProfile?.partner_id) {
+      console.error('Inviter already has a partner');
       return { error: new Error('The inviter already has a partner') };
     }
     
     if (currentUserProfile?.partner_id) {
+      console.error('Current user already has a partner');
       return { error: new Error('You already have a partner') };
     }
     
-    // Start a transaction to update everything atomically
-    // 1. Update the invite status
+    console.log('Starting partner linking process...');
+    
+    // Update the invite status
     const { error: updateError } = await supabase
       .from('partner_invites')
       .update({ is_accepted: true })
       .eq('id', invite.id);
       
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('Error updating invitation status:', updateError);
+      throw updateError;
+    }
     
-    // 2. Link the inviter to the current user
+    console.log('Updated invitation status to accepted');
+    
+    // Link the inviter to the current user
     const { error: updateInviterError } = await supabase
       .from('user_profiles')
       .update({ partner_id: currentUserId })
       .eq('id', invite.inviter_id);
       
-    if (updateInviterError) throw updateInviterError;
+    if (updateInviterError) {
+      console.error('Error linking inviter to current user:', updateInviterError);
+      throw updateInviterError;
+    }
     
-    // 3. Link the current user to the inviter
+    console.log('Linked inviter to current user');
+    
+    // Link the current user to the inviter
     const { error: updateCurrentUserError } = await supabase
       .from('user_profiles')
       .update({ partner_id: invite.inviter_id })
       .eq('id', currentUserId);
       
-    if (updateCurrentUserError) throw updateCurrentUserError;
+    if (updateCurrentUserError) {
+      console.error('Error linking current user to inviter:', updateCurrentUserError);
+      throw updateCurrentUserError;
+    }
+    
+    console.log('Linked current user to inviter. Connection complete!');
     
     return { error: null };
   } catch (error) {
-    console.error('Error accepting invitation:', error);
+    console.error('Error in acceptInvitation:', error);
     return { error };
   }
 };

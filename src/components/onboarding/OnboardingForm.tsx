@@ -53,13 +53,27 @@ const OnboardingForm = () => {
   };
   
   const handleNestedChange = (parentField: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [parentField]: {
-        ...prev[parentField as keyof typeof prev],
-        [field]: value
+    setFormData(prev => {
+      // Ensure the parent field exists and is an object before spreading it
+      const parentValue = prev[parentField as keyof typeof prev] || {};
+      
+      // Check if parentValue is an object before using spread
+      if (typeof parentValue === 'object' && parentValue !== null) {
+        return {
+          ...prev,
+          [parentField]: {
+            ...parentValue,
+            [field]: value
+          }
+        };
       }
-    }));
+      
+      // Fallback if parentValue is not an object
+      return {
+        ...prev,
+        [parentField]: { [field]: value }
+      };
+    });
   };
   
   const nextStep = () => {

@@ -74,8 +74,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           ...data,
           mood_settings: data.mood_settings ? 
             {
-              showAvatar: data.mood_settings.showAvatar,
-              defaultMood: data.mood_settings.defaultMood
+              showAvatar: typeof data.mood_settings === 'object' && data.mood_settings !== null ? 
+                data.mood_settings.showAvatar : true,
+              defaultMood: typeof data.mood_settings === 'object' && data.mood_settings !== null ? 
+                data.mood_settings.defaultMood : 'neutral'
             } : null
         };
         

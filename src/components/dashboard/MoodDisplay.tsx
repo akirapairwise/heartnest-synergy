@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Heart, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 import { MoodEntry } from '@/types/check-ins';
+import { Button } from "@/components/ui/button";
+import { useNavigate } from 'react-router-dom';
 
 const moodLabels = ["Struggling", "Disconnected", "Neutral", "Connected", "Thriving"];
 const moodColors = ["text-red-500", "text-orange-400", "text-yellow-500", "text-green-400", "text-green-600"];
@@ -16,6 +17,7 @@ const MoodDisplay = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (user) {
@@ -23,7 +25,7 @@ const MoodDisplay = () => {
     } else {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, profile?.partner_id]);
   
   const fetchLatestMoods = async () => {
     setIsLoading(true);
@@ -48,15 +50,29 @@ const MoodDisplay = () => {
         });
       }
       
-      // In a real app, you would fetch the partner's mood
-      // For now, we'll use mock data for the partner
-      setPartnerMood({ 
-        id: "partner-1",
-        date: new Date().toISOString(), 
-        mood: 3, 
-        note: "Good conversation about future plans" 
-      });
-      
+      // Fetch partner's mood if partner exists
+      if (profile?.partner_id) {
+        const { data: partnerData, error: partnerError } = await supabase
+          .from('check_ins')
+          .select('id, timestamp, mood, reflection')
+          .eq('user_id', profile.partner_id)
+          .order('timestamp', { ascending: false })
+          .limit(1);
+          
+        if (partnerError) throw partnerError;
+        
+        if (partnerData && partnerData.length > 0) {
+          setPartnerMood({
+            id: partnerData[0].id,
+            date: partnerData[0].timestamp,
+            mood: parseInt(partnerData[0].mood.charAt(0)),
+            note: partnerData[0].reflection
+          });
+        }
+      } else {
+        // Reset partner mood if no partner
+        setPartnerMood(null);
+      }
     } catch (error: any) {
       console.error('Error fetching mood data:', error);
       setError('Failed to load mood data');
@@ -142,30 +158,43 @@ const MoodDisplay = () => {
             <p className="text-xs text-muted-foreground line-clamp-1">{defaultUserMood.note}</p>
           </div>
           
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              {showAvatar && (
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://i.pravatar.cc/150?img=39" />
-                  <AvatarFallback>JP</AvatarFallback>
-                </Avatar>
-              )}
-              <div>
-                <p className="text-xs text-muted-foreground">Partner</p>
-                <p className={`text-sm font-medium ${moodColors[defaultPartnerMood.mood-1]}`}>{moodLabels[defaultPartnerMood.mood-1]}</p>
+          {profile?.partner_id ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                {showAvatar && (
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=Partner`} />
+                    <AvatarFallback>PA</AvatarFallback>
+                  </Avatar>
+                )}
+                <div>
+                  <p className="text-xs text-muted-foreground">Partner</p>
+                  <p className={`text-sm font-medium ${moodColors[defaultPartnerMood.mood-1]}`}>{moodLabels[defaultPartnerMood.mood-1]}</p>
+                </div>
               </div>
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Heart
+                    key={star}
+                    className={`h-4 w-4 ${star <= defaultPartnerMood.mood ? moodColors[defaultPartnerMood.mood-1] : 'text-gray-200'}`}
+                    fill={star <= defaultPartnerMood.mood ? 'currentColor' : 'none'}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground line-clamp-1">{defaultPartnerMood.note}</p>
             </div>
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Heart
-                  key={star}
-                  className={`h-4 w-4 ${star <= defaultPartnerMood.mood ? moodColors[defaultPartnerMood.mood-1] : 'text-gray-200'}`}
-                  fill={star <= defaultPartnerMood.mood ? 'currentColor' : 'none'}
-                />
-              ))}
+          ) : (
+            <div className="space-y-2 flex items-center justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/connect')}
+                className="text-xs"
+              >
+                Connect Partner
+              </Button>
             </div>
-            <p className="text-xs text-muted-foreground line-clamp-1">{defaultPartnerMood.note}</p>
-          </div>
+          )}
         </div>
         
         <div className="mt-3 text-center">

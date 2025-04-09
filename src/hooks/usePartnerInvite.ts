@@ -15,7 +15,12 @@ export const usePartnerInvite = () => {
   const createInvitation = useCallback(async () => {
     if (!user) {
       toast.error('You must be logged in to invite a partner');
-      return;
+      return null;
+    }
+    
+    if (profile?.partner_id) {
+      toast.error('You already have a partner connected');
+      return null;
     }
     
     setIsLoading(true);
@@ -33,13 +38,15 @@ export const usePartnerInvite = () => {
         console.log('Invitation created successfully:', data);
         return url;
       }
+      return null;
     } catch (error) {
       console.error('Error creating invitation:', error);
       toast.error('Failed to create invitation');
+      return null;
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, profile]);
   
   const acceptInvitation = useCallback(async (token: string) => {
     if (!user) {
@@ -86,8 +93,6 @@ export const usePartnerInvite = () => {
       // Refresh user profile
       await fetchUserProfile(user.id);
       
-      toast.success('Partner connection broken successfully');
-      
       // Clear any active invites
       setActiveInvite(null);
       setInviteUrl(null);
@@ -104,6 +109,13 @@ export const usePartnerInvite = () => {
   
   const loadUserInvites = useCallback(async () => {
     if (!user) return;
+    
+    // Don't load invites if user already has a partner
+    if (profile?.partner_id) {
+      setActiveInvite(null);
+      setInviteUrl(null);
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -131,7 +143,7 @@ export const usePartnerInvite = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, profile]);
   
   /**
    * Regenerates the token for an existing invitation
@@ -144,6 +156,11 @@ export const usePartnerInvite = () => {
     
     if (!activeInvite) {
       toast.error('No active invitation to regenerate');
+      return null;
+    }
+    
+    if (profile?.partner_id) {
+      toast.error('You already have a partner connected');
       return null;
     }
     
@@ -172,14 +189,14 @@ export const usePartnerInvite = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, activeInvite]);
+  }, [user, activeInvite, profile]);
   
-  // Load user invites on mount
+  // Load user invites on mount and when profile changes
   useEffect(() => {
     if (user) {
       loadUserInvites();
     }
-  }, [user, loadUserInvites]);
+  }, [user, profile?.partner_id, loadUserInvites]);
   
   return {
     isLoading,

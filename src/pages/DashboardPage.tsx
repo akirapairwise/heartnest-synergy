@@ -14,13 +14,28 @@ import SuggestionsSection from '@/components/dashboard/SuggestionsSection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Skeleton } from '@/components/ui/skeleton';
+import { usePartnerInvite } from '@/hooks/usePartnerInvite';
+import { Button } from '@/components/ui/button';
+import { UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = () => {
   const { profile, isLoading } = useAuth();
+  const { activeInvite, refreshInvites } = usePartnerInvite();
   const userName = profile?.full_name || 'Partner';
   const [activeTab, setActiveTab] = useState('overview');
+  const navigate = useNavigate();
   
   useDocumentTitle('Dashboard | HeartNest');
+
+  useEffect(() => {
+    // Refresh invites when dashboard loads
+    if (profile) {
+      refreshInvites();
+    }
+  }, [profile, refreshInvites]);
+
+  const hasPartner = Boolean(profile?.partner_id);
 
   return (
     <div className="animate-fade-in max-w-6xl mx-auto">
@@ -33,6 +48,17 @@ const DashboardPage = () => {
               <h1 className="text-2xl sm:text-3xl font-bold">Welcome, {userName}</h1>
               <p className="text-muted-foreground">Here's an overview of your relationship</p>
             </div>
+            
+            {!hasPartner && !activeInvite && (
+              <Button 
+                onClick={() => navigate('/connect')}
+                className="hidden sm:flex items-center gap-2"
+                size="sm"
+              >
+                <UserPlus className="h-4 w-4" />
+                Connect Partner
+              </Button>
+            )}
           </div>
           
           <Tabs 
@@ -66,6 +92,18 @@ const DashboardPage = () => {
                   <PartnerCard />
                 </div>
               </div>
+              
+              {!hasPartner && !activeInvite && (
+                <div className="sm:hidden">
+                  <Button 
+                    onClick={() => navigate('/connect')}
+                    className="w-full mt-4"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Connect Partner
+                  </Button>
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="my-goals" className="mt-6">

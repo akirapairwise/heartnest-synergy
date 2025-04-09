@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
@@ -147,7 +146,8 @@ export const useOnboardingForm = (totalSteps: number) => {
         description: "Your profile has been set up. You're ready to start your relationship journey."
       });
       
-      // Note: We don't need to navigate here as it will be handled by the OnboardingPage useEffect
+      // Explicitly navigate to dashboard after successful profile update
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Error updating profile:', error);
       useToastHook({

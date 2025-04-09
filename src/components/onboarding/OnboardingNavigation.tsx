@@ -28,7 +28,7 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     await onComplete(e);
-    // Note: We don't need navigation here as it's handled by the AuthContext through useEffect in OnboardingPage
+    // Navigation is now handled directly in the handleComplete function in useOnboardingForm
   };
   
   return (

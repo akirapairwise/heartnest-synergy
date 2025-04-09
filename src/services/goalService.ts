@@ -50,10 +50,20 @@ export const createGoal = async (goal: Partial<Goal>): Promise<{ goal: Goal | nu
     return { goal: null, error: 'User not authenticated' };
   }
 
+  // Ensure title is provided as it's required in the database
+  if (!goal.title) {
+    return { goal: null, error: 'Title is required' };
+  }
+
+  // Create a properly typed object for insertion
   const newGoal = {
-    ...goal,
+    title: goal.title, // This is required by the database schema
+    description: goal.description || null,
+    category: goal.category || null,
+    status: goal.status || 'pending',
+    is_shared: goal.is_shared || false,
     owner_id: userId,
-    status: goal.status || 'pending'
+    partner_id: goal.partner_id || null
   };
 
   const { data, error } = await supabase

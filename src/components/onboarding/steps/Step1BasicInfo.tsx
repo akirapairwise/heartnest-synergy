@@ -14,6 +14,15 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ formData, handleChange }) => {
   return (
     <>
       <h3 className="text-lg font-medium mb-4">Basic Information</h3>
+      <div className="space-y-2 mb-4">
+        <Label htmlFor="fullName">Full Name</Label>
+        <Input 
+          id="fullName" 
+          placeholder="Your full name" 
+          value={formData.full_name || ''}
+          onChange={(e) => handleChange('full_name', e.target.value)}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="dob">Date of Birth</Label>

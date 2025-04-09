@@ -37,12 +37,12 @@ const ConflictResponseForm = ({ conflict, onSuccess }: ConflictResponseFormProps
     }
 
     try {
-      // Update the conflict with the responder's statement
+      // Update the conflict with the responder's statement using type assertion
       const { error } = await supabase
         .from('conflicts')
         .update({
           responder_statement: data.response
-        })
+        } as any)
         .eq('id', conflict.id);
 
       if (error) throw error;

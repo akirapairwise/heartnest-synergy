@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Conflict, ConflictStatus } from '@/types/conflicts';
 
 export const fetchUserConflicts = async (userId: string): Promise<Conflict[]> => {
+  // Cast the response data to Conflict[] type
   const { data, error } = await supabase
     .from('conflicts')
     .select('*')
@@ -10,7 +11,7 @@ export const fetchUserConflicts = async (userId: string): Promise<Conflict[]> =>
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  return data || [];
+  return (data || []) as unknown as Conflict[];
 };
 
 export const getConflictStatus = (conflict: Conflict, userId: string): ConflictStatus => {
@@ -42,13 +43,14 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
   const mockAiReflection = "This conflict stems from different expectations about fairness and responsibility.";
   const mockAiPlan = "1. Create a shared chore schedule\n2. Define what 'clean' means to each person\n3. Schedule a weekly check-in about household management";
   
+  // Cast the update to any to bypass TypeScript's strict checking
   const { error } = await supabase
     .from('conflicts')
     .update({
       ai_summary: mockAiSummary,
       ai_reflection: mockAiReflection,
       ai_resolution_plan: mockAiPlan
-    })
+    } as any)
     .eq('id', conflictId);
   
   if (error) throw error;

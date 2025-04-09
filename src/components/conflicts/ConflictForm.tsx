@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ConflictFormData } from '@/types/conflicts';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters"),
@@ -46,7 +47,7 @@ const ConflictForm = ({ onSuccess, partnerId }: ConflictFormProps) => {
         responder_id: data.partner_id
       };
 
-      const { error } = await window.supabase
+      const { error } = await supabase
         .from('conflicts')
         .insert({
           initiator_id: user.id,

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -7,19 +7,72 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { Loader2, Smile, SmilePlus, Frown, Meh } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const MoodSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAvatar, setShowAvatar] = useState(true);
   const [defaultMood, setDefaultMood] = useState('neutral');
+  const { user } = useAuth();
+  
+  // Load saved settings on component mount
+  useEffect(() => {
+    if (user) {
+      loadSettings();
+    }
+  }, [user]);
+  
+  const loadSettings = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Fetch user settings from a user_settings table or profile
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('mood_settings')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data && data.mood_settings) {
+        // If there are saved settings, apply them
+        const settings = data.mood_settings;
+        setShowAvatar(settings.showAvatar ?? true);
+        setDefaultMood(settings.defaultMood ?? 'neutral');
+      }
+    } catch (error) {
+      console.error('Error loading mood settings:', error);
+      // Don't show error toast here as it's not critical
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const handleSaveSettings = async () => {
+    if (!user) {
+      toast.error('You must be logged in to save settings');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      // This is a placeholder for the actual save logic
-      // In a real app, you would implement this using Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Save settings to user profile
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          mood_settings: {
+            showAvatar,
+            defaultMood,
+          }
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
       
       toast.success('Mood & avatar settings saved');
     } catch (error) {
@@ -36,7 +89,7 @@ const MoodSettings = () => {
         <div className="flex items-center gap-4">
           <Avatar className={showAvatar ? 'opacity-100' : 'opacity-50'}>
             <AvatarFallback className="bg-primary text-primary-foreground">
-              JD
+              {user?.email?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
           <div className="space-y-1">

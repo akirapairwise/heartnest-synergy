@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { moodOptions } from './MoodOptions';
@@ -13,15 +13,23 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface CheckInFormProps {
   onCheckInSaved: () => void;
+  defaultMood?: string;
 }
 
-const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved }) => {
+const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }) => {
   const [mood, setMood] = useState<string>("");
   const [satisfactionRating, setSatisfactionRating] = useState<number>(5);
   const [reflection, setReflection] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
   const { user } = useAuth();
+
+  // Set default mood if provided
+  useEffect(() => {
+    if (defaultMood && !mood) {
+      setMood(defaultMood);
+    }
+  }, [defaultMood]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +88,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved }) => {
           <div className="space-y-4">
             <div>
               <Label className="mb-2 block">Select your mood</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {moodOptions.map((option) => (
                   <button
                     key={option.value}
@@ -130,8 +138,17 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved }) => {
           </div>
           
           <Button type="submit" className="w-full btn-primary-gradient" disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save Check-In'}
-            <Send className="ml-2 h-4 w-4" />
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Save Check-In
+                <Send className="ml-2 h-4 w-4" />
+              </>
+            )}
           </Button>
         </form>
       </CardContent>

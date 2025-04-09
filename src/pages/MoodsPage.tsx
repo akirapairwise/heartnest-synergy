@@ -1,12 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Calendar } from "lucide-react";
+import { Heart, Calendar, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
+import { MoodEntry } from '@/types/check-ins';
 
 const moodLabels = ["Struggling", "Disconnected", "Neutral", "Connected", "Thriving"];
 const moodDescriptions = [
@@ -17,32 +18,23 @@ const moodDescriptions = [
   "Strong connection, deep trust, and mutual support"
 ];
 
-type MoodEntry = {
-  id: string;
-  date: string;
-  mood: number;
-  note?: string;
-};
-
 const MoodsPage = () => {
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingHistory, setIsFetchingHistory] = useState(false);
   const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
   const { user } = useAuth();
   
-  useEffect(() => {
-    if (user) {
-      fetchMoodHistory();
-    }
-  }, [user]);
-  
-  const fetchMoodHistory = async () => {
+  const fetchMoodHistory = useCallback(async () => {
+    if (!user) return;
+    
     try {
+      setIsFetchingHistory(true);
       const { data, error } = await supabase
         .from('check_ins')
         .select('id, timestamp, mood, reflection')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('timestamp', { ascending: false })
         .limit(10);
         
@@ -59,8 +51,16 @@ const MoodsPage = () => {
     } catch (error) {
       console.error('Error fetching mood history:', error);
       toast.error('Failed to load mood history');
+    } finally {
+      setIsFetchingHistory(false);
     }
-  };
+  }, [user]);
+  
+  useEffect(() => {
+    if (user) {
+      fetchMoodHistory();
+    }
+  }, [user, fetchMoodHistory]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +108,7 @@ const MoodsPage = () => {
   };
   
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-6 pb-8">
       <div>
         <h1 className="text-3xl font-bold mb-2">Mood Tracker</h1>
         <p className="text-muted-foreground">Track how you feel about your relationship over time</p>
@@ -129,7 +129,7 @@ const MoodsPage = () => {
                       <button
                         key={mood}
                         type="button"
-                        className={`flex-1 min-w-[100px] flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                        className={`flex-1 min-w-[100px] max-w-[160px] flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
                           selectedMood === mood 
                             ? 'border-primary bg-primary/10' 
                             : 'border-muted hover:border-muted-foreground/50'
@@ -152,7 +152,7 @@ const MoodsPage = () => {
                           ))}
                           {Array(5 - mood).fill(0).map((_, i) => (
                             <Heart 
-                              key={i} 
+                              key={`empty-${i}`} 
                               className="h-5 w-5 text-gray-200"
                             />
                           ))}
@@ -176,8 +176,19 @@ const MoodsPage = () => {
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full btn-primary-gradient" disabled={isLoading}>
-                  {isLoading ? 'Saving...' : 'Save Mood Entry'}
+                <Button 
+                  type="submit" 
+                  className="w-full btn-primary-gradient" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Mood Entry'
+                  )}
                 </Button>
               </form>
             </CardContent>
@@ -194,14 +205,18 @@ const MoodsPage = () => {
               <CardDescription>Your recent mood entries</CardDescription>
             </CardHeader>
             <CardContent>
-              {moodHistory.length === 0 ? (
+              {isFetchingHistory ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : moodHistory.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No mood entries yet.</p>
                   <p className="text-sm mt-1">Track your first mood above!</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {moodHistory.map((entry, index) => (
+                  {moodHistory.map((entry) => (
                     <div key={entry.id} className="border-b pb-3 last:border-0">
                       <div className="flex justify-between items-start">
                         <div>
@@ -229,7 +244,7 @@ const MoodsPage = () => {
                             />
                           ))}
                           {Array(5 - entry.mood).fill(0).map((_, i) => (
-                            <Heart key={i} className="h-4 w-4 text-gray-200" />
+                            <Heart key={`empty-${i}`} className="h-4 w-4 text-gray-200" />
                           ))}
                         </div>
                       </div>

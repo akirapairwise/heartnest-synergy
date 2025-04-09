@@ -2,12 +2,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import * as partnerInviteService from '@/services/partnerInviteService';
+import * as partnerService from '@/services/partners';
+import { PartnerInvite } from '@/services/partners';
 
 export const usePartnerInvite = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
-  const [activeInvite, setActiveInvite] = useState<partnerInviteService.PartnerInvite | null>(null);
+  const [activeInvite, setActiveInvite] = useState<PartnerInvite | null>(null);
   
   const { user, profile, fetchUserProfile } = useAuth();
   
@@ -19,7 +20,7 @@ export const usePartnerInvite = () => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await partnerInviteService.createInvitation(user);
+      const { data, error } = await partnerService.createInvitation(user);
       
       if (error) throw error;
       
@@ -49,7 +50,7 @@ export const usePartnerInvite = () => {
     setIsLoading(true);
     try {
       console.log('Accepting invitation with token:', token);
-      const { error } = await partnerInviteService.acceptInvitation(token, user.id);
+      const { error } = await partnerService.acceptInvitation(token, user.id);
       
       if (error) {
         console.error('Error from acceptInvitation service:', error);
@@ -78,7 +79,7 @@ export const usePartnerInvite = () => {
     
     setIsLoading(true);
     try {
-      const { error } = await partnerInviteService.unlinkPartner(user.id, profile.partner_id);
+      const { error } = await partnerService.unlinkPartner(user.id, profile.partner_id);
       
       if (error) throw error;
       
@@ -101,7 +102,7 @@ export const usePartnerInvite = () => {
     
     setIsLoading(true);
     try {
-      const { data, error } = await partnerInviteService.getUserInvitations(user.id);
+      const { data, error } = await partnerService.getUserInvitations(user.id);
       
       if (error) throw error;
       

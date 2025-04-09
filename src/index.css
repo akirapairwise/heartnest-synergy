@@ -90,6 +90,10 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
   }
+  
+  html, body, #root {
+    @apply h-full overflow-x-hidden;
+  }
 }
 
 @layer components {
@@ -102,7 +106,7 @@
   }
   
   .heart-card {
-    @apply relative overflow-hidden rounded-2xl border p-6 shadow-sm transition-all duration-300 hover:shadow-md;
+    @apply relative overflow-hidden rounded-2xl border p-4 sm:p-6 shadow-sm transition-all duration-300 hover:shadow-md;
   }
   
   .heart-card::before {
@@ -111,5 +115,32 @@
   
   .heart-card:hover::before {
     @apply opacity-60;
+  }
+  
+  /* Responsive typography */
+  .text-responsive {
+    @apply text-base sm:text-lg md:text-xl;
+  }
+  
+  /* Responsive spacing */
+  .section-spacing {
+    @apply my-4 sm:my-6 md:my-8;
+  }
+  
+  .container-responsive {
+    @apply px-4 sm:px-6 md:px-8 max-w-7xl mx-auto;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Ensure dropdown menus are fully visible on mobile */
+  [data-radix-popper-content-wrapper] {
+    z-index: 100 !important;
   }
 }

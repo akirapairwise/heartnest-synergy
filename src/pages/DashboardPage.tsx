@@ -11,20 +11,22 @@ import PartnerGoalsSection from '@/components/dashboard/PartnerGoalsSection';
 import CheckInsSection from '@/components/dashboard/CheckInsSection';
 import ConflictsSection from '@/components/dashboard/ConflictsSection';
 import SuggestionsSection from '@/components/dashboard/SuggestionsSection';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const DashboardPage = () => {
   const { profile } = useAuth();
   const userName = profile?.full_name || 'Partner';
+  const isMobile = useIsMobile();
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-3xl font-bold mb-2">Welcome back, {userName}</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, {userName}</h1>
       <p className="text-muted-foreground mb-6">Here's an overview of your relationship</p>
       
       {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="md:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
+        <div className="md:col-span-2 space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <MoodCard />
             <GoalsCard />
           </div>
@@ -38,13 +40,21 @@ const DashboardPage = () => {
       {/* Detailed sections in tabs */}
       <div className="mt-8">
         <Tabs defaultValue="my-goals" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} mb-2`}>
             <TabsTrigger value="my-goals">My Goals</TabsTrigger>
             <TabsTrigger value="partner-goals">Partner Goals</TabsTrigger>
-            <TabsTrigger value="check-ins">Check-Ins</TabsTrigger>
-            <TabsTrigger value="conflicts">Conflicts</TabsTrigger>
+            {!isMobile && <TabsTrigger value="check-ins">Check-Ins</TabsTrigger>}
+            {!isMobile && <TabsTrigger value="conflicts">Conflicts</TabsTrigger>}
             <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
           </TabsList>
+          
+          {isMobile && (
+            <TabsList className="grid w-full grid-cols-2 mt-2">
+              <TabsTrigger value="check-ins">Check-Ins</TabsTrigger>
+              <TabsTrigger value="conflicts">Conflicts</TabsTrigger>
+            </TabsList>
+          )}
+          
           <TabsContent value="my-goals" className="mt-6">
             <MyGoalsSection />
           </TabsContent>

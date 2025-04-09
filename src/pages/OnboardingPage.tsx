@@ -16,8 +16,8 @@ const OnboardingPage = () => {
   }, [isOnboardingComplete, navigate]);
 
   return (
-    <div className="min-h-screen py-12 px-4 bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50">
-      <div className="container mx-auto">
+    <div className="min-h-screen py-6 sm:py-12 px-4 bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50">
+      <div className="container mx-auto max-w-4xl">
         <OnboardingForm />
       </div>
     </div>

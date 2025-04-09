@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from '@/contexts/AuthContext';
 
 type MoodEntry = {
   date: string;
@@ -14,18 +16,60 @@ const moodLabels = ["Struggling", "Disconnected", "Neutral", "Connected", "Thriv
 const moodColors = ["text-red-500", "text-orange-400", "text-yellow-500", "text-green-400", "text-green-600"];
 
 const MoodDisplay = () => {
-  // Mock user mood data
-  const userMood: MoodEntry = { 
-    date: "2025-04-09", 
-    mood: 4, 
-    note: "Had a wonderful dinner date" 
+  const [userMood, setUserMood] = useState<MoodEntry | null>(null);
+  const [partnerMood, setPartnerMood] = useState<MoodEntry | null>(null);
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    if (user) {
+      fetchLatestMoods();
+    }
+  }, [user]);
+  
+  const fetchLatestMoods = async () => {
+    try {
+      // Fetch user's latest mood
+      const { data: userData, error: userError } = await supabase
+        .from('check_ins')
+        .select('timestamp, mood, reflection')
+        .eq('user_id', user?.id)
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (!userError && userData) {
+        setUserMood({
+          date: userData.timestamp,
+          mood: parseInt(userData.mood.charAt(0)),
+          note: userData.reflection || undefined
+        });
+      }
+      
+      // In a real app, you would fetch the partner's mood
+      // For now, we'll use mock data for the partner
+      setPartnerMood({ 
+        date: new Date().toISOString(), 
+        mood: 3, 
+        note: "Good conversation about future plans" 
+      });
+      
+    } catch (error) {
+      console.error('Error fetching mood data:', error);
+      // Don't show error toast here as it's not critical for the UI
+    }
   };
   
-  // Mock partner mood data
-  const partnerMood: MoodEntry = { 
-    date: "2025-04-09", 
+  // Default display if no data is available
+  const defaultUserMood: MoodEntry = userMood || { 
+    date: new Date().toISOString(), 
     mood: 3, 
-    note: "Good conversation about future plans" 
+    note: "No recent check-in" 
+  };
+  
+  const defaultPartnerMood: MoodEntry = partnerMood || { 
+    date: new Date().toISOString(), 
+    mood: 3, 
+    note: "No recent check-in" 
   };
   
   return (
@@ -45,19 +89,19 @@ const MoodDisplay = () => {
               </Avatar>
               <div>
                 <p className="text-xs text-muted-foreground">You</p>
-                <p className={`text-sm font-medium ${moodColors[userMood.mood-1]}`}>{moodLabels[userMood.mood-1]}</p>
+                <p className={`text-sm font-medium ${moodColors[defaultUserMood.mood-1]}`}>{moodLabels[defaultUserMood.mood-1]}</p>
               </div>
             </div>
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Heart
                   key={star}
-                  className={`h-4 w-4 ${star <= userMood.mood ? moodColors[userMood.mood-1] : 'text-gray-200'}`}
-                  fill={star <= userMood.mood ? 'currentColor' : 'none'}
+                  className={`h-4 w-4 ${star <= defaultUserMood.mood ? moodColors[defaultUserMood.mood-1] : 'text-gray-200'}`}
+                  fill={star <= defaultUserMood.mood ? 'currentColor' : 'none'}
                 />
               ))}
             </div>
-            <p className="text-xs text-muted-foreground line-clamp-1">{userMood.note}</p>
+            <p className="text-xs text-muted-foreground line-clamp-1">{defaultUserMood.note}</p>
           </div>
           
           <div className="space-y-2">
@@ -68,19 +112,19 @@ const MoodDisplay = () => {
               </Avatar>
               <div>
                 <p className="text-xs text-muted-foreground">Partner</p>
-                <p className={`text-sm font-medium ${moodColors[partnerMood.mood-1]}`}>{moodLabels[partnerMood.mood-1]}</p>
+                <p className={`text-sm font-medium ${moodColors[defaultPartnerMood.mood-1]}`}>{moodLabels[defaultPartnerMood.mood-1]}</p>
               </div>
             </div>
             <div className="flex">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Heart
                   key={star}
-                  className={`h-4 w-4 ${star <= partnerMood.mood ? moodColors[partnerMood.mood-1] : 'text-gray-200'}`}
-                  fill={star <= partnerMood.mood ? 'currentColor' : 'none'}
+                  className={`h-4 w-4 ${star <= defaultPartnerMood.mood ? moodColors[defaultPartnerMood.mood-1] : 'text-gray-200'}`}
+                  fill={star <= defaultPartnerMood.mood ? 'currentColor' : 'none'}
                 />
               ))}
             </div>
-            <p className="text-xs text-muted-foreground line-clamp-1">{partnerMood.note}</p>
+            <p className="text-xs text-muted-foreground line-clamp-1">{defaultPartnerMood.note}</p>
           </div>
         </div>
         

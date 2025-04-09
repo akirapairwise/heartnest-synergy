@@ -6,53 +6,61 @@ import { Target, CheckCircle2, Circle, PlusCircle, Calendar } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Goal } from '@/types/goals';
 import { fetchMyGoals, updateGoalProgress } from '@/services/goalService';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
 
 const MyGoalsSection = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   const navigate = useNavigate();
   
   useEffect(() => {
     const loadGoals = async () => {
       setIsLoading(true);
-      const goalsData = await fetchMyGoals();
-      setGoals(goalsData);
-      setIsLoading(false);
+      try {
+        const goalsData = await fetchMyGoals();
+        setGoals(goalsData);
+      } catch (error) {
+        console.error('Error loading goals:', error);
+        toast.error('Failed to load goals');
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     loadGoals();
   }, []);
   
   const handleUpdateProgress = async (goalId: string, newProgress: number) => {
-    const { success, error } = await updateGoalProgress(goalId, newProgress);
-    
-    if (success) {
-      // Update the local state
-      setGoals(goals.map(goal => 
-        goal.id === goalId 
-          ? { 
-              ...goal, 
-              progress: newProgress, 
-              completed: newProgress === 100,
-              status: newProgress === 100 ? 'completed' : newProgress > 0 ? 'in_progress' : 'pending'
-            } 
-          : goal
-      ));
+    try {
+      const { success, error } = await updateGoalProgress(goalId, newProgress);
       
-      toast({
-        title: "Progress updated",
-        description: `Goal progress updated to ${newProgress}%`,
-      });
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to update goal progress",
-        variant: "destructive",
-      });
+      if (success) {
+        // Update the local state
+        setGoals(goals.map(goal => 
+          goal.id === goalId 
+            ? { 
+                ...goal, 
+                progress: newProgress, 
+                completed: newProgress === 100,
+                status: newProgress === 100 ? 'completed' : newProgress > 0 ? 'in_progress' : 'pending'
+              } 
+            : goal
+        ));
+        
+        toast.success(`Goal progress updated to ${newProgress}%`);
+      } else {
+        throw error || new Error('Failed to update goal progress');
+      }
+    } catch (error: any) {
+      console.error('Error updating goal progress:', error);
+      toast.error('Failed to update goal progress: ' + (error.message || 'Unknown error'));
     }
+  };
+  
+  const handleToggleComplete = async (goal: Goal) => {
+    const newProgress = goal.completed ? 0 : 100;
+    await handleUpdateProgress(goal.id, newProgress);
   };
   
   const completedGoals = goals.filter(goal => goal.completed).length;
@@ -77,8 +85,14 @@ const MyGoalsSection = () => {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-pulse text-muted-foreground">Loading goals...</div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-full mb-4"></div>
+                <div className="h-2 bg-muted rounded w-full"></div>
+              </div>
+            ))}
           </div>
         ) : (
           <>
@@ -116,11 +130,16 @@ const MyGoalsSection = () => {
                   <div key={goal.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-start gap-3">
-                        {goal.completed ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                        )}
+                        <button 
+                          onClick={() => handleToggleComplete(goal)}
+                          className="flex-shrink-0 mt-0.5 focus:outline-none"
+                        >
+                          {goal.completed ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </button>
                         <div>
                           <h3 className={`font-medium ${goal.completed ? 'line-through text-muted-foreground' : ''}`}>
                             {goal.title}
@@ -137,6 +156,32 @@ const MyGoalsSection = () => {
                           <span className="text-xs font-medium">{goal.progress}%</span>
                         </div>
                         <Progress value={goal.progress} className="h-2" />
+                        <div className="flex justify-between mt-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs"
+                            onClick={() => handleUpdateProgress(goal.id, 0)}
+                          >
+                            0%
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs"
+                            onClick={() => handleUpdateProgress(goal.id, 50)}
+                          >
+                            50%
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs"
+                            onClick={() => handleUpdateProgress(goal.id, 100)}
+                          >
+                            100%
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>

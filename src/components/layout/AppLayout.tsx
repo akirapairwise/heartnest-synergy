@@ -5,6 +5,7 @@ import Navbar from './Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 const AppLayout = () => {
   const { user, isLoading } = useAuth();
@@ -19,12 +20,28 @@ const AppLayout = () => {
         toast.error("Authentication required", {
           description: "Please log in to continue"
         });
-        navigate('/auth', { replace: true });
+        navigate('/auth', { replace: true, state: { from: location.pathname } });
       } else {
         setIsPageReady(true);
+        
+        // Set up realtime listeners for relevant tables
+        const channel = supabase
+          .channel('schema-db-changes')
+          .on('postgres_changes', 
+            { event: '*', schema: 'public' }, 
+            (payload) => {
+              // Refresh data based on changes
+              // This will be handled by individual components
+            }
+          )
+          .subscribe();
+          
+        return () => {
+          supabase.removeChannel(channel);
+        };
       }
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, location.pathname]);
 
   // Show loading when authenticating
   if (isLoading || !isPageReady) {

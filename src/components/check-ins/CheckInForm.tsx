@@ -39,17 +39,14 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved }) => {
     setIsLoading(true);
     
     try {
-      // Use type assertions to work around TypeScript limitations
       const { error } = await supabase
         .from('check_ins')
-        .insert([
-          {
-            mood,
-            reflection: reflection || null,
-            satisfaction_rating: satisfactionRating,
-            user_id: user.id,
-          },
-        ]) as { error: any };
+        .insert({
+          mood,
+          reflection: reflection || null,
+          satisfaction_rating: satisfactionRating,
+          user_id: user.id,
+        });
 
       if (error) {
         throw error;
@@ -64,9 +61,9 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved }) => {
       
       // Notify parent component to refresh the check-ins list
       onCheckInSaved();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving check-in:', error);
-      toast.error('Failed to save check-in');
+      toast.error('Failed to save check-in: ' + (error.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }

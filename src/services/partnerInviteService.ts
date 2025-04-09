@@ -9,6 +9,7 @@ export interface PartnerInvite {
   token: string;
   is_accepted: boolean;
   created_at: string;
+  inviter_name?: string; // Optional field for frontend display
 }
 
 /**
@@ -43,16 +44,34 @@ export const createInvitation = async (user: User): Promise<{ data: PartnerInvit
  */
 export const getInvitationByToken = async (token: string): Promise<{ data: PartnerInvite | null, error: any }> => {
   try {
-    const { data, error } = await supabase
+    // Get the invitation data
+    const { data: invite, error: inviteError } = await supabase
       .from('partner_invites')
-      .select('*, profiles:user_profiles!inviter_id(full_name)')
+      .select('*')
       .eq('token', token)
       .eq('is_accepted', false)
       .single();
       
-    if (error) throw error;
+    if (inviteError) throw inviteError;
     
-    return { data, error: null };
+    // If invite exists, get the inviter's name
+    if (invite) {
+      const { data: inviterProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('full_name')
+        .eq('id', invite.inviter_id)
+        .single();
+        
+      if (!profileError && inviterProfile) {
+        // Add the inviter name to the response
+        return { 
+          data: { ...invite, inviter_name: inviterProfile.full_name }, 
+          error: null 
+        };
+      }
+    }
+    
+    return { data: invite, error: null };
   } catch (error) {
     console.error('Error fetching invitation:', error);
     return { data: null, error };

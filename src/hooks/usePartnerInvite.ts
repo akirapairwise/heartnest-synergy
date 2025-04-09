@@ -101,14 +101,19 @@ export const usePartnerInvite = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        // Find the most recent invite
-        const latestInvite = data[0];
-        setActiveInvite(latestInvite);
-        
-        // Create the invite URL
-        const baseUrl = window.location.origin;
-        const url = `${baseUrl}/invite?token=${latestInvite.token}`;
-        setInviteUrl(url);
+        // Find the most recent active invite
+        const latestInvite = data.find(invite => !invite.is_accepted);
+        if (latestInvite) {
+          setActiveInvite(latestInvite);
+          
+          // Create the invite URL
+          const baseUrl = window.location.origin;
+          const url = `${baseUrl}/invite?token=${latestInvite.token}`;
+          setInviteUrl(url);
+        } else {
+          setActiveInvite(null);
+          setInviteUrl(null);
+        }
       } else {
         setActiveInvite(null);
         setInviteUrl(null);

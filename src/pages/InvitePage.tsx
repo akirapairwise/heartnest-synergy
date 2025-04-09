@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,8 +55,8 @@ const InvitePage = () => {
       }
       
       // Set the inviter name if available
-      if (data.profiles && data.profiles.full_name) {
-        setInviterName(data.profiles.full_name);
+      if (data.inviter_name) {
+        setInviterName(data.inviter_name);
       }
       
       setStatus('valid');

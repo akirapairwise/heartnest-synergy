@@ -11,10 +11,10 @@ const AuthPage = () => {
   const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
-    // Only redirect if loading is complete
+    // Only redirect if loading is complete and we have authentication information
     if (!isLoading) {
       setPageLoading(false);
-
+      
       if (user) {
         // If user is authenticated, redirect to appropriate page
         const redirectPath = isOnboardingComplete ? '/dashboard' : '/onboarding';

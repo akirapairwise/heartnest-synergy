@@ -89,15 +89,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         let moodSettings = null;
         
         if (data.mood_settings) {
-          // Handle the mood_settings based on its actual structure
-          if (typeof data.mood_settings === 'object') {
+          try {
+            // Make sure we handle mood_settings as a proper object
+            const settings = data.mood_settings as Record<string, any>;
             moodSettings = {
-              showAvatar: typeof data.mood_settings.showAvatar === 'boolean' 
-                ? data.mood_settings.showAvatar 
-                : data.mood_settings.showAvatar === 'true',
-              defaultMood: typeof data.mood_settings.defaultMood === 'string'
-                ? data.mood_settings.defaultMood
-                : String(data.mood_settings.defaultMood || 'neutral')
+              showAvatar: typeof settings.showAvatar === 'boolean' 
+                ? settings.showAvatar 
+                : settings.showAvatar === 'true',
+              defaultMood: typeof settings.defaultMood === 'string'
+                ? settings.defaultMood
+                : String(settings.defaultMood || 'neutral')
+            };
+          } catch (e) {
+            console.error('Error parsing mood_settings:', e);
+            // Fallback to default mood settings
+            moodSettings = {
+              showAvatar: true,
+              defaultMood: 'neutral'
             };
           }
         }

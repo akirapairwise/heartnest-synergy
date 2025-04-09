@@ -2,6 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, LineChart, Target, Calendar, MessageSquare, Menu, X, Settings } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -48,22 +49,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <ul className="space-y-2">
             {navItems.map((item) => (
               <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `flex items-center px-4 py-2 rounded-md transition-colors ${
-                      isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-accent'
-                    }`
-                  }
-                  onClick={() => {
-                    if (window.innerWidth < 768) toggleSidebar();
-                  }}
-                >
-                  {item.icon}
-                  <span className="ml-3">{item.label}</span>
-                </NavLink>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <NavLink
+                        to={item.to}
+                        className={({ isActive }) =>
+                          `flex items-center px-4 py-2 rounded-md transition-colors ${
+                            isActive
+                              ? 'bg-primary text-primary-foreground'
+                              : 'hover:bg-accent'
+                          }`
+                        }
+                        onClick={() => {
+                          if (window.innerWidth < 768) toggleSidebar();
+                        }}
+                      >
+                        {item.icon}
+                        <span className="ml-3">{item.label}</span>
+                      </NavLink>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      {item.label}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </li>
             ))}
           </ul>

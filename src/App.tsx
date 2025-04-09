@@ -1,7 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -24,47 +23,45 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} />
-            
-            {/* Routes that require authentication and completed onboarding */}
-            <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/moods" element={<MoodsPage />} />
-              <Route path="/goals" element={<GoalsPage />} />
-              <Route path="/check-ins" element={<CheckInsPage />} />
-              <Route path="/recommendations" element={<RecommendationsPage />} />
-              <Route path="/profile/settings" element={<ProfileSettingsPage />} />
-            </Route>
-            
-            {/* Routes that require authentication but not completed onboarding */}
-            <Route path="/onboarding" element={
-              <ProtectedRoute>
-                <OnboardingRequired mustBeIncomplete>
-                  <OnboardingPage />
-                </OnboardingRequired>
-              </ProtectedRoute>
-            } />
-            <Route path="/connect" element={
-              <ProtectedRoute>
-                <OnboardingRequired>
-                  <ConnectPage />
-                </OnboardingRequired>
-              </ProtectedRoute>
-            } />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<AuthPage />} />
+          
+          {/* Routes that require authentication and completed onboarding */}
+          <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/moods" element={<MoodsPage />} />
+            <Route path="/goals" element={<GoalsPage />} />
+            <Route path="/check-ins" element={<CheckInsPage />} />
+            <Route path="/recommendations" element={<RecommendationsPage />} />
+            <Route path="/profile/settings" element={<ProfileSettingsPage />} />
+          </Route>
+          
+          {/* Routes that require authentication but not completed onboarding */}
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              <OnboardingRequired mustBeIncomplete>
+                <OnboardingPage />
+              </OnboardingRequired>
+            </ProtectedRoute>
+          } />
+          <Route path="/connect" element={
+            <ProtectedRoute>
+              <OnboardingRequired>
+                <ConnectPage />
+              </OnboardingRequired>
+            </ProtectedRoute>
+          } />
+          
+          {/* Catch-all route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 

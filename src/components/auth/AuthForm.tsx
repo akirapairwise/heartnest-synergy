@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Heart } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -75,6 +75,11 @@ const AuthForm = () => {
         
         if (error) {
           setError(error.message);
+          toast({
+            title: "Login failed",
+            description: error.message,
+            variant: "destructive",
+          });
         } else {
           toast({
             title: "Welcome back!",
@@ -86,37 +91,46 @@ const AuthForm = () => {
         
         if (error) {
           setError(error.message);
+          toast({
+            title: "Registration failed",
+            description: error.message,
+            variant: "destructive",
+          });
         } else {
           toast({
             title: "Account created successfully!",
             description: "Your account has been created. Let's set up your profile!",
           });
-          navigate('/onboarding');
         }
       }
     } catch (error) {
       console.error('Authentication error:', error);
       setError('An unexpected error occurred. Please try again.');
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
   
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto shadow-lg border-harmony-100">
       <CardHeader className="space-y-2 text-center">
         <div className="flex justify-center mb-2">
           <Heart className="h-10 w-10 text-love-500 animate-pulse-soft" />
         </div>
-        <CardTitle className="text-2xl font-bold">Welcome to HeartNest</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-2xl font-bold text-gray-800">Welcome to HeartNest</CardTitle>
+        <CardDescription className="text-gray-600">
           Build deeper connections and grow together
         </CardDescription>
       </CardHeader>
       <Tabs defaultValue="login" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="register">Register</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="login" className="text-sm font-medium">Login</TabsTrigger>
+          <TabsTrigger value="register" className="text-sm font-medium">Register</TabsTrigger>
         </TabsList>
         <TabsContent value="login">
           <form onSubmit={(e) => handleAuth(e, 'login')}>
@@ -127,19 +141,20 @@ const AuthForm = () => {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-gray-700">Email</Label>
                 <Input 
                   id="email" 
                   type="email" 
                   placeholder="your@email.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="focus:border-harmony-500 focus:ring-harmony-200"
                   required 
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-gray-700">Password</Label>
                   <Button variant="link" size="sm" className="px-0 text-xs text-harmony-600">
                     Forgot password?
                   </Button>
@@ -149,13 +164,22 @@ const AuthForm = () => {
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="focus:border-harmony-500 focus:ring-harmony-200"
                   required 
                 />
               </div>
             </CardContent>
             <CardFooter>
-              <Button type="submit" className="w-full btn-primary-gradient" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-love-500 to-harmony-500 hover:from-love-600 hover:to-harmony-600 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
+                  </span>
+                ) : "Login"}
               </Button>
             </CardFooter>
           </form>
@@ -169,50 +193,62 @@ const AuthForm = () => {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="reg-name">Full Name</Label>
+                <Label htmlFor="reg-name" className="text-gray-700">Full Name</Label>
                 <Input 
                   id="reg-name" 
                   placeholder="Your name" 
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  className="focus:border-harmony-500 focus:ring-harmony-200"
                   required 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-email">Email</Label>
+                <Label htmlFor="reg-email" className="text-gray-700">Email</Label>
                 <Input 
                   id="reg-email" 
                   type="email" 
                   placeholder="your@email.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="focus:border-harmony-500 focus:ring-harmony-200"
                   required 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-password">Password</Label>
+                <Label htmlFor="reg-password" className="text-gray-700">Password</Label>
                 <Input 
                   id="reg-password" 
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="focus:border-harmony-500 focus:ring-harmony-200"
                   required 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Label htmlFor="confirm-password" className="text-gray-700">Confirm Password</Label>
                 <Input 
                   id="confirm-password" 
                   type="password" 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="focus:border-harmony-500 focus:ring-harmony-200"
                   required 
                 />
               </div>
             </CardContent>
             <CardFooter>
-              <Button type="submit" className="w-full btn-primary-gradient" disabled={isLoading}>
-                {isLoading ? "Creating Account..." : "Create Account"}
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-love-500 to-harmony-500 hover:from-love-600 hover:to-harmony-600 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...
+                  </span>
+                ) : "Create Account"}
               </Button>
             </CardFooter>
           </form>

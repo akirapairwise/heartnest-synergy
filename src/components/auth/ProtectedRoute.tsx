@@ -1,7 +1,8 @@
 
 import React, { useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
@@ -10,15 +11,28 @@ type ProtectedRouteProps = {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // If user is not authenticated after loading is complete, redirect to auth
+    if (!isLoading && !user) {
+      navigate('/auth', { state: { from: location }, replace: true });
+    }
+  }, [user, isLoading, location, navigate]);
 
   if (isLoading) {
-    // You could display a loading spinner here
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50">
+        <Loader2 className="h-10 w-10 text-love-500 animate-spin mb-4" />
+        <p className="text-harmony-700">Authenticating...</p>
+      </div>
+    );
   }
 
+  // If user is not authenticated (after loading completed), don't render anything
+  // The useEffect above will handle the redirect
   if (!user) {
-    // Redirect to the login page if not authenticated
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return null;
   }
 
   return <>{children}</>;

@@ -155,20 +155,10 @@ export const useOnboardingForm = (totalSteps: number) => {
       
       // Refetch the user profile to confirm the update
       if (user) {
-        try {
-          await fetchUserProfile(user.id);
-          // After successful refetch, redirect to dashboard
-          setTimeout(() => {
-            navigate('/dashboard', { replace: true });
-          }, 800); // Short delay for toast to be visible
-        } catch (fetchError) {
-          console.error('Error refetching profile after update:', fetchError);
-          useToastHook({
-            title: "Profile Update Issue",
-            description: "Your profile was updated but we couldn't verify it. Please refresh the page.",
-            variant: "destructive",
-          });
-        }
+        await fetchUserProfile(user.id);
+        // After successful refetch, redirect to dashboard
+        // Use replace:true to prevent back navigation to onboarding
+        navigate('/dashboard', { replace: true });
       } else {
         // Fallback if user is not available
         navigate('/dashboard', { replace: true });

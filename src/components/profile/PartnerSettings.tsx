@@ -1,16 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter,
-  DialogDescription
-} from '@/components/ui/dialog';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -22,34 +13,33 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Loader2, UserPlus, UserX, Copy, Check } from 'lucide-react';
-import { usePartnerInvitations } from '@/hooks/usePartnerInvitations';
+import { Loader2, UserPlus, UserX, Copy, Check, Link } from 'lucide-react';
+import { usePartnerInvite } from '@/hooks/usePartnerInvite';
 import { supabase } from '@/integrations/supabase/client';
 
 const PartnerSettings = () => {
   const { profile, user } = useAuth();
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
-  const [partnerEmail, setPartnerEmail] = useState('');
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   
   const {
     isLoading,
-    sendInvitation,
+    inviteUrl,
+    activeInvite,
+    createInvitation,
     unlinkPartner,
-    fetchInvitations,
-    activeInvitation
-  } = usePartnerInvitations();
+    refreshInvites
+  } = usePartnerInvite();
   
   const hasPartner = Boolean(profile?.partner_id);
   
   useEffect(() => {
     if (user) {
-      fetchInvitations();
+      refreshInvites();
       fetchPartnerProfile();
     }
-  }, [user, profile?.partner_id, fetchInvitations]);
+  }, [user, profile?.partner_id, refreshInvites]);
   
   const fetchPartnerProfile = async () => {
     if (!profile?.partner_id) return;
@@ -69,16 +59,8 @@ const PartnerSettings = () => {
     }
   };
   
-  const handleInvitePartner = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const { error } = await sendInvitation(partnerEmail);
-    
-    if (!error) {
-      setIsInviteDialogOpen(false);
-      setPartnerEmail('');
-      toast.success('Invitation sent to partner');
-    }
+  const handleCreateInvite = async () => {
+    await createInvitation();
   };
   
   const handleUnlinkPartner = async () => {
@@ -91,11 +73,11 @@ const PartnerSettings = () => {
   };
   
   const handleCopyInvite = () => {
-    if (!activeInvitation) return;
+    if (!inviteUrl) return;
     
-    navigator.clipboard.writeText(activeInvitation.invitation_code);
+    navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
-    toast.success('Invitation code copied to clipboard');
+    toast.success('Invitation link copied to clipboard');
     
     setTimeout(() => setCopied(false), 2000);
   };
@@ -122,20 +104,20 @@ const PartnerSettings = () => {
             </Button>
           </div>
         </div>
-      ) : activeInvitation ? (
+      ) : activeInvite ? (
         <div className="p-4 rounded-lg border">
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground">Pending Invitation</p>
-              <p className="font-medium">You've invited {activeInvitation.recipient_email}</p>
+              <p className="text-sm text-muted-foreground">Partner Invitation</p>
+              <p className="font-medium">Share this link with your partner</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Share this code with your partner
+                They'll be able to connect with you after clicking the link
               </p>
             </div>
             
             <div className="flex items-center gap-2">
-              <div className="bg-muted p-2 rounded font-mono">
-                {activeInvitation.invitation_code}
+              <div className="bg-muted p-2 rounded font-mono text-xs overflow-hidden text-ellipsis whitespace-nowrap flex-1">
+                {inviteUrl}
               </div>
               <Button size="sm" variant="outline" onClick={handleCopyInvite}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -146,61 +128,21 @@ const PartnerSettings = () => {
       ) : (
         <div className="p-6 rounded-lg border flex flex-col items-center justify-center text-center">
           <p className="mb-4 text-muted-foreground">You haven't connected with a partner yet.</p>
-          <Button onClick={() => setIsInviteDialogOpen(true)} className="gap-2">
-            <UserPlus className="h-4 w-4" />
-            Invite Partner
+          <Button onClick={handleCreateInvite} disabled={isLoading} className="gap-2">
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Link className="h-4 w-4" />
+                Create Invitation Link
+              </>
+            )}
           </Button>
         </div>
       )}
-      
-      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Invite Partner</DialogTitle>
-            <DialogDescription>
-              Enter your partner's email to send them an invitation to connect.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleInvitePartner} className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="partnerEmail">Partner's Email</Label>
-              <Input
-                id="partnerEmail"
-                type="email"
-                value={partnerEmail}
-                onChange={(e) => setPartnerEmail(e.target.value)}
-                placeholder="partner@example.com"
-                required
-              />
-            </div>
-            
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsInviteDialogOpen(false);
-                  setPartnerEmail('');
-                }}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  'Send Invitation'
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
       
       <AlertDialog open={isUnlinkDialogOpen} onOpenChange={setIsUnlinkDialogOpen}>
         <AlertDialogContent>

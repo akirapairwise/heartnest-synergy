@@ -210,6 +210,30 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_invites: {
+        Row: {
+          created_at: string
+          id: string
+          inviter_id: string
+          is_accepted: boolean
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inviter_id: string
+          is_accepted?: boolean
+          token: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inviter_id?: string
+          is_accepted?: boolean
+          token?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           bio: string | null

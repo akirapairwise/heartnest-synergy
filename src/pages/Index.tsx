@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Heart, ChevronRight, Sparkles, Target, MessageSquare, BarChart4 } from "lucide-react";
@@ -32,7 +31,15 @@ const Index = () => {
               Get Started
               <ChevronRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button variant="outline" size="lg" className="px-6 py-6">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="px-6 py-6"
+              onClick={() => {
+                // Scroll to features section
+                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
               Learn More
             </Button>
           </div>
@@ -40,7 +47,7 @@ const Index = () => {
       </div>
       
       {/* Features Section */}
-      <div className="py-20 container mx-auto px-4">
+      <div id="features" className="py-20 container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold mb-4">Features Designed for Deeper Connections</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">

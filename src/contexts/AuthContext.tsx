@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +16,7 @@ type AuthContextType = {
   updateProfile: (updates: any) => Promise<{ error: any | null } | undefined>;
   fetchUserProfile: (userId: string) => Promise<void>;
   updateOnboardingStatus: (isComplete: boolean) => Promise<{ error: any | null } | undefined>;
+  refreshSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,46 +27,137 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean | null>(null);
+  const [lastActivityTimestamp, setLastActivityTimestamp] = useState<number>(Date.now());
   const { toast } = useToast();
 
-  useEffect(() => {
-    const getSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
+  // Function to refresh the session
+  const refreshSession = useCallback(async () => {
+    try {
+      console.log('Refreshing session...');
+      setIsLoading(true);
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('Error refreshing session:', error);
+        // If refresh fails, try getting the current session
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          setSession(sessionData.session);
+          setUser(sessionData.session.user);
+          
+          if (sessionData.session.user) {
+            await fetchUserProfile(sessionData.session.user.id);
+          }
+        } else {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setIsOnboardingComplete(null);
         }
+      } else {
+        console.log('Session refreshed successfully');
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        
+        if (data.session?.user) {
+          await fetchUserProfile(data.session.user.id);
+        }
+      }
+    } catch (error) {
+      console.error('Unexpected error refreshing session:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Track user activity
+  useEffect(() => {
+    const handleActivity = () => {
+      setLastActivityTimestamp(Date.now());
+    };
+
+    // Add event listeners for user activity
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+    window.addEventListener('focus', handleActivity);
+
+    return () => {
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+      window.removeEventListener('focus', handleActivity);
+    };
+  }, []);
+
+  // Check for session refresh need periodically
+  useEffect(() => {
+    const checkSessionInterval = setInterval(() => {
+      const now = Date.now();
+      const inactiveTime = now - lastActivityTimestamp;
+      
+      // If user has been inactive for more than 10 minutes and there's a session
+      if (inactiveTime > 10 * 60 * 1000 && session) {
+        console.log('User inactive for 10+ minutes, refreshing session');
+        refreshSession();
+        setLastActivityTimestamp(now);
+      }
+    }, 60 * 1000); // Check every minute
+
+    return () => clearInterval(checkSessionInterval);
+  }, [lastActivityTimestamp, refreshSession, session]);
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        setIsLoading(true);
+        console.log('Initializing auth...');
+        
+        // First set up the auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event: AuthChangeEvent, currentSession: Session | null) => {
+            console.log('Auth state changed:', event);
+            
+            // Don't make Supabase calls directly in the callback to prevent deadlocks
+            // Use setTimeout to defer them to the next event loop
+            setTimeout(async () => {
+              setSession(currentSession);
+              setUser(currentSession?.user ?? null);
+              
+              if (currentSession?.user) {
+                await fetchUserProfile(currentSession.user.id);
+              } else {
+                // Clear profile when logged out
+                setProfile(null);
+                setIsOnboardingComplete(null);
+              }
+            }, 0);
+          }
+        );
+
+        // Then get the initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+
+        if (initialSession?.user) {
+          await fetchUserProfile(initialSession.user.id);
+        }
+
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (error) {
-        console.error('Error getting session:', error);
+        console.error('Error initializing auth:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, session: Session | null) => {
-        setUser(session?.user ?? null);
-        setSession(session);
-        
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
-        } else {
-          // Clear profile when logged out
-          setProfile(null);
-          setIsOnboardingComplete(null);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    initializeAuth();
   }, []);
 
   const fetchUserProfile = useCallback(async (userId: string) => {
@@ -308,6 +399,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     updateProfile,
     fetchUserProfile,
     updateOnboardingStatus,
+    refreshSession
   };
 
   return (

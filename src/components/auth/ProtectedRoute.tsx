@@ -9,19 +9,33 @@ type ProtectedRouteProps = {
 };
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading, isOnboardingComplete } = useAuth();
+  const { user, isLoading, isOnboardingComplete, refreshSession } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // If user is not authenticated after loading is complete, redirect to auth
+    // If session appears to be expired, try refreshing it
+    const checkAndRefreshSession = async () => {
+      if (!user && !isLoading) {
+        console.log('No user detected in protected route, attempting to refresh session');
+        await refreshSession();
+      }
+    };
+    
+    checkAndRefreshSession();
+  }, [refreshSession, user, isLoading]);
+
+  useEffect(() => {
+    // If user is still not authenticated after loading is complete and refresh attempt, redirect to auth
     if (!isLoading && !user) {
+      console.log('User not authenticated, redirecting to auth page');
       navigate('/auth', { state: { from: location }, replace: true });
     }
     
     // If user is authenticated but onboarding is not complete, redirect to onboarding
     // Only redirect if not already on the onboarding page
     if (!isLoading && user && isOnboardingComplete === false && !location.pathname.includes('/onboarding')) {
+      console.log('User authenticated but onboarding not complete, redirecting to onboarding');
       navigate('/onboarding', { replace: true });
     }
   }, [user, isLoading, isOnboardingComplete, location, navigate]);

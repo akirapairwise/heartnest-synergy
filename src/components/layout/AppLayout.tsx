@@ -8,42 +8,54 @@ import { Loader2 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 
 const AppLayout = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, refreshSession } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isPageReady, setIsPageReady] = useState(false);
   
-  // Check authentication status
+  // Check authentication status and refresh if needed
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        toast.error("Authentication required", {
-          description: "Please log in to continue"
-        });
-        navigate('/auth', { replace: true, state: { from: location.pathname } });
-      } else {
-        setIsPageReady(true);
-        
-        // Set up realtime listeners for relevant tables
-        const channel = supabase
-          .channel('schema-db-changes')
-          .on('postgres_changes', 
-            { event: '*', schema: 'public' }, 
-            (payload) => {
-              console.log('Database change detected:', payload);
-              // Specific components will handle their own refresh logic
-            }
-          )
-          .subscribe((status) => {
-            console.log('Realtime subscription status:', status);
-          });
+    const checkAuth = async () => {
+      if (!isLoading) {
+        if (!user) {
+          console.log('No user in AppLayout, attempting to refresh session');
+          await refreshSession();
           
-        return () => {
-          supabase.removeChannel(channel);
-        };
+          // If still no user after refresh, redirect to auth
+          if (!user) {
+            toast.error("Authentication required", {
+              description: "Please log in to continue"
+            });
+            navigate('/auth', { replace: true, state: { from: location.pathname } });
+          } else {
+            setIsPageReady(true);
+          }
+        } else {
+          setIsPageReady(true);
+          
+          // Set up realtime listeners for relevant tables
+          const channel = supabase
+            .channel('schema-db-changes')
+            .on('postgres_changes', 
+              { event: '*', schema: 'public' }, 
+              (payload) => {
+                console.log('Database change detected:', payload);
+                // Specific components will handle their own refresh logic
+              }
+            )
+            .subscribe((status) => {
+              console.log('Realtime subscription status:', status);
+            });
+            
+          return () => {
+            supabase.removeChannel(channel);
+          };
+        }
       }
-    }
-  }, [user, isLoading, navigate, location.pathname]);
+    };
+    
+    checkAuth();
+  }, [user, isLoading, navigate, location.pathname, refreshSession]);
 
   // Show loading when authenticating
   if (isLoading || !isPageReady) {

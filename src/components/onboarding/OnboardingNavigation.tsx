@@ -1,8 +1,19 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check, SkipForward } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, SkipForward, LogOut } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog";
+import { useAuth } from '@/contexts/AuthContext';
 
 interface OnboardingNavigationProps {
   currentStep: number;
@@ -24,11 +35,19 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
   onComplete
 }) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     await onComplete(e);
-    // Navigation is now handled directly in the handleComplete function in useOnboardingForm
+  };
+  
+  const handleCancelOnboarding = () => {
+    navigate('/auth');
+  };
+  
+  const handleSignOut = async () => {
+    await signOut();
   };
   
   return (
@@ -38,9 +57,40 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
       ) : (
-        <Button variant="outline" onClick={() => navigate('/auth')}>
-          Cancel
-        </Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              Cancel
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Cancel Onboarding</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to cancel the onboarding process? You can return later to complete your profile.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+              <DialogClose asChild>
+                <Button variant="outline" className="w-full sm:w-auto">Continue Onboarding</Button>
+              </DialogClose>
+              <Button 
+                variant="secondary" 
+                onClick={handleCancelOnboarding} 
+                className="w-full sm:w-auto"
+              >
+                Return to Login
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleSignOut}
+                className="w-full sm:w-auto flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" /> Sign Out
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
       
       <div className="flex gap-2">

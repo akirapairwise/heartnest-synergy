@@ -1,12 +1,15 @@
+
 import React from 'react';
-import { Home, Heart, Target, MessageSquare, Sparkles } from "lucide-react";
+import { Home, Heart, Target, MessageSquare, Sparkles, Menu } from "lucide-react";
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 export function Sidebar() {
   const { profile, signOut } = useAuth();
-  const partnerName = profile?.partner_name || 'No Partner';
+  const partnerName = profile?.full_name || 'No Partner';
 
   return (
     <aside className="hidden md:flex md:flex-col w-64 border-r h-[calc(100vh-4rem)] bg-background">
@@ -29,6 +32,35 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+  );
+}
+
+export function MobileSidebar() {
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle navigation menu</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="p-0">
+        <div className="flex flex-col h-full">
+          <div className="p-4 border-b">
+            <h2 className="text-lg font-semibold">HeartNest</h2>
+          </div>
+          <nav className="flex-1 p-4">
+            <ul className="space-y-1">
+              <NavItem href="/dashboard" icon={<Home className="h-4 w-4" />}>Dashboard</NavItem>
+              <NavItem href="/moods" icon={<Heart className="h-4 w-4" />}>Mood Tracker</NavItem>
+              <NavItem href="/goals" icon={<Target className="h-4 w-4" />}>Goals</NavItem>
+              <NavItem href="/check-ins" icon={<MessageSquare className="h-4 w-4" />}>Check-Ins</NavItem>
+              <NavItem href="/recommendations" icon={<Sparkles className="h-4 w-4" />}>Recommendations</NavItem>
+            </ul>
+          </nav>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 

@@ -14,14 +14,13 @@ export const fetchRecommendations = async (userId: string, category?: string): P
   let query = supabase
     .from('ai_recommendations')
     .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .eq('user_id', userId);
     
   if (category && category !== 'all') {
     query = query.eq('category', category);
   }
   
-  const { data, error } = await query;
+  const { data, error } = await query.order('created_at', { ascending: false });
   
   if (error) throw error;
   return (data || []) as Recommendation[];

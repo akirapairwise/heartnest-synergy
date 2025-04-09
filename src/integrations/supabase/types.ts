@@ -36,6 +36,45 @@ export type Database = {
         }
         Relationships: []
       }
+      conflicts: {
+        Row: {
+          ai_reflection: string | null
+          ai_resolution_plan: string | null
+          ai_summary: string | null
+          created_at: string
+          id: string
+          initiator_id: string
+          initiator_statement: string
+          resolved_at: string | null
+          responder_id: string
+          responder_statement: string | null
+        }
+        Insert: {
+          ai_reflection?: string | null
+          ai_resolution_plan?: string | null
+          ai_summary?: string | null
+          created_at?: string
+          id?: string
+          initiator_id: string
+          initiator_statement: string
+          resolved_at?: string | null
+          responder_id: string
+          responder_statement?: string | null
+        }
+        Update: {
+          ai_reflection?: string | null
+          ai_resolution_plan?: string | null
+          ai_summary?: string | null
+          created_at?: string
+          id?: string
+          initiator_id?: string
+          initiator_statement?: string
+          resolved_at?: string | null
+          responder_id?: string
+          responder_statement?: string | null
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           category: string | null

@@ -9,7 +9,7 @@ type ProtectedRouteProps = {
 };
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isOnboardingComplete } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -18,7 +18,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     if (!isLoading && !user) {
       navigate('/auth', { state: { from: location }, replace: true });
     }
-  }, [user, isLoading, location, navigate]);
+    
+    // If user is authenticated but onboarding is not complete, redirect to onboarding
+    // Only redirect if not already on the onboarding page
+    if (!isLoading && user && isOnboardingComplete === false && !location.pathname.includes('/onboarding')) {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [user, isLoading, isOnboardingComplete, location, navigate]);
 
   if (isLoading) {
     return (

@@ -114,6 +114,11 @@ const CheckInsPage = () => {
       return;
     }
     
+    if (!user) {
+      toast.error('You must be logged in to save a check-in');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -125,6 +130,7 @@ const CheckInsPage = () => {
             mood,
             reflection: reflection || null,
             satisfaction_rating: satisfactionRating,
+            user_id: user.id, // Add the user_id from the auth context
           },
         ]) as { error: any };
 

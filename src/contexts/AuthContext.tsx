@@ -69,7 +69,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           description: "Failed to fetch user profile.",
         });
       } else {
-        setProfile(data || null);
+        // Transform mood_settings to ensure it matches our expected type
+        const formattedProfile: Profile = {
+          ...data,
+          mood_settings: data.mood_settings ? 
+            {
+              showAvatar: data.mood_settings.showAvatar,
+              defaultMood: data.mood_settings.defaultMood
+            } : null
+        };
+        
+        setProfile(formattedProfile);
         setIsOnboardingComplete(data?.is_onboarding_complete ?? false);
       }
     } catch (error) {

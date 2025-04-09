@@ -25,11 +25,17 @@ export const usePartnerInvitations = () => {
         
       if (error) throw error;
       
-      setInvitations(data || []);
+      // Explicitly cast the data to ensure type compatibility
+      const typedData = data?.map(item => ({
+        ...item,
+        status: item.status as 'pending' | 'accepted' | 'rejected'
+      })) as PartnerInvitation[] || [];
+      
+      setInvitations(typedData);
       
       // Set the active invitation (most recent pending one)
-      if (data && data.length > 0) {
-        const pendingInvitation = data.find((inv: PartnerInvitation) => inv.status === 'pending');
+      if (typedData.length > 0) {
+        const pendingInvitation = typedData.find(inv => inv.status === 'pending');
         setActiveInvitation(pendingInvitation || null);
       } else {
         setActiveInvitation(null);
@@ -65,12 +71,13 @@ export const usePartnerInvitations = () => {
         return { error: new Error('Duplicate invitation') };
       }
       
-      // Create a new invitation
+      // Create a new invitation - note we don't provide invitation_code as it's generated server-side
       const { data, error } = await supabase
         .from('partner_invitations')
         .insert({
           sender_id: user.id,
-          recipient_email: recipientEmail
+          recipient_email: recipientEmail,
+          status: 'pending'
         })
         .select('*')
         .single();

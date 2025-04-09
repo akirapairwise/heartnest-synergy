@@ -38,15 +38,15 @@ const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
     return null;
   }
 
-  // If profile exists and onboarding is complete, redirect to dashboard
-  if (profile && isOnboardingComplete && mustBeIncomplete) {
+  // If mustBeIncomplete is true, then only allow access if onboarding is NOT complete
+  // If mustBeIncomplete is false, then only allow access if onboarding IS complete
+  if (mustBeIncomplete && isOnboardingComplete) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If mustBeIncomplete is true, then only allow access if onboarding is NOT complete
-  // If mustBeIncomplete is false, then only allow access if onboarding IS complete
-  if (mustBeIncomplete ? isOnboardingComplete : !isOnboardingComplete) {
-    return <Navigate to={isOnboardingComplete ? '/dashboard' : '/onboarding'} replace />;
+  // If onboarding is incomplete and we require it to be complete, redirect to onboarding
+  if (!mustBeIncomplete && !isOnboardingComplete) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
@@ -130,18 +131,23 @@ export const useOnboardingForm = (totalSteps: number) => {
     setIsLoading(true);
     
     try {
+      // Collect all relevant profile data from the form
       const profileData = {
+        location: formData.location,
+        bio: formData.bio,
         love_language: formData.love_language,
         communication_style: formData.communication_style,
         emotional_needs: formData.emotional_needs,
         relationship_goals: formData.relationship_goals,
         financial_attitude: formData.financial_attitude,
+        // Explicitly set the onboarding flag to true
         is_onboarding_complete: true
       };
       
+      // Update the profile with all collected data
       await updateProfile(profileData);
       
-      // Use Sonner toast for better visibility
+      // Show success toast
       toast.success("Profile completed!", {
         description: "Your profile has been set up. You're ready to start your relationship journey."
       });

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +12,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Loader2, UserPlus, UserX, Copy, Check, Link, Clock } from 'lucide-react';
+import { Loader2, UserPlus, UserX, Copy, Check, Link, Clock, RefreshCw } from 'lucide-react';
 import { usePartnerInvite } from '@/hooks/usePartnerInvite';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -29,7 +28,8 @@ const PartnerSettings = () => {
     activeInvite,
     createInvitation,
     unlinkPartner,
-    refreshInvites
+    refreshInvites,
+    regenerateToken
   } = usePartnerInvite();
   
   const hasPartner = Boolean(profile?.partner_id);
@@ -80,6 +80,10 @@ const PartnerSettings = () => {
     toast.success('Invitation link copied to clipboard');
     
     setTimeout(() => setCopied(false), 2000);
+  };
+  
+  const handleRegenerateToken = async () => {
+    await regenerateToken();
   };
   
   const getInviteExpiration = () => {
@@ -141,6 +145,21 @@ const PartnerSettings = () => {
                 <span>Expires in {getInviteExpiration()}</span>
               </div>
             )}
+            
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleRegenerateToken} 
+              disabled={isLoading}
+              className="gap-2"
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Regenerate Link
+            </Button>
           </div>
         </div>
       ) : (

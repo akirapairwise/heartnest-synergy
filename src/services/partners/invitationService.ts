@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
 import { PartnerInvite, InvitationResult, InvitationsResult } from "./types";
@@ -119,6 +118,54 @@ export const getUserInvitations = async (userId: string): Promise<InvitationsRes
     return { data: data as PartnerInvite[], error: null };
   } catch (error) {
     console.error('Error fetching partner invitations:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Regenerates an invitation token
+ * This will invalidate the old token and create a new one with a fresh expiration date
+ */
+export const regenerateToken = async (userId: string): Promise<InvitationResult> => {
+  try {
+    // First check if the user has an active invitation
+    const { data: existingInvites, error: fetchError } = await supabase
+      .from('partner_invites')
+      .select('*')
+      .eq('inviter_id', userId)
+      .eq('is_accepted', false)
+      .gt('expires_at', new Date().toISOString())
+      .limit(1);
+      
+    if (fetchError) throw fetchError;
+    
+    if (!existingInvites || existingInvites.length === 0) {
+      return { 
+        data: null, 
+        error: new Error('No active invitation found to regenerate') 
+      };
+    }
+    
+    // Generate a new token and expiration date
+    const newToken = generateToken();
+    const newExpiresAt = calculateExpirationDate();
+    
+    // Update the existing invitation with the new token and expiration
+    const { data, error: updateError } = await supabase
+      .from('partner_invites')
+      .update({
+        token: newToken,
+        expires_at: newExpiresAt
+      })
+      .eq('id', existingInvites[0].id)
+      .select()
+      .single();
+      
+    if (updateError) throw updateError;
+    
+    return { data: data as PartnerInvite, error: null };
+  } catch (error) {
+    console.error('Error regenerating invitation token:', error);
     return { data: null, error };
   }
 };

@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -128,6 +127,47 @@ export const usePartnerInvite = () => {
     }
   }, [user]);
   
+  /**
+   * Regenerates the token for an existing invitation
+   */
+  const regenerateToken = useCallback(async () => {
+    if (!user) {
+      toast.error('You must be logged in to regenerate an invitation');
+      return null;
+    }
+    
+    if (!activeInvite) {
+      toast.error('No active invitation to regenerate');
+      return null;
+    }
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await partnerService.regenerateToken(user.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        // Create the full invitation URL
+        const baseUrl = window.location.origin;
+        const url = `${baseUrl}/invite?token=${data.token}`;
+        setInviteUrl(url);
+        setActiveInvite(data);
+        toast.success('Invitation link regenerated successfully');
+        return url;
+      }
+      return null;
+    } catch (error: any) {
+      console.error('Error regenerating token:', error);
+      toast.error(error.message || 'Failed to regenerate invitation');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, activeInvite]);
+  
   // Load user invites on mount
   useEffect(() => {
     if (user) {
@@ -142,6 +182,7 @@ export const usePartnerInvite = () => {
     createInvitation,
     acceptInvitation,
     unlinkPartner,
+    regenerateToken,
     refreshInvites: loadUserInvites
   };
 };

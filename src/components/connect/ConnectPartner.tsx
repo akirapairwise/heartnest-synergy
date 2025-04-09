@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { Heart, UserPlus, Copy, Check, ArrowRight, AlertTriangle, Clock, Loader2 } from "lucide-react";
+import { Heart, UserPlus, Copy, Check, ArrowRight, AlertTriangle, Clock, Loader2, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePartnerInvite } from "@/hooks/usePartnerInvite";
 import { toast } from 'sonner';
@@ -21,7 +21,8 @@ const ConnectPartner = () => {
     inviteUrl,
     activeInvite,
     createInvitation,
-    acceptInvitation
+    acceptInvitation,
+    regenerateToken
   } = usePartnerInvite();
   
   const handleCopyInvite = () => {
@@ -72,6 +73,15 @@ const ConnectPartner = () => {
       }
     } catch (err: any) {
       setError(err.message || "Failed to create invitation");
+    }
+  };
+  
+  const handleRegenerateToken = async () => {
+    setError(null);
+    try {
+      await regenerateToken();
+    } catch (err: any) {
+      setError(err.message || "Failed to regenerate invitation");
     }
   };
   
@@ -135,6 +145,21 @@ const ConnectPartner = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 When your partner clicks this link, they'll be able to connect with you
               </p>
+              
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={handleRegenerateToken} 
+                disabled={isLoading}
+                className="gap-2 mt-3"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Regenerate Link
+              </Button>
             </div>
             
             <div className="space-y-2">

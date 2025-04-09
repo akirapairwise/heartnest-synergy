@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Loader2, UserPlus, UserX, Copy, Check, Link } from 'lucide-react';
+import { Loader2, UserPlus, UserX, Copy, Check, Link, Clock } from 'lucide-react';
 import { usePartnerInvite } from '@/hooks/usePartnerInvite';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -82,6 +82,17 @@ const PartnerSettings = () => {
     setTimeout(() => setCopied(false), 2000);
   };
   
+  const getInviteExpiration = () => {
+    if (!activeInvite?.expires_at) return null;
+    
+    const expiresAt = new Date(activeInvite.expires_at);
+    const now = new Date();
+    const diffTime = Math.abs(expiresAt.getTime() - now.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays === 1 ? '1 day' : `${diffDays} days`;
+  };
+  
   return (
     <div className="space-y-4">
       {hasPartner ? (
@@ -123,6 +134,13 @@ const PartnerSettings = () => {
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
+            
+            {getInviteExpiration() && (
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Clock className="h-4 w-4 mr-1" />
+                <span>Expires in {getInviteExpiration()}</span>
+              </div>
+            )}
           </div>
         </div>
       ) : (

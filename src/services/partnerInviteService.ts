@@ -9,6 +9,7 @@ export interface PartnerInvite {
   token: string;
   is_accepted: boolean;
   created_at: string;
+  expires_at: string;
   inviter_name?: string; // Optional field for frontend display
 }
 
@@ -34,15 +35,32 @@ export const createInvitation = async (user: User): Promise<{ data: PartnerInvit
       };
     }
     
+    // Delete existing non-accepted invitations from this user
+    const { error: deleteError } = await supabase
+      .from('partner_invites')
+      .delete()
+      .eq('inviter_id', user.id)
+      .eq('is_accepted', false)
+      .gt('expires_at', new Date().toISOString());
+      
+    if (deleteError) {
+      console.error('Error cleaning up old invitations:', deleteError);
+    }
+    
     // Generate a random token
     const token = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
+    
+    // Calculate expiration date (7 days from now)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
     
     // Create a new invite
     const { data, error } = await supabase
       .from('partner_invites')
       .insert({
         inviter_id: user.id,
-        token
+        token,
+        expires_at: expiresAt.toISOString()
       })
       .select()
       .single();
@@ -61,15 +79,21 @@ export const createInvitation = async (user: User): Promise<{ data: PartnerInvit
  */
 export const getInvitationByToken = async (token: string): Promise<{ data: PartnerInvite | null, error: any }> => {
   try {
-    // Get the invitation data
+    const now = new Date().toISOString();
+    
+    // Get the invitation data (must be valid and not expired)
     const { data: invite, error: inviteError } = await supabase
       .from('partner_invites')
       .select('*')
       .eq('token', token)
       .eq('is_accepted', false)
+      .gt('expires_at', now)
       .single();
       
-    if (inviteError) throw inviteError;
+    if (inviteError) {
+      console.error('Error fetching invitation:', inviteError);
+      return { data: null, error: inviteError };
+    }
     
     // If invite exists, get the inviter's name
     if (invite) {
@@ -90,7 +114,7 @@ export const getInvitationByToken = async (token: string): Promise<{ data: Partn
       return { data: invite as PartnerInvite, error: null };
     }
     
-    return { data: null, error: new Error('Invitation not found') };
+    return { data: null, error: new Error('Invitation not found or expired') };
   } catch (error) {
     console.error('Error fetching invitation:', error);
     return { data: null, error };
@@ -102,10 +126,14 @@ export const getInvitationByToken = async (token: string): Promise<{ data: Partn
  */
 export const getUserInvitations = async (userId: string): Promise<{ data: PartnerInvite[] | null, error: any }> => {
   try {
+    const now = new Date().toISOString();
+    
     const { data, error } = await supabase
       .from('partner_invites')
       .select('*')
       .eq('inviter_id', userId)
+      .eq('is_accepted', false)
+      .gt('expires_at', now)
       .order('created_at', { ascending: false });
       
     if (error) throw error;
@@ -129,7 +157,7 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
     
     if (fetchError || !invite) {
       console.error('Failed to find invitation:', fetchError || 'Invitation not found');
-      return { error: fetchError || new Error('Invitation not found or already accepted') };
+      return { error: fetchError || new Error('Invitation not found, expired, or already accepted') };
     }
     
     // Check that user isn't inviting themselves
@@ -234,6 +262,18 @@ export const unlinkPartner = async (userId: string, partnerId: string | null): P
       .eq('id', partnerId);
       
     if (unlinkPartnerError) throw unlinkPartnerError;
+    
+    // Optionally update shared resources (e.g., goals)
+    const { error: updateGoalsError } = await supabase
+      .from('goals')
+      .update({ is_shared: false })
+      .eq('owner_id', userId)
+      .eq('partner_id', partnerId);
+      
+    if (updateGoalsError) {
+      console.error('Error updating goals:', updateGoalsError);
+      // Non-critical error, continue
+    }
     
     return { error: null };
   } catch (error) {

@@ -5,9 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePartnerInvite } from '@/hooks/usePartnerInvite';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Heart, UserPlus, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { Loader2, Heart, UserPlus, CheckCircle, XCircle, ArrowRight, AlertTriangle } from 'lucide-react';
 import { getInvitationByToken } from '@/services/partnerInviteService';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const InvitePage = () => {
   const [searchParams] = useSearchParams();
@@ -45,14 +46,7 @@ const InvitePage = () => {
       if (error || !data) {
         console.error('Invalid token:', error);
         setStatus('invalid');
-        setErrorMessage(error?.message || 'This invitation link is invalid or has expired');
-        return;
-      }
-      
-      // Check if token is valid and not accepted
-      if (data.is_accepted) {
-        console.log('Token already accepted');
-        setStatus('accepted');
+        setErrorMessage(error?.message || 'This invitation link is invalid, expired, or has already been used');
         return;
       }
       
@@ -209,7 +203,7 @@ const InvitePage = () => {
             <div className="py-8">
               <XCircle className="h-16 w-16 text-red-500 mx-auto" />
               <p className="mt-4 text-muted-foreground">
-                {errorMessage || 'The invitation link you\'re trying to use is invalid or has already been used.'}
+                {errorMessage || 'The invitation link you\'re trying to use is invalid, expired, or has already been used.'}
               </p>
               <p className="mt-2 text-muted-foreground">
                 Please ask your partner to send you a new invitation.

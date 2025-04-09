@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { Heart, UserPlus, Copy, Check, ArrowRight, AlertTriangle } from "lucide-react";
+import { Heart, UserPlus, Copy, Check, ArrowRight, AlertTriangle, Clock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePartnerInvite } from "@/hooks/usePartnerInvite";
 import { toast } from 'sonner';
@@ -20,9 +20,9 @@ const ConnectPartner = () => {
   const {
     isLoading,
     inviteUrl,
+    activeInvite,
     createInvitation,
-    acceptInvitation,
-    activeInvite
+    acceptInvitation
   } = usePartnerInvite();
   
   const handleCopyInvite = () => {
@@ -81,6 +81,17 @@ const ConnectPartner = () => {
     navigate('/dashboard');
   };
   
+  const getInviteExpiration = () => {
+    if (!activeInvite?.expires_at) return null;
+    
+    const expiresAt = new Date(activeInvite.expires_at);
+    const now = new Date();
+    const diffTime = Math.abs(expiresAt.getTime() - now.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays === 1 ? '1 day' : `${diffDays} days`;
+  };
+  
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
@@ -116,7 +127,13 @@ const ConnectPartner = () => {
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              {getInviteExpiration() && (
+                <div className="flex items-center justify-center text-xs text-muted-foreground mt-2">
+                  <Clock className="h-3 w-3 mr-1" />
+                  <span>Expires in {getInviteExpiration()}</span>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
                 When your partner clicks this link, they'll be able to connect with you
               </p>
             </div>
@@ -152,7 +169,7 @@ const ConnectPartner = () => {
               >
                 {isLoading ? (
                   <>
-                    <span className="animate-spin">⚙️</span>
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Creating...
                   </>
                 ) : (
@@ -188,7 +205,7 @@ const ConnectPartner = () => {
                       className="gap-1"
                     >
                       {isLoading ? (
-                        <span className="animate-spin">⚙️</span>
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <ArrowRight className="h-4 w-4" />
                       )}

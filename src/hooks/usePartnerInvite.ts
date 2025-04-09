@@ -108,18 +108,13 @@ export const usePartnerInvite = () => {
       
       if (data && data.length > 0) {
         // Find the most recent active invite
-        const latestInvite = data.find(invite => !invite.is_accepted);
-        if (latestInvite) {
-          setActiveInvite(latestInvite);
-          
-          // Create the invite URL
-          const baseUrl = window.location.origin;
-          const url = `${baseUrl}/invite?token=${latestInvite.token}`;
-          setInviteUrl(url);
-        } else {
-          setActiveInvite(null);
-          setInviteUrl(null);
-        }
+        const latestInvite = data[0]; // Should already be filtered by expiration and acceptance
+        setActiveInvite(latestInvite);
+        
+        // Create the invite URL
+        const baseUrl = window.location.origin;
+        const url = `${baseUrl}/invite?token=${latestInvite.token}`;
+        setInviteUrl(url);
       } else {
         setActiveInvite(null);
         setInviteUrl(null);

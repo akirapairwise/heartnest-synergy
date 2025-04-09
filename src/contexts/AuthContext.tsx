@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
 type AuthContextType = {
   session: Session | null;
@@ -116,7 +117,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase
         .from('user_profiles')
-        .update({ is_onboarding_complete: isComplete, updated_at: new Date() })
+        .update({ 
+          is_onboarding_complete: isComplete, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', user.id);
         
       if (error) {

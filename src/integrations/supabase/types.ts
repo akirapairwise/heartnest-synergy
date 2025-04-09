@@ -109,9 +109,11 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          deadline: string | null
           description: string | null
           id: string
           is_shared: boolean
+          milestones: string[] | null
           owner_id: string
           partner_id: string | null
           status: string
@@ -121,9 +123,11 @@ export type Database = {
         Insert: {
           category?: string | null
           created_at?: string
+          deadline?: string | null
           description?: string | null
           id?: string
           is_shared?: boolean
+          milestones?: string[] | null
           owner_id: string
           partner_id?: string | null
           status?: string
@@ -133,9 +137,11 @@ export type Database = {
         Update: {
           category?: string | null
           created_at?: string
+          deadline?: string | null
           description?: string | null
           id?: string
           is_shared?: boolean
+          milestones?: string[] | null
           owner_id?: string
           partner_id?: string | null
           status?: string

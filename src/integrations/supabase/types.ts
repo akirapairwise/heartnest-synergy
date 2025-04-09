@@ -177,6 +177,39 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invitation_code: string
+          recipient_email: string
+          sender_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invitation_code: string
+          recipient_email: string
+          sender_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invitation_code?: string
+          recipient_email?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           bio: string | null
@@ -190,6 +223,7 @@ export type Database = {
           location: string | null
           love_language: string | null
           mood_settings: Json | null
+          partner_id: string | null
           relationship_goals: string | null
           updated_at: string
         }
@@ -205,6 +239,7 @@ export type Database = {
           location?: string | null
           love_language?: string | null
           mood_settings?: Json | null
+          partner_id?: string | null
           relationship_goals?: string | null
           updated_at?: string
         }
@@ -220,6 +255,7 @@ export type Database = {
           location?: string | null
           love_language?: string | null
           mood_settings?: Json | null
+          partner_id?: string | null
           relationship_goals?: string | null
           updated_at?: string
         }
@@ -230,7 +266,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invitation_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

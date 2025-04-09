@@ -2,24 +2,29 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
 import { Heart, UserPlus, Copy, Check, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePartnerInvitations } from "@/hooks/usePartnerInvitations";
 
 const ConnectPartner = () => {
   const [copied, setCopied] = useState(false);
   const [method, setMethod] = useState<'invite' | 'connect'>('invite');
-  const [isLoading, setIsLoading] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Mock invitation code
-  const inviteCode = "HEART-NEST-1234";
+  const {
+    activeInvitation,
+    isLoading,
+    sendInvitation,
+    acceptInvitation
+  } = usePartnerInvitations();
   
   const handleCopyInvite = () => {
-    navigator.clipboard.writeText(inviteCode);
+    navigator.clipboard.writeText(activeInvitation?.invitation_code || '');
     setCopied(true);
     toast({
       title: "Copied to clipboard!",
@@ -29,19 +34,32 @@ const ConnectPartner = () => {
     setTimeout(() => setCopied(false), 2000);
   };
   
-  const handleConnect = (e: React.FormEvent) => {
+  const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // Simulate connection process
-    setTimeout(() => {
-      setIsLoading(false);
+    const { error } = await acceptInvitation(inviteCode);
+    
+    if (!error) {
       toast({
         title: "Connection successful!",
         description: "You're now connected with your partner.",
       });
       navigate('/dashboard');
-    }, 1500);
+    }
+  };
+  
+  const handleInviteSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = (e.target as HTMLFormElement).email.value;
+    
+    const { error } = await sendInvitation(email);
+    
+    if (!error) {
+      toast({
+        title: "Invitation sent!",
+        description: "Share the code with your partner to complete the connection.",
+      });
+    }
   };
   
   const handleSkip = () => {
@@ -89,17 +107,39 @@ const ConnectPartner = () => {
         
         {method === 'invite' ? (
           <div className="space-y-4 animate-fade-in">
-            <div className="p-4 bg-muted rounded-lg text-center">
-              <p className="text-sm text-muted-foreground mb-2">Share this invitation code with your partner</p>
-              <div className="flex items-center justify-center space-x-2">
-                <div className="bg-background px-3 py-2 rounded border text-lg font-medium tracking-wider">
-                  {inviteCode}
+            {activeInvitation ? (
+              <div className="p-4 bg-muted rounded-lg text-center">
+                <p className="text-sm text-muted-foreground mb-2">Share this invitation code with your partner</p>
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="bg-background px-3 py-2 rounded border text-lg font-medium tracking-wider">
+                    {activeInvitation.invitation_code}
+                  </div>
+                  <Button size="sm" variant="outline" onClick={handleCopyInvite}>
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
                 </div>
-                <Button size="sm" variant="outline" onClick={handleCopyInvite}>
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
               </div>
-            </div>
+            ) : (
+              <form onSubmit={handleInviteSend} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Partner's Email</Label>
+                  <Input 
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="partner@example.com"
+                    required
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full btn-primary-gradient"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Sending..." : "Send Invitation"}
+                </Button>
+              </form>
+            )}
             
             <div className="space-y-2">
               <p className="text-sm text-center text-muted-foreground">Or share via</p>
@@ -128,7 +168,9 @@ const ConnectPartner = () => {
               <Label htmlFor="invite-code">Enter Invitation Code</Label>
               <Input 
                 id="invite-code" 
-                placeholder="e.g. HEART-NEST-1234" 
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                placeholder="e.g. ABCD-1234-EFGH" 
                 className="text-center uppercase tracking-wider"
               />
               <p className="text-xs text-muted-foreground text-center">
@@ -139,7 +181,7 @@ const ConnectPartner = () => {
             <Button 
               type="submit" 
               className="w-full btn-primary-gradient"
-              disabled={isLoading}
+              disabled={isLoading || !inviteCode}
             >
               {isLoading ? "Connecting..." : "Connect With Partner"}
               {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}

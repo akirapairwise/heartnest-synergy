@@ -18,6 +18,7 @@ import CheckInsPage from "./pages/CheckInsPage";
 import RecommendationsPage from "./pages/RecommendationsPage";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 import AppLayout from "./components/layout/AppLayout";
+import PartnerInvitationPage from "./pages/PartnerInvitationPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/invitation/:code" element={<PartnerInvitationPage />} />
           
           {/* Routes that require authentication and completed onboarding */}
           <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

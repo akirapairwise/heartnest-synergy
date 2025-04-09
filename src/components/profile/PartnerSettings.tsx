@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,55 +23,93 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Loader2, UserPlus, UserX } from 'lucide-react';
+import { Loader2, UserPlus, UserX, Copy, Check } from 'lucide-react';
+import { usePartnerInvitations } from '@/hooks/usePartnerInvitations';
+import { supabase } from '@/integrations/supabase/client';
 
 const PartnerSettings = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
   const [partnerEmail, setPartnerEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [partnerProfile, setPartnerProfile] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
+  const [activeInvitation, setActiveInvitation] = useState<any>(null);
   
-  // This is a placeholder for the actual partner data
-  // In a real app, you would fetch this from your Supabase database
+  const {
+    isLoading,
+    sendInvitation,
+    unlinkPartner,
+    fetchInvitations,
+    invitations
+  } = usePartnerInvitations();
+  
   const hasPartner = Boolean(profile?.partner_id);
+  
+  useEffect(() => {
+    if (user) {
+      fetchInvitations();
+      fetchPartnerProfile();
+    }
+  }, [user, profile?.partner_id]);
+  
+  const fetchPartnerProfile = async () => {
+    if (!profile?.partner_id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', profile.partner_id)
+        .single();
+        
+      if (error) throw error;
+      
+      setPartnerProfile(data);
+    } catch (error) {
+      console.error('Error fetching partner profile:', error);
+    }
+  };
+  
+  useEffect(() => {
+    // Get the most recent pending invitation
+    if (invitations && invitations.length > 0) {
+      const pending = invitations.find(inv => inv.status === 'pending');
+      setActiveInvitation(pending);
+    } else {
+      setActiveInvitation(null);
+    }
+  }, [invitations]);
   
   const handleInvitePartner = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    try {
-      // This is a placeholder for the actual invite logic
-      // In a real app, you would implement this using Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('Invitation sent to partner');
+    const { error } = await sendInvitation(partnerEmail);
+    
+    if (!error) {
       setIsInviteDialogOpen(false);
       setPartnerEmail('');
-    } catch (error) {
-      console.error('Error inviting partner:', error);
-      toast.error('Failed to send invitation');
-    } finally {
-      setIsLoading(false);
+      toast.success('Invitation sent to partner');
     }
   };
   
   const handleUnlinkPartner = async () => {
-    setIsLoading(true);
+    const { error } = await unlinkPartner();
     
-    try {
-      // This is a placeholder for the actual unlink logic
-      // In a real app, you would implement this using Supabase
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('Partner unlinked successfully');
+    if (!error) {
       setIsUnlinkDialogOpen(false);
-    } catch (error) {
-      console.error('Error unlinking partner:', error);
-      toast.error('Failed to unlink partner');
-    } finally {
-      setIsLoading(false);
+      setPartnerProfile(null);
     }
+  };
+  
+  const handleCopyInvite = () => {
+    if (!activeInvitation) return;
+    
+    navigator.clipboard.writeText(activeInvitation.invitation_code);
+    setCopied(true);
+    toast.success('Invitation code copied to clipboard');
+    
+    setTimeout(() => setCopied(false), 2000);
   };
   
   return (
@@ -81,8 +119,10 @@ const PartnerSettings = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Connected Partner</p>
-              <p className="font-medium">Partner Name</p>
-              <p className="text-sm text-muted-foreground">partner@example.com</p>
+              <p className="font-medium">{partnerProfile?.full_name || 'Partner'}</p>
+              {partnerProfile?.location && (
+                <p className="text-sm text-muted-foreground">{partnerProfile.location}</p>
+              )}
             </div>
             <Button 
               variant="outline" 
@@ -92,6 +132,27 @@ const PartnerSettings = () => {
               <UserX className="h-4 w-4" />
               Unlink Partner
             </Button>
+          </div>
+        </div>
+      ) : activeInvitation ? (
+        <div className="p-4 rounded-lg border">
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Pending Invitation</p>
+              <p className="font-medium">You've invited {activeInvitation.recipient_email}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Share this code with your partner
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="bg-muted p-2 rounded font-mono">
+                {activeInvitation.invitation_code}
+              </div>
+              <Button size="sm" variant="outline" onClick={handleCopyInvite}>
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
         </div>
       ) : (

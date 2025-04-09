@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { Sparkles, ArrowLeft, ArrowRight, Check, SkipForward } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import Step1BasicInfo from './steps/Step1BasicInfo';
 import Step2Communication from './steps/Step2Communication';
@@ -18,6 +18,7 @@ const OnboardingForm = () => {
   const [step, setStep] = useState(1);
   const [progress, setProgress] = useState(20);
   const [isLoading, setIsLoading] = useState(false);
+  const [skippedSteps, setSkippedSteps] = useState<number[]>([]);
   const [formData, setFormData] = useState({
     location: "",
     bio: "",
@@ -90,6 +91,24 @@ const OnboardingForm = () => {
     }
   };
 
+  const skipStep = () => {
+    // Mark current step as skipped if it's not already in the skipped steps array
+    if (!skippedSteps.includes(step)) {
+      setSkippedSteps([...skippedSteps, step]);
+    }
+    
+    // Move to the next step
+    if (step < totalSteps) {
+      setStep(step + 1);
+      window.scrollTo(0, 0);
+    }
+    
+    toast({
+      title: "Step skipped",
+      description: "You can always come back to complete this step later.",
+    });
+  };
+
   const goToStep = (stepNumber: number) => {
     if (stepNumber >= 1 && stepNumber <= totalSteps) {
       setStep(stepNumber);
@@ -130,6 +149,11 @@ const OnboardingForm = () => {
       setIsLoading(false);
     }
   };
+
+  // Function to check if a step is skipped
+  const isStepSkipped = (stepNumber: number) => {
+    return skippedSteps.includes(stepNumber);
+  };
   
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -147,10 +171,11 @@ const OnboardingForm = () => {
                 onClick={() => goToStep(i + 1)}
                 className={`px-2 py-1 rounded transition-all ${
                   i + 1 === step ? 'text-primary font-medium' : 
+                  isStepSkipped(i + 1) ? 'text-amber-500' :
                   i + 1 < step ? 'text-muted-foreground' : 'text-muted'
                 }`}
               >
-                Step {i + 1}
+                Step {i + 1} {isStepSkipped(i + 1) && '(Skipped)'}
               </button>
             ))}
           </div>
@@ -210,23 +235,31 @@ const OnboardingForm = () => {
           </Button>
         )}
         
-        {step < totalSteps ? (
-          <Button className="btn-primary-gradient" onClick={nextStep}>
-            Continue <ArrowRight className="ml-1 h-4 w-4" />
-          </Button>
-        ) : (
-          <Button 
-            className="btn-primary-gradient" 
-            onClick={handleComplete}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>Setting up...</>
-            ) : (
-              <>Complete Profile <Check className="ml-1 h-4 w-4" /></>
-            )}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {step < totalSteps && (
+            <Button variant="outline" onClick={skipStep} className="flex items-center gap-2">
+              Skip <SkipForward className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {step < totalSteps ? (
+            <Button className="btn-primary-gradient" onClick={nextStep}>
+              Continue <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button 
+              className="btn-primary-gradient" 
+              onClick={handleComplete}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>Setting up...</>
+              ) : (
+                <>Complete Profile <Check className="ml-1 h-4 w-4" /></>
+              )}
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

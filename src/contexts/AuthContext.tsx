@@ -5,15 +5,31 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
+type Profile = {
+  id: string;
+  user_id: string;
+  partner_id: string | null;
+  is_onboarding_complete: boolean;
+  love_language: string | null;
+  communication_style: string | null;
+  emotional_needs: string | null;
+  relationship_goals: string | null;
+  financial_attitude: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type AuthContextType = {
   session: Session | null;
   user: User | null;
+  profile: Profile | null;
   isLoading: boolean;
   isOnboardingComplete: boolean | null;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
   updateOnboardingStatus: (isComplete: boolean) => Promise<void>;
+  updateProfile: (data: Partial<Profile>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean | null>(null);
   const navigate = useNavigate();
@@ -32,12 +49,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         
-        // After setting auth state, check onboarding status
+        // After setting auth state, check profile and onboarding status
         if (session?.user) {
           setTimeout(() => {
-            checkOnboardingStatus(session.user.id);
+            fetchUserProfile(session.user.id);
           }, 0);
         } else {
+          setProfile(null);
           setIsOnboardingComplete(null);
         }
       }
@@ -49,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkOnboardingStatus(session.user.id);
+        fetchUserProfile(session.user.id);
       } else {
         setIsLoading(false);
       }
@@ -58,22 +76,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const checkOnboardingStatus = async (userId: string) => {
+  const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('is_onboarding_complete')
-        .eq('id', userId)
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
         .single();
 
       if (error) {
-        console.error('Error fetching onboarding status:', error);
+        console.error('Error fetching user profile:', error);
+        setProfile(null);
         setIsOnboardingComplete(false);
       } else {
+        setProfile(data as Profile);
         setIsOnboardingComplete(data?.is_onboarding_complete || false);
       }
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      console.error('Error fetching user profile:', error);
+      setProfile(null);
       setIsOnboardingComplete(false);
     } finally {
       setIsLoading(false);
@@ -116,20 +137,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const { error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({ 
           is_onboarding_complete: isComplete, 
           updated_at: new Date().toISOString() 
         })
-        .eq('id', user.id);
+        .eq('user_id', user.id);
         
       if (error) {
         console.error('Error updating onboarding status:', error);
       } else {
         setIsOnboardingComplete(isComplete);
+        if (profile) {
+          setProfile({
+            ...profile,
+            is_onboarding_complete: isComplete,
+            updated_at: new Date().toISOString()
+          });
+        }
       }
     } catch (error) {
       console.error('Error updating onboarding status:', error);
+    }
+  };
+
+  const updateProfile = async (data: Partial<Profile>) => {
+    if (!user || !profile) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          ...data,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+        
+      if (error) {
+        console.error('Error updating profile:', error);
+      } else {
+        setProfile({
+          ...profile,
+          ...data,
+          updated_at: new Date().toISOString()
+        });
+        
+        // Update onboarding status if it's included in the update
+        if (data.is_onboarding_complete !== undefined) {
+          setIsOnboardingComplete(data.is_onboarding_complete);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
     }
   };
 
@@ -138,12 +197,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         session,
         user,
+        profile,
         isLoading,
         isOnboardingComplete,
         signIn,
         signUp,
         signOut,
         updateOnboardingStatus,
+        updateProfile,
       }}
     >
       {children}

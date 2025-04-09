@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +15,24 @@ import { useAuth } from '@/contexts/AuthContext';
 const OnboardingForm = () => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    love_language: "",
+    communication_style: "",
+    emotional_needs: "",
+    relationship_goals: "",
+    financial_attitude: ""
+  });
+  
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { updateOnboardingStatus } = useAuth();
+  const { updateProfile } = useAuth();
+  
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
   
   const nextStep = () => {
     setStep(step + 1);
@@ -31,7 +47,10 @@ const OnboardingForm = () => {
     setIsLoading(true);
     
     try {
-      await updateOnboardingStatus(true);
+      await updateProfile({
+        ...formData,
+        is_onboarding_complete: true
+      });
       
       toast({
         title: "Profile completed!",
@@ -40,7 +59,7 @@ const OnboardingForm = () => {
       
       navigate('/connect');
     } catch (error) {
-      console.error('Error updating onboarding status:', error);
+      console.error('Error updating profile:', error);
       toast({
         title: "Error",
         description: "There was a problem saving your profile. Please try again.",
@@ -127,7 +146,7 @@ const OnboardingForm = () => {
             
             <div className="space-y-2">
               <Label htmlFor="communication-style">Communication Style</Label>
-              <Select>
+              <Select onValueChange={(value) => handleChange("communication_style", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -142,7 +161,7 @@ const OnboardingForm = () => {
             
             <div className="space-y-2">
               <Label htmlFor="love-languages">Primary Love Language</Label>
-              <Select>
+              <Select onValueChange={(value) => handleChange("love_language", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -161,6 +180,7 @@ const OnboardingForm = () => {
               <Textarea 
                 id="goals" 
                 placeholder="What are you hoping to improve or achieve in your relationship?" 
+                onChange={(e) => handleChange("relationship_goals", e.target.value)}
               />
             </div>
           </div>
@@ -171,11 +191,27 @@ const OnboardingForm = () => {
             <h3 className="text-lg font-medium">Personalize Your Experience</h3>
             
             <div className="space-y-2">
-              <Label htmlFor="interests">Your Interests & Hobbies</Label>
+              <Label htmlFor="emotional-needs">Your Emotional Needs</Label>
               <Textarea 
-                id="interests" 
-                placeholder="What do you enjoy doing in your free time?" 
+                id="emotional-needs" 
+                placeholder="What emotional support do you need in a relationship?" 
+                onChange={(e) => handleChange("emotional_needs", e.target.value)}
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="financial-attitude">Financial Attitude</Label>
+              <Select onValueChange={(value) => handleChange("financial_attitude", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="saver">Saver</SelectItem>
+                  <SelectItem value="spender">Spender</SelectItem>
+                  <SelectItem value="investor">Investor</SelectItem>
+                  <SelectItem value="balanced">Balanced approach</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="space-y-4">

@@ -52,9 +52,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      setIsLoading(true);
       const { profile, isOnboardingComplete, error } = await authService.fetchUserProfile(userId);
       
       if (error) {
+        console.error('Error fetching user profile:', error);
         setProfile(null);
         setIsOnboardingComplete(false);
       } else {
@@ -132,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signOut,
         updateOnboardingStatus,
         updateProfile,
+        fetchUserProfile,
       }}
     >
       {children}

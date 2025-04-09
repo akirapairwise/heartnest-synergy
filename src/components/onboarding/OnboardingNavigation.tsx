@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check, SkipForward, LogOut } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, SkipForward, LogOut, Loader2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { 
   Dialog,
@@ -53,13 +53,13 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
   return (
     <div className="flex justify-between p-4">
       {currentStep > 1 ? (
-        <Button variant="outline" onClick={onPrev} className="flex items-center gap-2">
+        <Button variant="outline" onClick={onPrev} className="flex items-center gap-2" disabled={isLoading}>
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
       ) : (
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">
+            <Button variant="outline" disabled={isLoading}>
               Cancel
             </Button>
           </DialogTrigger>
@@ -95,13 +95,13 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
       
       <div className="flex gap-2">
         {currentStep < totalSteps && (
-          <Button variant="outline" onClick={onSkip} className="flex items-center gap-2">
+          <Button variant="outline" onClick={onSkip} className="flex items-center gap-2" disabled={isLoading}>
             Skip <SkipForward className="h-4 w-4" />
           </Button>
         )}
         
         {currentStep < totalSteps ? (
-          <Button className="btn-primary-gradient" onClick={onNext}>
+          <Button className="btn-primary-gradient" onClick={onNext} disabled={isLoading}>
             Continue <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         ) : (
@@ -111,9 +111,14 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
             disabled={isLoading}
           >
             {isLoading ? (
-              <>Setting up...</>
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Setting up...
+              </span>
             ) : (
-              <>Complete Profile <Check className="ml-1 h-4 w-4" /></>
+              <span className="flex items-center">
+                Complete Profile <Check className="ml-1 h-4 w-4" />
+              </span>
             )}
           </Button>
         )}

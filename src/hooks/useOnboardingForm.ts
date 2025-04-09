@@ -46,7 +46,7 @@ export const useOnboardingForm = (totalSteps: number) => {
   
   const { toast: useToastHook } = useToast();
   const navigate = useNavigate();
-  const { updateProfile } = useAuth();
+  const { updateProfile, fetchUserProfile, user } = useAuth();
   
   useEffect(() => {
     // Update progress based on current step
@@ -147,13 +147,32 @@ export const useOnboardingForm = (totalSteps: number) => {
       // Update the profile with all collected data
       await updateProfile(profileData);
       
-      // Show success toast
+      // Show success toast with longer duration
       toast.success("Profile completed!", {
-        description: "Your profile has been set up. You're ready to start your relationship journey."
+        description: "Your profile has been set up. Redirecting to your dashboard...",
+        duration: 3000
       });
       
-      // Explicitly navigate to dashboard after successful profile update
-      navigate('/dashboard', { replace: true });
+      // Refetch the user profile to confirm the update
+      if (user) {
+        try {
+          await fetchUserProfile(user.id);
+          // After successful refetch, redirect to dashboard
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 800); // Short delay for toast to be visible
+        } catch (fetchError) {
+          console.error('Error refetching profile after update:', fetchError);
+          useToastHook({
+            title: "Profile Update Issue",
+            description: "Your profile was updated but we couldn't verify it. Please refresh the page.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Fallback if user is not available
+        navigate('/dashboard', { replace: true });
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
       useToastHook({

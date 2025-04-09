@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import OnboardingForm from '@/components/onboarding/OnboardingForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "sonner";
+import { Loader2 } from 'lucide-react';
 
 const OnboardingPage = () => {
-  const { isOnboardingComplete, profile, isLoading } = useAuth();
+  const { isOnboardingComplete, profile, isLoading, user } = useAuth();
   const navigate = useNavigate();
   
   // Add effect to handle redirection when onboarding is completed
@@ -16,24 +17,28 @@ const OnboardingPage = () => {
       if (isOnboardingComplete) {
         toast.success("Onboarding already completed! Redirecting to dashboard.");
         navigate('/dashboard', { replace: true });
+      } else if (!user) {
+        // If no user is found, redirect to auth page
+        toast.error("Authentication required. Please log in.");
+        navigate('/auth', { replace: true });
       }
     }
-  }, [isOnboardingComplete, isLoading, navigate]);
+  }, [isOnboardingComplete, isLoading, navigate, user]);
 
   // Don't render the form until we know the user needs to complete onboarding
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-love-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <Loader2 className="h-8 w-8 text-love-500 animate-spin mx-auto mb-4" />
           <p className="text-harmony-700">Loading your profile...</p>
         </div>
       </div>
     );
   }
 
-  // If onboarding is already complete, don't render anything (handled by useEffect)
-  if (isOnboardingComplete) {
+  // If onboarding is already complete or no user is found, don't render anything (handled by useEffect)
+  if (isOnboardingComplete || !user) {
     return null;
   }
 

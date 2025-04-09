@@ -27,4 +27,5 @@ export type AuthContextType = {
   signOut: () => Promise<void>;
   updateOnboardingStatus: (isComplete: boolean) => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
+  fetchUserProfile: (userId: string) => Promise<void>;
 };

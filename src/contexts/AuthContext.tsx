@@ -100,10 +100,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
     }
+    
+    return { error };
   };
 
   const updateProfile = async (data: Partial<Profile>) => {
-    if (!user || !profile) return;
+    if (!user || !profile) {
+      return { error: new Error("User not authenticated or profile not loaded") };
+    }
     
     const { error } = await authService.updateProfile(user.id, data);
     
@@ -119,6 +123,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsOnboardingComplete(data.is_onboarding_complete);
       }
     }
+    
+    return { error };
   };
 
   return (

@@ -4,6 +4,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export type OnboardingFormData = {
   location: string;
@@ -131,6 +132,18 @@ export const useOnboardingForm = (totalSteps: number) => {
     setIsLoading(true);
     
     try {
+      // Verify user is authenticated before proceeding
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (!currentUser) {
+        toast.error("Authentication error", {
+          description: "You must be logged in to complete your profile.",
+          duration: 3000
+        });
+        navigate('/auth', { replace: true });
+        return;
+      }
+      
       // Collect all relevant profile data from the form
       const profileData = {
         location: formData.location,
@@ -145,7 +158,11 @@ export const useOnboardingForm = (totalSteps: number) => {
       };
       
       // Update the profile with all collected data
-      await updateProfile(profileData);
+      const updateResult = await updateProfile(profileData);
+      
+      if (updateResult?.error) {
+        throw new Error(updateResult.error.message || "Failed to update profile");
+      }
       
       // Show success toast with longer duration
       toast.success("Profile completed!", {
@@ -155,10 +172,33 @@ export const useOnboardingForm = (totalSteps: number) => {
       
       // Refetch the user profile to confirm the update
       if (user) {
-        await fetchUserProfile(user.id);
-        // After successful refetch, redirect to dashboard
-        // Use replace:true to prevent back navigation to onboarding
-        navigate('/dashboard', { replace: true });
+        try {
+          await fetchUserProfile(user.id);
+          
+          // Verify that is_onboarding_complete is actually true after fetching
+          const { data: profileCheck, error: profileCheckError } = await supabase
+            .from('user_profiles')
+            .select('is_onboarding_complete')
+            .eq('id', user.id)
+            .single();
+            
+          if (profileCheckError) {
+            console.error('Error verifying profile update:', profileCheckError);
+          } else if (!profileCheck?.is_onboarding_complete) {
+            console.warn('Profile update may not have been saved correctly');
+          }
+          
+          // After successful verification, redirect to dashboard
+          navigate('/dashboard', { replace: true });
+        } catch (fetchError) {
+          console.error('Error refetching profile after update:', fetchError);
+          // Even if verification fails, still redirect to dashboard but show a warning
+          toast.warning("Profile updated", { 
+            description: "Redirecting to dashboard, but please refresh if you encounter any issues.",
+            duration: 4000
+          });
+          navigate('/dashboard', { replace: true });
+        }
       } else {
         // Fallback if user is not available
         navigate('/dashboard', { replace: true });
@@ -167,7 +207,7 @@ export const useOnboardingForm = (totalSteps: number) => {
       console.error('Error updating profile:', error);
       useToastHook({
         title: "Error",
-        description: "There was a problem saving your profile. Please try again.",
+        description: error instanceof Error ? error.message : "There was a problem saving your profile. Please try again.",
         variant: "destructive",
       });
     } finally {

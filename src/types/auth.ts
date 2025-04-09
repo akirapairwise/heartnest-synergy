@@ -14,6 +14,8 @@ export type Profile = {
   full_name: string | null;
   created_at: string;
   updated_at: string;
+  location?: string | null;
+  bio?: string | null;
 };
 
 export type AuthContextType = {
@@ -25,7 +27,7 @@ export type AuthContextType = {
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
-  updateOnboardingStatus: (isComplete: boolean) => Promise<void>;
-  updateProfile: (data: Partial<Profile>) => Promise<void>;
+  updateOnboardingStatus: (isComplete: boolean) => Promise<{ error: any | null } | undefined>;
+  updateProfile: (data: Partial<Profile>) => Promise<{ error: any | null } | undefined>;
   fetchUserProfile: (userId: string) => Promise<void>;
 };

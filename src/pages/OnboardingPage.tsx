@@ -5,10 +5,35 @@ import OnboardingForm from '@/components/onboarding/OnboardingForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "sonner";
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const OnboardingPage = () => {
-  const { isOnboardingComplete, profile, isLoading, user } = useAuth();
+  const { isOnboardingComplete, profile, isLoading, user, fetchUserProfile } = useAuth();
   const navigate = useNavigate();
+  
+  // Verify authentication and check onboarding status
+  useEffect(() => {
+    async function checkAuth() {
+      // Verify current auth state directly from Supabase
+      const { data: { user: currentUser }, error } = await supabase.auth.getUser();
+      
+      if (error || !currentUser) {
+        toast.error("Authentication required", { 
+          description: "Please log in to continue.",
+          duration: 3000
+        });
+        navigate('/auth', { replace: true });
+        return;
+      }
+      
+      // If we have a user but no profile data, try to fetch it
+      if (currentUser && !profile && !isLoading) {
+        await fetchUserProfile(currentUser.id);
+      }
+    }
+    
+    checkAuth();
+  }, [user, profile, navigate, fetchUserProfile, isLoading]);
   
   // Add effect to handle redirection when onboarding is completed
   useEffect(() => {

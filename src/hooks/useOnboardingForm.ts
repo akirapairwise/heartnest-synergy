@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -22,6 +22,7 @@ export type OnboardingFormData = {
 };
 
 export const useOnboardingForm = (totalSteps: number) => {
+  
   const [step, setStep] = useState(1);
   const [progress, setProgress] = useState(20);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +43,7 @@ export const useOnboardingForm = (totalSteps: number) => {
     ai_consent: true
   });
   
-  const { toast } = useToast();
+  const { toast: useToastHook } = useToast();
   const navigate = useNavigate();
   const { updateProfile } = useAuth();
   
@@ -60,6 +61,7 @@ export const useOnboardingForm = (totalSteps: number) => {
   };
   
   const handleNestedChange = (parentField: string, field: string, value: any) => {
+    
     setFormData(prev => {
       // Ensure the parent field exists and is an object before spreading it
       const parentValue = prev[parentField as keyof typeof prev] || {};
@@ -98,6 +100,7 @@ export const useOnboardingForm = (totalSteps: number) => {
   };
 
   const skipStep = () => {
+    
     // Mark current step as skipped if it's not already in the skipped steps array
     if (!skippedSteps.includes(step)) {
       setSkippedSteps([...skippedSteps, step]);
@@ -109,7 +112,7 @@ export const useOnboardingForm = (totalSteps: number) => {
       window.scrollTo(0, 0);
     }
     
-    toast({
+    useToastHook({
       title: "Step skipped",
       description: "You can always come back to complete this step later.",
     });
@@ -138,15 +141,15 @@ export const useOnboardingForm = (totalSteps: number) => {
       
       await updateProfile(profileData);
       
-      toast({
-        title: "Profile completed!",
-        description: "Your profile has been set up. You're ready to start your relationship journey.",
+      // Use Sonner toast for better visibility
+      toast.success("Profile completed!", {
+        description: "Your profile has been set up. You're ready to start your relationship journey."
       });
       
-      navigate('/dashboard');
+      // Note: We don't need to navigate here as it will be handled by the OnboardingPage useEffect
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast({
+      useToastHook({
         title: "Error",
         description: "There was a problem saving your profile. Please try again.",
         variant: "destructive",

@@ -25,6 +25,12 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
 }) => {
   const navigate = useNavigate();
   
+  const handleComplete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onComplete(e);
+    // Note: We don't need navigation here as it's handled by the AuthContext through useEffect in OnboardingPage
+  };
+  
   return (
     <div className="flex justify-between p-4">
       {currentStep > 1 ? (
@@ -51,7 +57,7 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
         ) : (
           <Button 
             className="btn-primary-gradient" 
-            onClick={onComplete}
+            onClick={handleComplete}
             disabled={isLoading}
           >
             {isLoading ? (

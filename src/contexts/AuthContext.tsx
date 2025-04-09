@@ -3,34 +3,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
-
-type Profile = {
-  id: string;
-  user_id: string;
-  partner_id: string | null;
-  is_onboarding_complete: boolean;
-  love_language: string | null;
-  communication_style: string | null;
-  emotional_needs: string | null;
-  relationship_goals: string | null;
-  financial_attitude: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-type AuthContextType = {
-  session: Session | null;
-  user: User | null;
-  profile: Profile | null;
-  isLoading: boolean;
-  isOnboardingComplete: boolean | null;
-  signIn: (email: string, password: string) => Promise<{ error: any | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any | null }>;
-  signOut: () => Promise<void>;
-  updateOnboardingStatus: (isComplete: boolean) => Promise<void>;
-  updateProfile: (data: Partial<Profile>) => Promise<void>;
-};
+import { AuthContextType, Profile } from '@/types/auth';
+import * as authService from '@/services/authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -78,19 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
+      const { profile, isOnboardingComplete, error } = await authService.fetchUserProfile(userId);
+      
       if (error) {
-        console.error('Error fetching user profile:', error);
         setProfile(null);
         setIsOnboardingComplete(false);
       } else {
-        setProfile(data as Profile);
-        setIsOnboardingComplete(data?.is_onboarding_complete || false);
+        setProfile(profile);
+        setIsOnboardingComplete(isOnboardingComplete);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -102,93 +71,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      return { error };
-    } catch (error) {
-      return { error };
-    }
+    return await authService.signIn(email, password);
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-      return { error };
-    } catch (error) {
-      return { error };
-    }
+    return await authService.signUp(email, password, fullName);
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await authService.signOut();
     navigate('/auth');
   };
 
   const updateOnboardingStatus = async (isComplete: boolean) => {
     if (!user) return;
     
-    try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ 
-          is_onboarding_complete: isComplete, 
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', user.id);
-        
-      if (error) {
-        console.error('Error updating onboarding status:', error);
-      } else {
-        setIsOnboardingComplete(isComplete);
-        if (profile) {
-          setProfile({
-            ...profile,
-            is_onboarding_complete: isComplete,
-            updated_at: new Date().toISOString()
-          });
-        }
+    const { error } = await authService.updateOnboardingStatus(user.id, isComplete);
+    
+    if (!error) {
+      setIsOnboardingComplete(isComplete);
+      if (profile) {
+        setProfile({
+          ...profile,
+          is_onboarding_complete: isComplete,
+          updated_at: new Date().toISOString()
+        });
       }
-    } catch (error) {
-      console.error('Error updating onboarding status:', error);
     }
   };
 
   const updateProfile = async (data: Partial<Profile>) => {
     if (!user || !profile) return;
     
-    try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          ...data,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-        
-      if (error) {
-        console.error('Error updating profile:', error);
-      } else {
-        setProfile({
-          ...profile,
-          ...data,
-          updated_at: new Date().toISOString()
-        });
-        
-        // Update onboarding status if it's included in the update
-        if (data.is_onboarding_complete !== undefined) {
-          setIsOnboardingComplete(data.is_onboarding_complete);
-        }
+    const { error } = await authService.updateProfile(user.id, data);
+    
+    if (!error) {
+      setProfile({
+        ...profile,
+        ...data,
+        updated_at: new Date().toISOString()
+      });
+      
+      // Update onboarding status if it's included in the update
+      if (data.is_onboarding_complete !== undefined) {
+        setIsOnboardingComplete(data.is_onboarding_complete);
       }
-    } catch (error) {
-      console.error('Error updating profile:', error);
     }
   };
 

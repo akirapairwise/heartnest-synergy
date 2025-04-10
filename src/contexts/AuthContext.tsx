@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -165,9 +166,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       console.log('Fetching user profile for:', userId);
       
-      // Use the security definer RPC function to avoid RLS recursion issues
+      // Directly query user_profiles table instead of using RPC
       const { data, error } = await supabase
-        .rpc('get_profile_by_user_id', { user_id: userId })
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
         .maybeSingle();
 
       if (error) {
@@ -197,7 +200,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (createError.code === '23505') {
               console.log('Profile might have been created in parallel, trying to fetch again');
               const { data: retryData, error: retryError } = await supabase
-                .rpc('get_profile_by_user_id', { user_id: userId })
+                .from('user_profiles')
+                .select('*')
+                .eq('id', userId)
                 .maybeSingle();
                 
               if (retryError) {
@@ -218,7 +223,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } else {
             console.log('Profile created successfully, fetching it');
             const { data: newData, error: newFetchError } = await supabase
-              .rpc('get_profile_by_user_id', { user_id: userId })
+              .from('user_profiles')
+              .select('*')
+              .eq('id', userId)
               .maybeSingle();
               
             if (newFetchError) {
@@ -289,7 +296,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             console.log('Profile already exists (duplicate key), trying to fetch again');
             // If it's a duplicate key error, try fetching once more
             const { data: retryData, error: retryError } = await supabase
-              .rpc('get_profile_by_user_id', { user_id: userId })
+              .from('user_profiles')
+              .select('*')
+              .eq('id', userId)
               .maybeSingle();
               
             if (retryError) {
@@ -305,7 +314,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           // Fetch the newly created profile
           const { data: newData, error: newFetchError } = await supabase
-            .rpc('get_profile_by_user_id', { user_id: userId })
+            .from('user_profiles')
+            .select('*')
+            .eq('id', userId)
             .maybeSingle();
             
           if (newFetchError) {
@@ -313,8 +324,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return;
           }
           
-          setProfile(newData as Profile);
-          setIsOnboardingComplete(newData?.is_onboarding_complete ?? false);
+          if (newData) {
+            setProfile(newData as Profile);
+            setIsOnboardingComplete(newData?.is_onboarding_complete ?? false);
+          }
         }
       }
     } catch (error) {

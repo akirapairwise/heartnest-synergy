@@ -33,60 +33,54 @@ const ProfileChecker = ({ onError }: ProfileCheckerProps) => {
         console.log('Checking if profile exists for user:', user.id);
         setIsInitializing(true);
         
-        // Try to directly fetch the profile using our security definer function
-        const { data: profile, error: profileError } = await supabase
-          .rpc('get_profile_by_user_id', { user_id: user.id })
+        // Try to directly fetch the profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
           .maybeSingle();
           
         if (profileError) {
           console.error('Error checking profile existence:', profileError);
           
-          // If there's a specific error that indicates profile might not exist
-          if (profileError.code === 'PGRST116') { // No results found error
-            console.log('No profile found via RPC, attempting to create one');
+          // Create a basic profile with minimal required fields
+          const { error: insertError } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: user.id,
+              is_onboarding_complete: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+              
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
             
-            // Create a basic profile with minimal required fields
-            const { error: insertError } = await supabase
-              .from('user_profiles')
-              .insert({
-                id: user.id,
-                is_onboarding_complete: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-              
-            if (insertError) {
-              console.error('Error creating profile:', insertError);
-              
-              // Special handling for duplicate key errors (profile already exists)
-              if (insertError.code === '23505') {
-                console.log('Profile already exists (created by trigger), fetching it instead');
-                
-                // Refresh the profile in the auth context
-                if (fetchUserProfile) {
-                  await fetchUserProfile(user.id);
-                }
-              } else {
-                onError('Unable to set up your profile. Please try again later.');
-                return;
-              }
-            } else {
-              console.log('Profile created successfully');
+            // Special handling for duplicate key errors (profile already exists)
+            if (insertError.code === '23505') {
+              console.log('Profile already exists (created by trigger), fetching it instead');
               
               // Refresh the profile in the auth context
               if (fetchUserProfile) {
                 await fetchUserProfile(user.id);
               }
+            } else {
+              onError('Unable to set up your profile. Please try again later.');
+              return;
             }
           } else {
-            onError('There was an issue accessing your profile. Please try again later.');
-            return;
+            console.log('Profile created successfully');
+            
+            // Refresh the profile in the auth context
+            if (fetchUserProfile) {
+              await fetchUserProfile(user.id);
+            }
           }
-        } else if (profile) {
-          console.log('Profile found using RPC function:', profile.id);
+        } else if (profileData) {
+          console.log('Profile found:', profileData.id);
           
           // If profile already has a partner, navigate to dashboard
-          if (profile.partner_id) {
+          if (profileData.partner_id) {
             console.log('User already has a partner connected, redirecting to dashboard');
             toast.info('You already have a partner connected');
             navigate('/dashboard');

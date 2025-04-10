@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
 import { getInvitationByToken } from "../partnerInviteService";
@@ -31,9 +32,11 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       return { error: new Error('You cannot accept your own invitation') };
     }
     
-    // Verify current user profile exists using the RPC function
+    // Verify current user profile exists
     const { data: currentUserProfile, error: currentUserError } = await supabase
-      .rpc('get_profile_by_user_id', { user_id: currentUserId })
+      .from('user_profiles')
+      .select('*')
+      .eq('id', currentUserId)
       .maybeSingle();
       
     if (currentUserError) {
@@ -63,9 +66,11 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }
     
-    // Verify inviter profile exists using the RPC function
+    // Verify inviter profile exists
     const { data: inviterProfile, error: inviterError } = await supabase
-      .rpc('get_profile_by_user_id', { user_id: invite.inviter_id })
+      .from('user_profiles')
+      .select('*')
+      .eq('id', invite.inviter_id)
       .maybeSingle();
       
     if (inviterError) {

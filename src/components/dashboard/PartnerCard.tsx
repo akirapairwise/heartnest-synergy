@@ -2,13 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, CalendarHeart, Gift, UserX, Loader2 } from "lucide-react";
+import { MessageSquare, CalendarHeart, Gift, UserX, Loader2, UserPlus } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { usePartnerInvite } from '@/hooks/usePartnerInvite';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,8 +21,7 @@ import {
 
 const PartnerCard = () => {
   const navigate = useNavigate();
-  const { profile, user } = useAuth();
-  const { unlinkPartner } = usePartnerInvite();
+  const { profile, fetchUserProfile } = useAuth();
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
@@ -58,21 +56,47 @@ const PartnerCard = () => {
   };
   
   const handleUnlinkPartner = async () => {
-    if (!user || !profile?.partner_id) return;
+    if (!profile?.partner_id) return;
     
     setIsUnlinking(true);
-    const { error } = await unlinkPartner();
-    
-    if (error) {
-      toast.error('Failed to break partner connection');
-      console.error('Error unlinking partner:', error);
-    } else {
-      toast.success('Partner connection broken successfully');
+    try {
+      // Update both user profiles to remove partner connection
+      const partnerId = profile.partner_id;
+      
+      // Update current user profile
+      const { error: updateUserError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: null })
+        .eq('id', profile.id);
+        
+      if (updateUserError) throw updateUserError;
+      
+      // Update partner profile
+      const { error: updatePartnerError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: null })
+        .eq('id', partnerId);
+        
+      if (updatePartnerError) throw updatePartnerError;
+      
+      // Close dialog and show success message
+      setIsUnlinkDialogOpen(false);
+      toast.success('Partner connection removed successfully');
+      
+      // Refresh user profile
+      if (fetchUserProfile) {
+        await fetchUserProfile();
+      }
+      
+      // Clear partner profile state
       setPartnerProfile(null);
+      
+    } catch (error) {
+      console.error('Error unlinking partner:', error);
+      toast.error('Failed to remove partner connection');
+    } finally {
+      setIsUnlinking(false);
     }
-    
-    setIsUnlinking(false);
-    setIsUnlinkDialogOpen(false);
   };
   
   const handleMessagePartner = () => {
@@ -119,7 +143,9 @@ const PartnerCard = () => {
             variant="default" 
             size="sm" 
             onClick={() => navigate('/connect')}
+            className="gap-2"
           >
+            <UserPlus className="h-4 w-4" />
             Connect Partner
           </Button>
         </CardContent>

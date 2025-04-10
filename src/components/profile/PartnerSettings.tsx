@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -11,44 +16,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
-import { Loader2, UserPlus, UserX, Copy, Check, Link, Clock, RefreshCw } from 'lucide-react';
-import { usePartnerInvite } from '@/hooks/usePartnerInvite';
-import { supabase } from '@/integrations/supabase/client';
+import { Loader2, UserPlus, UserX } from 'lucide-react';
 
 const PartnerSettings = () => {
-  const { profile, user } = useAuth();
-  const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
+  const { profile, fetchUserProfile } = useAuth();
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
+  const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
+  const navigate = useNavigate();
   
-  const {
-    isLoading,
-    inviteUrl,
-    activeInvite,
-    createInvitation,
-    unlinkPartner,
-    refreshInvites,
-    regenerateToken
-  } = usePartnerInvite();
-  
-  const hasPartner = Boolean(profile?.partner_id);
-  
-  useEffect(() => {
-    if (user) {
-      refreshInvites();
-      fetchPartnerProfile();
+  React.useEffect(() => {
+    if (profile?.partner_id) {
+      fetchPartnerProfile(profile.partner_id);
     }
-  }, [user, profile?.partner_id, refreshInvites]);
+  }, [profile?.partner_id]);
   
-  const fetchPartnerProfile = async () => {
-    if (!profile?.partner_id) return;
-    
+  const fetchPartnerProfile = async (partnerId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', profile.partner_id)
+        .eq('id', partnerId)
         .single();
         
       if (error) throw error;
@@ -59,127 +47,97 @@ const PartnerSettings = () => {
     }
   };
   
-  const handleCreateInvite = async () => {
-    await createInvitation();
-  };
-  
   const handleUnlinkPartner = async () => {
-    const { error } = await unlinkPartner();
+    if (!profile?.partner_id) return;
     
-    if (!error) {
+    setIsUnlinking(true);
+    try {
+      // Update both user profiles to remove partner connection
+      const partnerId = profile.partner_id;
+      
+      // Update current user profile
+      const { error: updateUserError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: null })
+        .eq('id', profile.id);
+        
+      if (updateUserError) throw updateUserError;
+      
+      // Update partner profile
+      const { error: updatePartnerError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: null })
+        .eq('id', partnerId);
+        
+      if (updatePartnerError) throw updatePartnerError;
+      
+      // Close dialog and show success message
       setIsUnlinkDialogOpen(false);
+      toast.success('Partner connection removed successfully');
+      
+      // Refresh user profile
+      if (fetchUserProfile) {
+        await fetchUserProfile();
+      }
+      
+      // Clear partner profile state
       setPartnerProfile(null);
+      
+    } catch (error) {
+      console.error('Error unlinking partner:', error);
+      toast.error('Failed to remove partner connection');
+    } finally {
+      setIsUnlinking(false);
     }
   };
   
-  const handleCopyInvite = () => {
-    if (!inviteUrl) return;
-    
-    navigator.clipboard.writeText(inviteUrl);
-    setCopied(true);
-    toast.success('Invitation link copied to clipboard');
-    
-    setTimeout(() => setCopied(false), 2000);
-  };
-  
-  const handleRegenerateToken = async () => {
-    await regenerateToken();
-  };
-  
-  const getInviteExpiration = () => {
-    if (!activeInvite?.expires_at) return null;
-    
-    const expiresAt = new Date(activeInvite.expires_at);
-    const now = new Date();
-    const diffTime = Math.abs(expiresAt.getTime() - now.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays === 1 ? '1 day' : `${diffDays} days`;
+  const handleConnectPartner = () => {
+    navigate('/connect');
   };
   
   return (
     <div className="space-y-4">
-      {hasPartner ? (
-        <div className="p-4 rounded-lg border">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Connected Partner</p>
-              <p className="font-medium">{partnerProfile?.full_name || 'Partner'}</p>
-              {partnerProfile?.location && (
-                <p className="text-sm text-muted-foreground">{partnerProfile.location}</p>
-              )}
-            </div>
-            <Button 
-              variant="destructive" 
-              onClick={() => setIsUnlinkDialogOpen(true)}
-              className="gap-2"
-            >
-              <UserX className="h-4 w-4" />
-              Break Partner Connection
-            </Button>
-          </div>
-        </div>
-      ) : activeInvite ? (
-        <div className="p-4 rounded-lg border">
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Partner Invitation</p>
-              <p className="font-medium">Share this link with your partner</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                They'll be able to connect with you after clicking the link
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <div className="bg-muted p-2 rounded font-mono text-xs overflow-hidden text-ellipsis whitespace-nowrap flex-1">
-                {inviteUrl}
+      <Card>
+        <CardHeader>
+          <CardTitle>Partner Connection</CardTitle>
+          <CardDescription>
+            Connect with your partner to unlock shared features
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {profile?.partner_id ? (
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg border">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Connected Partner</p>
+                    <p className="font-medium">{partnerProfile?.full_name || 'Partner'}</p>
+                    {partnerProfile?.location && (
+                      <p className="text-sm text-muted-foreground">{partnerProfile.location}</p>
+                    )}
+                  </div>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setIsUnlinkDialogOpen(true)}
+                    className="gap-2"
+                  >
+                    <UserX className="h-4 w-4" />
+                    Break Partner Connection
+                  </Button>
+                </div>
               </div>
-              <Button size="sm" variant="outline" onClick={handleCopyInvite}>
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </div>
+          ) : (
+            <div className="p-6 rounded-lg border flex flex-col items-center justify-center text-center">
+              <p className="mb-4 text-muted-foreground">You haven't connected with a partner yet.</p>
+              <Button onClick={handleConnectPartner} className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                Connect Partner
               </Button>
             </div>
-            
-            {getInviteExpiration() && (
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 mr-1" />
-                <span>Expires in {getInviteExpiration()}</span>
-              </div>
-            )}
-            
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleRegenerateToken} 
-              disabled={isLoading}
-              className="gap-2"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              Regenerate Link
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="p-6 rounded-lg border flex flex-col items-center justify-center text-center">
-          <p className="mb-4 text-muted-foreground">You haven't connected with a partner yet.</p>
-          <Button onClick={handleCreateInvite} disabled={isLoading} className="gap-2">
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <Link className="h-4 w-4" />
-                Create Invitation Link
-              </>
-            )}
-          </Button>
-        </div>
-      )}
+          )}
+        </CardContent>
+      </Card>
       
       <AlertDialog open={isUnlinkDialogOpen} onOpenChange={setIsUnlinkDialogOpen}>
         <AlertDialogContent>
@@ -190,13 +148,13 @@ const PartnerSettings = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isUnlinking}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleUnlinkPartner}
-              disabled={isLoading}
+              disabled={isUnlinking}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isLoading ? (
+              {isUnlinking ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Breaking connection...

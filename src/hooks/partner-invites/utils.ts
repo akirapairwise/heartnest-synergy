@@ -9,10 +9,18 @@ export const generateToken = (): string => {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       return chars.charAt(Math.floor(Math.random() * chars.length));
     }
-  ).join('').toUpperCase();
+  ).join('');
 };
 
 // Helper function to generate the invite URL
 export const generateInviteUrl = (token: string): string => {
-  return `${window.location.origin}/invite?token=${token.toUpperCase()}`;
+  // Always ensure uppercase token in URL
+  const formattedToken = token.trim().toUpperCase();
+  return `${window.location.origin}/invite?token=${formattedToken}`;
+};
+
+// Helper function to format token consistently
+export const formatToken = (token: string): string => {
+  // Remove spaces and ensure uppercase
+  return token.trim().toUpperCase();
 };

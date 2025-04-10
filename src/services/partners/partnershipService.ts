@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
 import { getInvitationByToken } from "../partnerInviteService";
+import { formatToken } from "@/hooks/partner-invites/utils";
 
 /**
  * Accepts a partner invitation and connects both users
@@ -10,10 +11,10 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
   try {
     console.log('Starting invitation acceptance process...');
     console.log('Current user ID:', currentUserId);
-    console.log('Token:', token.trim().toUpperCase());
+    console.log('Token:', formatToken(token));
     
     // Format token to be consistent
-    const formattedToken = token.trim().toUpperCase();
+    const formattedToken = formatToken(token);
     
     // First get the invitation with enhanced validation
     const { data: invite, error: fetchError } = await getInvitationByToken(formattedToken);

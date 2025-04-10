@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { acceptInvitation } from '@/services/partners/partnershipService';
 import { getInvitationByToken } from '@/services/partnerInviteService';
+import { formatToken } from '@/hooks/partner-invites/utils';
 
 /**
  * Form component for entering and submitting a partner code
@@ -21,9 +22,9 @@ const CodeInputForm = () => {
   const navigate = useNavigate();
   const { user, fetchUserProfile } = useAuth();
   
-  const validateCode = async (code: string) => {
+  const validateCode = async (inputCode: string) => {
     // Clean the code (remove spaces, uppercase)
-    const formattedCode = code.trim().toUpperCase();
+    const formattedCode = formatToken(inputCode);
     
     if (!formattedCode) {
       return { valid: false, error: 'Please enter a valid invitation code' };
@@ -61,7 +62,7 @@ const CodeInputForm = () => {
     }
     
     // Format code: remove spaces, uppercase
-    const formattedCode = code.trim().toUpperCase();
+    const formattedCode = formatToken(code);
     
     setIsSubmitting(true);
     setError(null);

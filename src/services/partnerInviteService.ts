@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerInvite } from "@/services/partners/types";
 import { enhanceInviteWithInviterName } from "./partners/utils";
+import { formatToken } from "@/hooks/partner-invites/utils";
 
 /**
  * Fetches invitation by token
@@ -13,7 +14,7 @@ export const getInvitationByToken = async (token: string) => {
     console.log('Fetching invitation by token:', token);
     
     // Format the token consistently
-    const formattedToken = token.trim().toUpperCase();
+    const formattedToken = formatToken(token);
     
     // First, check if the token exists at all
     const { data: allInvites, error: checkError } = await supabase

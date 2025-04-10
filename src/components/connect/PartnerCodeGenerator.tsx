@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { RefreshCw, Copy, Check, Clock, ArrowLeft, Sparkles, Share2 } from "lucide-react";
@@ -12,6 +12,7 @@ const PartnerCodeGenerator = () => {
   const [code, setCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const codeLoadAttempted = useRef(false);
   const { profile } = useAuth();
   const navigate = useNavigate();
   
@@ -19,8 +20,9 @@ const PartnerCodeGenerator = () => {
   
   useEffect(() => {
     // Only load existing code once when component mounts
-    if (!hasPartner) {
-      // Adding this check to prevent repeated calls
+    // and only if no partner and we haven't attempted to load yet
+    if (!hasPartner && !codeLoadAttempted.current) {
+      codeLoadAttempted.current = true;
       loadExistingCode();
     }
   }, [hasPartner]); // Only depend on hasPartner, not profile itself

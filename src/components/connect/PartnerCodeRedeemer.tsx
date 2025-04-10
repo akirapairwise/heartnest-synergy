@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ const PartnerCodeRedeemer = () => {
   const [error, setError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isProfileInitialized, setIsProfileInitialized] = useState(false);
+  const initializationAttempted = useRef(false);
   const navigate = useNavigate();
   const { profile, fetchUserProfile, user } = useAuth();
   
@@ -22,12 +23,20 @@ const PartnerCodeRedeemer = () => {
   
   // Ensure the user profile exists when the component mounts
   useEffect(() => {
-    // Add a guard to prevent multiple initialization attempts
-    if (isProfileInitialized || !user?.id) return;
-
+    // Guard against multiple initialization attempts and only run once
+    if (initializationAttempted.current || !user?.id) {
+      // If no user or we already tried to initialize, just mark as not initializing
+      if (!user?.id || isProfileInitialized) {
+        setIsInitializing(false);
+      }
+      return;
+    }
+    
+    // Mark that we've attempted initialization
+    initializationAttempted.current = true;
+    
     const initializeProfile = async () => {
       try {
-        setIsInitializing(true);
         // Ensure user profile exists
         const userProfile = await ensureUserProfile(user.id);
         

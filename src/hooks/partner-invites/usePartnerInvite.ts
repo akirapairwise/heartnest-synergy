@@ -18,6 +18,14 @@ export const usePartnerInvite = () => {
   const [activeInvite, setActiveInvite] = useState<PartnerInvite | null>(null);
   const { user, fetchUserProfile } = useAuth();
   const initialFetchDone = useRef(false);
+  const isMounted = useRef(true);
+
+  // Set up cleanup function for component unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Function to refresh active invites
   const refreshInvites = useCallback(async () => {
@@ -25,12 +33,15 @@ export const usePartnerInvite = () => {
     
     try {
       const invite = await fetchActiveInvite(user.id);
-      if (invite) {
-        setActiveInvite(invite);
-        setInviteUrl(generateInviteUrl(invite.token));
-      } else {
-        setActiveInvite(null);
-        setInviteUrl(null);
+      // Only update state if component is still mounted
+      if (isMounted.current) {
+        if (invite) {
+          setActiveInvite(invite);
+          setInviteUrl(generateInviteUrl(invite.token));
+        } else {
+          setActiveInvite(null);
+          setInviteUrl(null);
+        }
       }
     } catch (err) {
       console.error('Error refreshing invites:', err);
@@ -53,10 +64,12 @@ export const usePartnerInvite = () => {
       
       if (existingInvite) {
         // Use the existing invitation
-        setActiveInvite(existingInvite);
-        const url = generateInviteUrl(existingInvite.token);
-        setInviteUrl(url);
-        return url;
+        if (isMounted.current) {
+          setActiveInvite(existingInvite);
+          const url = generateInviteUrl(existingInvite.token);
+          setInviteUrl(url);
+        }
+        return generateInviteUrl(existingInvite.token);
       }
       
       // Create a new token
@@ -66,26 +79,33 @@ export const usePartnerInvite = () => {
       const result = await createNewInvitation(user.id, token);
       
       if (!result.success || !result.invite) {
-        if (result.error) {
+        if (result.error && isMounted.current) {
           setError(result.error);
           toast.error(result.error.message);
         }
         return null;
       }
       
-      setActiveInvite(result.invite);
-      const url = generateInviteUrl(token);
-      setInviteUrl(url);
+      if (isMounted.current) {
+        setActiveInvite(result.invite);
+        const url = generateInviteUrl(token);
+        setInviteUrl(url);
+        return url;
+      }
       
-      return url;
+      return generateInviteUrl(token);
     } catch (err) {
       console.error('Error creating invitation:', err);
       const errorObj = err instanceof Error ? err : new Error('Failed to create invitation');
-      setError(errorObj);
-      toast.error(errorObj.message);
+      if (isMounted.current) {
+        setError(errorObj);
+        toast.error(errorObj.message);
+      }
       return null;
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -107,26 +127,33 @@ export const usePartnerInvite = () => {
       const result = await regenerateInvitation(user.id, token);
       
       if (!result.success || !result.invite) {
-        if (result.error) {
+        if (result.error && isMounted.current) {
           setError(result.error);
           toast.error(result.error.message);
         }
         return null;
       }
       
-      setActiveInvite(result.invite);
-      const url = generateInviteUrl(token);
-      setInviteUrl(url);
+      if (isMounted.current) {
+        setActiveInvite(result.invite);
+        const url = generateInviteUrl(token);
+        setInviteUrl(url);
+        return url;
+      }
       
-      return url;
+      return generateInviteUrl(token);
     } catch (err) {
       console.error('Error regenerating token:', err);
       const errorObj = err instanceof Error ? err : new Error('Failed to regenerate invitation');
-      setError(errorObj);
-      toast.error(errorObj.message);
+      if (isMounted.current) {
+        setError(errorObj);
+        toast.error(errorObj.message);
+      }
       return null;
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -143,24 +170,33 @@ export const usePartnerInvite = () => {
       
       const result = await acceptInvite(user.id, token);
       
-      if (result.error) {
+      if (result.error && isMounted.current) {
         setError(result.error);
         return result;
       }
       
       // Refresh user profile
-      if (fetchUserProfile) {
-        await fetchUserProfile(user.id);
+      if (fetchUserProfile && isMounted.current) {
+        try {
+          await fetchUserProfile(user.id);
+        } catch (profileError) {
+          console.error('Error refreshing user profile:', profileError);
+          // We can continue with the flow even if this fails
+        }
       }
       
       return { error: null };
     } catch (err) {
       console.error('Error accepting invitation:', err);
       const errorObj = err instanceof Error ? err : new Error('Failed to accept invitation');
-      setError(errorObj);
+      if (isMounted.current) {
+        setError(errorObj);
+      }
       return { error: errorObj };
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -172,7 +208,7 @@ export const usePartnerInvite = () => {
     const loadInvite = async () => {
       try {
         const invite = await fetchActiveInvite(user.id);
-        if (invite) {
+        if (invite && isMounted.current) {
           setActiveInvite(invite);
           setInviteUrl(generateInviteUrl(invite.token));
         }

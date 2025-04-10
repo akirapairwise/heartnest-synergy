@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PartnerCodeGenerator from '@/components/connect/PartnerCodeGenerator';
 import PartnerCodeRedeemer from '@/components/connect/PartnerCodeRedeemer';
@@ -11,6 +11,8 @@ import { useNavigate } from 'react-router-dom';
 const ConnectPage = () => {
   useDocumentTitle('Connect Partner | HeartNest');
   const navigate = useNavigate();
+  // Default to "redeem" tab to minimize API calls on initial load
+  const [activeTab, setActiveTab] = useState('redeem');
   
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50 p-4">
@@ -39,14 +41,24 @@ const ConnectPage = () => {
         </div>
         
         <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/40 p-5 animate-fade-in">
-          <Tabs defaultValue="redeem" className="w-full">
+          <Tabs 
+            value={activeTab} 
+            onValueChange={setActiveTab} 
+            className="w-full"
+          >
             <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="redeem" className="data-[state=active]:bg-love-50 data-[state=active]:text-love-600 data-[state=active]:shadow-none">
+              <TabsTrigger 
+                value="redeem" 
+                className="data-[state=active]:bg-love-50 data-[state=active]:text-love-600 data-[state=active]:shadow-none"
+              >
                 <span className="flex items-center gap-2">
                   Enter Code
                 </span>
               </TabsTrigger>
-              <TabsTrigger value="generate" className="data-[state=active]:bg-harmony-50 data-[state=active]:text-harmony-600 data-[state=active]:shadow-none">
+              <TabsTrigger 
+                value="generate" 
+                className="data-[state=active]:bg-harmony-50 data-[state=active]:text-harmony-600 data-[state=active]:shadow-none"
+              >
                 <span className="flex items-center gap-2">
                   Generate Code
                 </span>
@@ -58,7 +70,8 @@ const ConnectPage = () => {
             </TabsContent>
             
             <TabsContent value="generate" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
-              <PartnerCodeGenerator />
+              {/* Only render generator when tab is active to avoid unnecessary API calls */}
+              {activeTab === 'generate' && <PartnerCodeGenerator />}
             </TabsContent>
           </Tabs>
         </div>

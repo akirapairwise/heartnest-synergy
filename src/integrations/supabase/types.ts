@@ -177,30 +177,6 @@ export type Database = {
         }
         Relationships: []
       }
-      partner_codes: {
-        Row: {
-          code: string
-          created_at: string
-          expires_at: string
-          inviter_id: string
-          is_used: boolean
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          expires_at?: string
-          inviter_id: string
-          is_used?: boolean
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          expires_at?: string
-          inviter_id?: string
-          is_used?: boolean
-        }
-        Relationships: []
-      }
       partner_invitations: {
         Row: {
           accepted_at: string | null
@@ -319,10 +295,6 @@ export type Database = {
     Functions: {
       generate_invitation_code: {
         Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_partner_code: {
-        Args: { length?: number }
         Returns: string
       }
     }

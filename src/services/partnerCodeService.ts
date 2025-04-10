@@ -159,6 +159,34 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
       }
     };
     
+    // Check if profile exists again before inserting (race condition protection)
+    const { data: checkAgain, error: checkError } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error('Error checking profile existence again:', checkError);
+    }
+    
+    if (checkAgain) {
+      console.log('Profile was created by another process, fetching it');
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (fetchError) {
+        console.error('Error fetching existing profile:', fetchError);
+        throw fetchError;
+      }
+      
+      return existingProfile as unknown as Profile;
+    }
+    
+    // Insert the new profile
     const { data: newProfile, error: createError } = await supabase
       .from('user_profiles')
       .insert(defaultProfile)
@@ -167,6 +195,22 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
       
     if (createError) {
       console.error('Error creating new user profile:', createError);
+      // Check if this is a duplicate key error
+      if (createError.code === '23505') {
+        console.log('Profile was created by another process (duplicate key), fetching it');
+        const { data: existingProfile, error: fetchError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+          
+        if (fetchError) {
+          console.error('Error fetching profile after duplicate key error:', fetchError);
+          throw fetchError;
+        }
+        
+        return existingProfile as unknown as Profile;
+      }
       throw createError;
     }
     

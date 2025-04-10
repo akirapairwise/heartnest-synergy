@@ -10,11 +10,11 @@ import ConnectedPartner from './partner/ConnectedPartner';
 import ActiveInvite from './partner/ActiveInvite';
 import CreateInvitation from './partner/CreateInvitation';
 import UnlinkDialog from './partner/UnlinkDialog';
+import { usePartnerProfile } from './partner/usePartnerProfile';
 
 const PartnerSettings = () => {
   const { profile, user } = useAuth();
   const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
-  const [partnerProfile, setPartnerProfile] = useState<any>(null);
   
   const {
     isLoading,
@@ -26,6 +26,8 @@ const PartnerSettings = () => {
     regenerateToken
   } = usePartnerInvite();
   
+  const { partnerProfile, fetchPartnerProfile } = usePartnerProfile(profile?.partner_id);
+  
   const hasPartner = Boolean(profile?.partner_id);
   
   useEffect(() => {
@@ -33,25 +35,7 @@ const PartnerSettings = () => {
       refreshInvites();
       fetchPartnerProfile();
     }
-  }, [user, profile?.partner_id, refreshInvites]);
-  
-  const fetchPartnerProfile = async () => {
-    if (!profile?.partner_id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', profile.partner_id)
-        .single();
-        
-      if (error) throw error;
-      
-      setPartnerProfile(data);
-    } catch (error) {
-      console.error('Error fetching partner profile:', error);
-    }
-  };
+  }, [user, profile?.partner_id, refreshInvites, fetchPartnerProfile]);
   
   const handleCreateInvite = async () => {
     await createInvitation();
@@ -62,7 +46,6 @@ const PartnerSettings = () => {
     
     if (!error) {
       setIsUnlinkDialogOpen(false);
-      setPartnerProfile(null);
       toast.success('Partner connection broken successfully');
     }
   };

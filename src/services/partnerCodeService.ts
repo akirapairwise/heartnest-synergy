@@ -48,7 +48,7 @@ export const generatePartnerCode = async (): Promise<CodeResult> => {
       .insert({
         code: generatedCode as string,
         inviter_id: userId
-      } as PartnerCode);
+      } as unknown as PartnerCode);
       
     if (insertError) throw insertError;
     
@@ -103,6 +103,8 @@ export const getActivePartnerCode = async (): Promise<CodeResult> => {
  */
 export const ensureUserProfile = async (userId: string): Promise<Profile | null> => {
   try {
+    console.log('Ensuring user profile exists for user:', userId);
+    
     // Try to fetch the profile
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
@@ -110,12 +112,18 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
       .eq('id', userId)
       .maybeSingle();
       
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+      throw profileError;
+    }
     
     // If profile exists, return it
     if (profile) {
+      console.log('Found existing profile:', profile);
       return profile as unknown as Profile;
     }
+    
+    console.log('No profile found, creating new one for user:', userId);
     
     // Create a new profile
     const { data: newProfile, error: createError } = await supabase
@@ -127,8 +135,12 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
       .select()
       .single();
       
-    if (createError) throw createError;
+    if (createError) {
+      console.error('Error creating new user profile:', createError);
+      throw createError;
+    }
     
+    console.log('Created new profile successfully:', newProfile);
     return newProfile as unknown as Profile;
   } catch (error) {
     console.error('Error ensuring user profile exists:', error);
@@ -141,9 +153,12 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
  */
 export const redeemPartnerCode = async (code: string): Promise<{ success: boolean; message: string }> => {
   try {
-    const userId = (await supabase.auth.getSession()).data.session?.user.id;
+    console.log('Attempting to redeem partner code:', code);
+    const { data: session } = await supabase.auth.getSession();
+    const userId = session.session?.user.id;
     
     if (!userId) {
+      console.error('No authenticated user found');
       return { 
         success: false, 
         message: 'You must be logged in to redeem a partner code' 
@@ -159,9 +174,13 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
       
-    if (codeError) throw codeError;
+    if (codeError) {
+      console.error('Error fetching partner code:', codeError);
+      throw codeError;
+    }
     
     if (!partnerCodeData) {
+      console.error('Invalid or expired code:', code);
       return { 
         success: false, 
         message: 'Invalid or expired code' 
@@ -172,25 +191,37 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
     
     // Prevent self-invitation
     if (partnerCode.inviter_id === userId) {
+      console.error('User attempted to connect with themselves');
       return { 
         success: false, 
         message: 'You cannot connect with yourself' 
       };
     }
     
+    console.log('Ensuring both user profiles exist...');
     // Ensure both user profiles exist
     const inviterProfile = await ensureUserProfile(partnerCode.inviter_id);
     const currentUserProfile = await ensureUserProfile(userId);
     
     if (!inviterProfile || !currentUserProfile) {
+      console.error('Could not retrieve user profiles:', { 
+        inviterProfileExists: !!inviterProfile, 
+        currentUserProfileExists: !!currentUserProfile 
+      });
       return { 
         success: false, 
-        message: 'Could not retrieve user profiles' 
+        message: 'Could not retrieve user profiles. Please try again or contact support.' 
       };
     }
     
+    console.log('Found both profiles:', {
+      inviterProfile: inviterProfile.id,
+      currentUserProfile: currentUserProfile.id
+    });
+    
     // Check if either user already has a partner
     if (inviterProfile.partner_id) {
+      console.error('Inviter already has a partner:', inviterProfile.partner_id);
       return {
         success: false,
         message: 'The inviter is already connected with a partner'
@@ -198,34 +229,46 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
     }
     
     if (currentUserProfile.partner_id) {
+      console.error('Current user already has a partner:', currentUserProfile.partner_id);
       return {
         success: false,
         message: 'You are already connected with a partner'
       };
     }
     
+    console.log('Updating both profiles to establish connection...');
     // Update both profiles to establish the connection
     const { error: updateInviterError } = await supabase
       .from('user_profiles')
       .update({ partner_id: userId })
       .eq('id', partnerCode.inviter_id);
       
-    if (updateInviterError) throw updateInviterError;
+    if (updateInviterError) {
+      console.error('Error updating inviter profile:', updateInviterError);
+      throw updateInviterError;
+    }
     
     const { error: updateCurrentUserError } = await supabase
       .from('user_profiles')
       .update({ partner_id: partnerCode.inviter_id })
       .eq('id', userId);
       
-    if (updateCurrentUserError) throw updateCurrentUserError;
+    if (updateCurrentUserError) {
+      console.error('Error updating current user profile:', updateCurrentUserError);
+      throw updateCurrentUserError;
+    }
     
+    console.log('Successfully connected users, marking code as used...');
     // Mark the code as used
     const { error: updateCodeError } = await supabase
       .from('partner_codes')
-      .update({ is_used: true } as Partial<PartnerCode>)
+      .update({ is_used: true } as unknown as Partial<PartnerCode>)
       .eq('code', code);
       
-    if (updateCodeError) throw updateCodeError;
+    if (updateCodeError) {
+      console.error('Error marking code as used:', updateCodeError);
+      throw updateCodeError;
+    }
     
     // Get inviter's name if available
     let inviterName = 'your partner';
@@ -233,6 +276,7 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
       inviterName = inviterProfile.full_name;
     }
     
+    console.log('Successfully completed partner connection!');
     return {
       success: true,
       message: `You are now connected with ${inviterName}!`
@@ -242,7 +286,7 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
     console.error('Error redeeming partner code:', error);
     return { 
       success: false, 
-      message: `An error occurred: ${(error as Error).message}` 
+      message: `An error occurred while connecting partners. Please try again later.` 
     };
   }
 };

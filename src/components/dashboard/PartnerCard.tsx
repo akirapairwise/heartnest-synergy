@@ -26,6 +26,7 @@ const PartnerCard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     if (profile?.partner_id) {
@@ -38,14 +39,22 @@ const PartnerCard = () => {
   const fetchPartnerProfile = async (partnerId: string) => {
     try {
       setIsLoading(true);
+      setError(null);
+      console.log("Fetching partner profile for:", partnerId);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', partnerId)
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching partner profile:", error);
+        setError("Could not load partner information");
+        throw error;
+      }
       
+      console.log("Partner profile fetched successfully:", data);
       setPartnerProfile(data);
     } catch (error) {
       console.error('Error fetching partner profile:', error);
@@ -56,36 +65,55 @@ const PartnerCard = () => {
   };
   
   const handleUnlinkPartner = async () => {
-    if (!profile?.partner_id) return;
+    if (!profile?.partner_id || !user?.id) {
+      toast.error("No partner to unlink");
+      return;
+    }
     
     setIsUnlinking(true);
     try {
+      console.log("Starting partner unlinking process...");
       // Update both user profiles to remove partner connection
       const partnerId = profile.partner_id;
       
       // Update current user profile
+      console.log("Updating current user profile...");
       const { error: updateUserError } = await supabase
         .from('user_profiles')
         .update({ partner_id: null })
-        .eq('id', profile.id);
+        .eq('id', user.id);
         
-      if (updateUserError) throw updateUserError;
+      if (updateUserError) {
+        console.error("Error updating current user profile:", updateUserError);
+        throw updateUserError;
+      }
       
       // Update partner profile
+      console.log("Updating partner profile...");
       const { error: updatePartnerError } = await supabase
         .from('user_profiles')
         .update({ partner_id: null })
         .eq('id', partnerId);
         
-      if (updatePartnerError) throw updatePartnerError;
+      if (updatePartnerError) {
+        console.error("Error updating partner profile:", updatePartnerError);
+        throw updatePartnerError;
+      }
       
       // Close dialog and show success message
       setIsUnlinkDialogOpen(false);
       toast.success('Partner connection removed successfully');
       
       // Refresh user profile
+      console.log("Refreshing user profile...");
       if (fetchUserProfile && user) {
-        await fetchUserProfile(user.id);
+        try {
+          await fetchUserProfile(user.id);
+          console.log("Profile refreshed successfully after unlinking");
+        } catch (refreshError) {
+          console.error("Error refreshing profile after unlinking:", refreshError);
+          // We can continue even if refresh fails
+        }
       }
       
       // Clear partner profile state

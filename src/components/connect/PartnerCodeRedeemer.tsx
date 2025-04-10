@@ -41,7 +41,13 @@ const PartnerCodeRedeemer = () => {
         
         // Refresh the user profile to get updated partner status
         if (fetchUserProfile && user) {
-          await fetchUserProfile(user.id);
+          try {
+            await fetchUserProfile(user.id);
+            console.log("Successfully refreshed user profile after connection");
+          } catch (err) {
+            console.error("Failed to refresh profile after connection:", err);
+            // We can still proceed to dashboard even if this fails
+          }
         }
         
         // Redirect to dashboard

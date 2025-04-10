@@ -165,60 +165,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       console.log('Fetching user profile for:', userId);
       
-      // Now check if the profile exists in the user_profiles table
-      const { data: userProfileExists, error: userProfileCheckError } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-        
-      if (userProfileCheckError) {
-        console.error('Error checking if user_profile exists:', userProfileCheckError);
-      }
-      
-      // If profile doesn't exist in user_profiles table, create it
-      if (!userProfileExists) {
-        console.log('Profile does not exist in user_profiles table, creating new profile for user:', userId);
-        const defaultUserProfile = {
-          id: userId,
-          is_onboarding_complete: false,
-          partner_id: null,
-          full_name: null,
-          love_language: null,
-          communication_style: null,
-          emotional_needs: null,
-          relationship_goals: null,
-          financial_attitude: null,
-          location: null,
-          bio: null,
-          mood_settings: {
-            showAvatar: true,
-            defaultMood: 'neutral'
-          }
-        };
-        
-        const { error: createUserProfileError } = await supabase
-          .from('user_profiles')
-          .insert(defaultUserProfile);
-          
-        if (createUserProfileError) {
-          console.error('Error creating new user profile in user_profiles table:', createUserProfileError);
-          toast({
-            title: "Error!",
-            description: "Failed to create user profile.",
-          });
-          return;
-        }
-        
-        console.log('Successfully created new profile for user in user_profiles table:', userId);
-      }
-      
-      // Now fetch the complete profile from user_profiles
+      // Directly fetch the profile from user_profiles without checking existence first
+      // This avoids the infinite recursion issue that was happening with the RLS policy
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user profile:', error);
@@ -226,7 +179,65 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           title: "Error!",
           description: "Failed to fetch user profile.",
         });
-      } else {
+        
+        // If there's an error but profile doesn't exist, try to create it
+        if (error.code !== 'PGRST116') { // Not found error
+          // Try to create a basic profile
+          const { error: insertError } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: userId,
+              is_onboarding_complete: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          
+          if (insertError) {
+            if (insertError.code === '23505') {
+              console.log('Profile already exists, this is a duplicate key error');
+              // If it's a duplicate key error, try fetching again
+              const { data: retryData, error: retryError } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+                
+              if (retryError) {
+                console.error('Error on retry fetch:', retryError);
+                return;
+              }
+              
+              if (retryData) {
+                console.log('Successfully retrieved profile on retry');
+                setProfile(retryData as Profile);
+                setIsOnboardingComplete(retryData?.is_onboarding_complete ?? false);
+                return;
+              }
+            } else {
+              console.error('Error creating profile:', insertError);
+              return;
+            }
+          } else {
+            console.log('Profile created successfully, fetching it');
+            const { data: newData, error: newFetchError } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+              
+            if (newFetchError) {
+              console.error('Error fetching newly created profile:', newFetchError);
+              return;
+            }
+            
+            if (newData) {
+              console.log('Retrieved newly created profile');
+              setProfile(newData as Profile);
+              setIsOnboardingComplete(newData?.is_onboarding_complete ?? false);
+            }
+          }
+        }
+      } else if (data) {
         // Properly transform mood_settings to ensure type safety
         let moodSettings = null;
         
@@ -262,6 +273,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         setProfile(formattedProfile);
         setIsOnboardingComplete(data?.is_onboarding_complete ?? false);
+      } else {
+        // Profile doesn't exist, create it
+        console.log('No profile found, creating new profile for user:', userId);
+        
+        const { error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: userId,
+            is_onboarding_complete: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          if (createError.code === '23505') {
+            console.log('Profile already exists (duplicate key), trying to fetch again');
+            // If it's a duplicate key error, try fetching once more
+            const { data: retryData, error: retryError } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+              
+            if (retryError) {
+              console.error('Error on retry fetch after duplicate key:', retryError);
+              return;
+            }
+            
+            if (retryData) {
+              setProfile(retryData as Profile);
+              setIsOnboardingComplete(retryData?.is_onboarding_complete ?? false);
+            }
+          }
+        } else {
+          // Fetch the newly created profile
+          const { data: newData, error: newFetchError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+            
+          if (newFetchError) {
+            console.error('Error fetching newly created profile:', newFetchError);
+            return;
+          }
+          
+          setProfile(newData as Profile);
+          setIsOnboardingComplete(newData?.is_onboarding_complete ?? false);
+        }
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);

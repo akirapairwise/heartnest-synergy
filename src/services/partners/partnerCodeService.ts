@@ -76,7 +76,10 @@ export const redeemPartnerCode = async (currentUserId: string, code: string): Pr
       .eq('code', code.toUpperCase())
       .maybeSingle() as { data: PartnerCode | null, error: any };
       
-    if (codeError) throw codeError;
+    if (codeError) {
+      console.error('Error fetching partner code:', codeError);
+      throw codeError;
+    }
     
     if (!partnerCode) {
       return { error: new Error('Invalid partner code. Please check and try again.') };
@@ -91,52 +94,57 @@ export const redeemPartnerCode = async (currentUserId: string, code: string): Pr
       return { error: new Error('You cannot use your own partner code.') };
     }
     
-    // Check if users already have partners
-    console.log('Looking up user profiles for:', partnerCode.inviter_id, 'and', currentUserId);
-    
-    const { data: users, error: usersError } = await supabase
+    // Retrieve both user profiles separately to ensure we get results
+    // 1. First, get the inviter's profile
+    const { data: inviterProfile, error: inviterError } = await supabase
       .from('user_profiles')
       .select('id, partner_id, full_name')
-      .in('id', [partnerCode.inviter_id, currentUserId]);
+      .eq('id', partnerCode.inviter_id)
+      .maybeSingle();
       
-    if (usersError) {
-      console.error('Error fetching user profiles:', usersError);
-      throw usersError;
+    if (inviterError) {
+      console.error('Error fetching inviter profile:', inviterError);
+      return { error: new Error('Unable to complete invitation. Try again or contact support.') };
     }
     
-    console.log('User profiles found:', users);
-    
-    if (!users || users.length < 2) {
-      console.error('Could not find both user profiles:', {
-        expected: [partnerCode.inviter_id, currentUserId],
-        found: users
-      });
-      return { error: new Error('Could not find both user profiles. Please try again or contact support.') };
+    if (!inviterProfile) {
+      console.error('Inviter profile not found:', partnerCode.inviter_id);
+      return { error: new Error('Unable to complete invitation. Try again or contact support.') };
     }
     
-    const inviter = users.find(u => u.id === partnerCode.inviter_id);
-    const currentUser = users.find(u => u.id === currentUserId);
-    
-    if (!inviter) {
-      console.error('Code owner profile not found:', partnerCode.inviter_id);
-      return { error: new Error('Could not find the code owner\'s profile.') };
+    // 2. Get the current user's profile
+    const { data: currentUserProfile, error: userError } = await supabase
+      .from('user_profiles')
+      .select('id, partner_id, full_name')
+      .eq('id', currentUserId)
+      .maybeSingle();
+      
+    if (userError) {
+      console.error('Error fetching current user profile:', userError);
+      return { error: new Error('Unable to complete invitation. Try again or contact support.') };
     }
     
-    if (!currentUser) {
+    if (!currentUserProfile) {
       console.error('Current user profile not found:', currentUserId);
-      return { error: new Error('Could not find your user profile.') };
+      return { error: new Error('Unable to complete invitation. Try again or contact support.') };
     }
     
-    if (inviter.partner_id) {
+    console.log('Found profiles:', { 
+      inviter: inviterProfile,
+      currentUser: currentUserProfile
+    });
+    
+    // Check if either user already has a partner
+    if (inviterProfile.partner_id) {
       return { error: new Error('The code owner already has a partner.') };
     }
     
-    if (currentUser.partner_id) {
+    if (currentUserProfile.partner_id) {
       return { error: new Error('You already have a partner. Disconnect first before connecting to someone else.') };
     }
     
     // Start transaction to link both users
-    console.log('Linking users:', inviter.id, 'and', currentUser.id);
+    console.log('Linking users:', inviterProfile.id, 'and', currentUserProfile.id);
     
     // 1. Link the inviter to the current user
     const { error: updateInviterError } = await supabase

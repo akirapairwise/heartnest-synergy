@@ -163,6 +163,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
       setIsLoading(true);
+      console.log('Fetching user profile for:', userId);
+      
+      // First ensure the profile exists
+      const { data: profileExists, error: checkError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error('Error checking if profile exists:', checkError);
+      }
+      
+      // If profile doesn't exist, create it
+      if (!profileExists) {
+        console.log('Profile does not exist, creating new profile for user:', userId);
+        const defaultProfile = {
+          id: userId,
+          is_onboarding_complete: false,
+          partner_id: null,
+          full_name: null,
+          love_language: null,
+          communication_style: null,
+          emotional_needs: null,
+          relationship_goals: null,
+          financial_attitude: null,
+          location: null,
+          bio: null,
+          mood_settings: {
+            showAvatar: true,
+            defaultMood: 'neutral'
+          }
+        };
+        
+        const { error: createError } = await supabase
+          .from('user_profiles')
+          .insert(defaultProfile);
+          
+        if (createError) {
+          console.error('Error creating new user profile:', createError);
+          toast({
+            title: "Error!",
+            description: "Failed to create user profile.",
+          });
+          return;
+        }
+        
+        console.log('Successfully created new profile for user:', userId);
+      }
+      
+      // Now fetch the complete profile (whether it was just created or already existed)
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')

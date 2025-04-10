@@ -29,6 +29,12 @@ export const generatePartnerCode = async (): Promise<CodeResult> => {
       throw new Error('User not authenticated');
     }
     
+    // Ensure user profile exists before generating code
+    const profile = await ensureUserProfile(userId);
+    if (!profile) {
+      throw new Error('Could not create or retrieve user profile');
+    }
+    
     // Delete existing unused codes
     await supabase
       .from('partner_codes')
@@ -71,6 +77,9 @@ export const getActivePartnerCode = async (): Promise<CodeResult> => {
       throw new Error('User not authenticated');
     }
     
+    // Ensure user profile exists
+    await ensureUserProfile(userId);
+    
     const { data, error } = await supabase
       .from('partner_codes')
       .select('*')
@@ -105,6 +114,11 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
   try {
     console.log('Ensuring user profile exists for user:', userId);
     
+    if (!userId) {
+      console.error('Invalid user ID provided to ensureUserProfile');
+      return null;
+    }
+    
     // Try to fetch the profile
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
@@ -125,13 +139,28 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
     
     console.log('No profile found, creating new one for user:', userId);
     
-    // Create a new profile
+    // Create a new profile with default values
+    const defaultProfile = {
+      id: userId,
+      is_onboarding_complete: false,
+      partner_id: null,
+      full_name: null,
+      love_language: null,
+      communication_style: null,
+      emotional_needs: null,
+      relationship_goals: null,
+      financial_attitude: null,
+      location: null,
+      bio: null,
+      mood_settings: {
+        showAvatar: true,
+        defaultMood: 'neutral'
+      }
+    };
+    
     const { data: newProfile, error: createError } = await supabase
       .from('user_profiles')
-      .insert({
-        id: userId,
-        is_onboarding_complete: false
-      })
+      .insert(defaultProfile)
       .select()
       .single();
       
@@ -144,6 +173,7 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
     return newProfile as unknown as Profile;
   } catch (error) {
     console.error('Error ensuring user profile exists:', error);
+    toast.error('Could not create or retrieve user profile');
     return null;
   }
 };
@@ -203,14 +233,19 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
     const inviterProfile = await ensureUserProfile(partnerCode.inviter_id);
     const currentUserProfile = await ensureUserProfile(userId);
     
-    if (!inviterProfile || !currentUserProfile) {
-      console.error('Could not retrieve user profiles:', { 
-        inviterProfileExists: !!inviterProfile, 
-        currentUserProfileExists: !!currentUserProfile 
-      });
+    if (!inviterProfile) {
+      console.error('Could not ensure inviter profile exists');
       return { 
         success: false, 
-        message: 'Could not retrieve user profiles. Please try again or contact support.' 
+        message: 'Could not retrieve inviter profile. Please try again or contact support.' 
+      };
+    }
+    
+    if (!currentUserProfile) {
+      console.error('Could not ensure current user profile exists');
+      return { 
+        success: false, 
+        message: 'Could not set up your profile. Please try again or contact support.' 
       };
     }
     

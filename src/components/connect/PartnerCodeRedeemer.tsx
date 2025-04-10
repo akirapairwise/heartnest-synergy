@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, ArrowLeft, Heart, Lock } from "lucide-react";
-import { redeemPartnerCode } from "@/services/partnerCodeService";
+import { redeemPartnerCode, ensureUserProfile } from "@/services/partnerCodeService";
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,10 +14,40 @@ const PartnerCodeRedeemer = () => {
   const [code, setCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   const navigate = useNavigate();
   const { profile, fetchUserProfile, user } = useAuth();
   
   const hasPartner = Boolean(profile?.partner_id);
+  
+  // Ensure the user profile exists when the component mounts
+  useEffect(() => {
+    const initializeProfile = async () => {
+      if (user?.id) {
+        try {
+          setIsInitializing(true);
+          // Ensure user profile exists
+          const userProfile = await ensureUserProfile(user.id);
+          
+          if (!userProfile) {
+            setError('Could not create or retrieve your profile. Please refresh and try again.');
+          } else if (fetchUserProfile) {
+            // Refresh the auth context with the latest profile data
+            await fetchUserProfile(user.id);
+          }
+        } catch (err) {
+          console.error('Error initializing profile:', err);
+          setError('There was a problem setting up your profile. Please refresh and try again.');
+        } finally {
+          setIsInitializing(false);
+        }
+      } else {
+        setIsInitializing(false);
+      }
+    };
+    
+    initializeProfile();
+  }, [user?.id, fetchUserProfile]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +96,18 @@ const PartnerCodeRedeemer = () => {
   const handleSkip = () => {
     navigate('/dashboard');
   };
+
+  // Show loading state while initializing
+  if (isInitializing) {
+    return (
+      <Card className="w-full border-0 bg-transparent shadow-none">
+        <CardContent className="flex flex-col items-center justify-center py-10">
+          <Loader2 className="h-8 w-8 text-love-500 animate-spin mb-4" />
+          <p className="text-muted-foreground">Setting up your profile...</p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   if (hasPartner) {
     return (

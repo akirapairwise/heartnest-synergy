@@ -22,9 +22,12 @@ const CodeInputForm = () => {
   const { user, fetchUserProfile } = useAuth();
   
   const validateCode = async (code: string) => {
+    // First format the code (remove spaces, uppercase)
+    const formattedCode = code.trim().toUpperCase();
+    
     // Just check if the invitation exists and is valid
-    console.log('Validating code before submission:', code);
-    const { data: invite, error } = await getInvitationByToken(code);
+    console.log('Validating code before submission:', formattedCode);
+    const { data: invite, error } = await getInvitationByToken(formattedCode);
     
     if (error || !invite) {
       console.log('Pre-validation failed:', error?.message);

@@ -16,7 +16,7 @@ export const getInvitationByToken = async (token: string) => {
     const { data: allInvites, error: checkError } = await supabase
       .from('partner_invites')
       .select('*')
-      .eq('token', token);
+      .eq('token', token.trim().toUpperCase());
       
     if (checkError) {
       console.error('Error checking for invite:', checkError);
@@ -44,7 +44,7 @@ export const getInvitationByToken = async (token: string) => {
     const { data: invite, error: inviteError } = await supabase
       .from('partner_invites')
       .select('*')
-      .eq('token', token)
+      .eq('token', token.trim().toUpperCase())
       .eq('is_accepted', false)
       .gt('expires_at', now)
       .maybeSingle();
@@ -62,7 +62,7 @@ export const getInvitationByToken = async (token: string) => {
       const { data: acceptedInvite } = await supabase
         .from('partner_invites')
         .select('*')
-        .eq('token', token)
+        .eq('token', token.trim().toUpperCase())
         .eq('is_accepted', true)
         .maybeSingle();
         
@@ -74,7 +74,7 @@ export const getInvitationByToken = async (token: string) => {
       const { data: expiredInvite } = await supabase
         .from('partner_invites')
         .select('*')
-        .eq('token', token)
+        .eq('token', token.trim().toUpperCase())
         .lte('expires_at', now)
         .maybeSingle();
         
@@ -88,6 +88,18 @@ export const getInvitationByToken = async (token: string) => {
 
     // Check if inviter still exists
     console.log('Checking if inviter still exists:', invite.inviter_id);
+    
+    // First, check auth.users directly for the user's existence
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(invite.inviter_id);
+    
+    if (authError) {
+      console.error('Error checking inviter in auth system:', authError);
+      // Continue anyway since we'll also check user_profiles
+    }
+    
+    console.log('Auth user check result:', authUser ? 'User exists in auth' : 'User does not exist in auth');
+    
+    // Then check user_profiles
     const { data: inviterProfile, error: profileError } = await supabase
       .from('user_profiles')
       .select('id, full_name')
@@ -96,28 +108,17 @@ export const getInvitationByToken = async (token: string) => {
       
     if (profileError) {
       console.error('Error checking inviter profile:', profileError);
-      return { data: null, error: profileError };
     }
     
-    if (!inviterProfile) {
-      console.log('Inviter profile not found for ID:', invite.inviter_id);
-      
-      // Check if the user exists at all in auth.users
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(invite.inviter_id);
-      
-      if (authError) {
-        console.error('Error checking inviter in auth system:', authError);
-      }
-      
-      console.log('Auth user check result:', authUser ? 'User exists' : 'User does not exist');
-      
+    if (!inviterProfile && !authUser?.user) {
+      console.log('Inviter profile not found and auth user not found for ID:', invite.inviter_id);
       return { 
         data: null, 
         error: new Error('The invitation is no longer valid because the inviter no longer has an account') 
       };
     }
     
-    console.log('Inviter profile found:', inviterProfile);
+    console.log('Inviter exists, continuing with invitation processing');
     
     // Enhance the invite with the inviter's name
     const enhancedInvite = await enhanceInviteWithInviterName(invite as PartnerInvite);

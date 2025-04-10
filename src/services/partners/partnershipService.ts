@@ -9,6 +9,8 @@ import { getInvitationByToken } from "../partnerInviteService";
 export const acceptInvitation = async (token: string, currentUserId: string): Promise<OperationResult> => {
   try {
     console.log('Starting invitation acceptance process...');
+    console.log('Current user ID:', currentUserId);
+    console.log('Token:', token);
     
     // First get the invitation with enhanced validation
     const { data: invite, error: fetchError } = await getInvitationByToken(token);
@@ -18,49 +20,52 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       return { error: fetchError || new Error('Invitation not found, expired, or already accepted') };
     }
     
+    console.log('Found invitation:', invite);
+    
     // Check that user isn't inviting themselves
     if (invite.inviter_id === currentUserId) {
       console.error('User tried to accept their own invitation');
       return { error: new Error('You cannot accept your own invitation') };
     }
     
-    // Check if either user already has a partner
-    const { data: users, error: usersError } = await supabase
+    // Check if the current user's profile exists
+    const { data: currentUserProfile, error: currentUserError } = await supabase
       .from('user_profiles')
       .select('id, partner_id, full_name')
-      .in('id', [invite.inviter_id, currentUserId]);
+      .eq('id', currentUserId)
+      .maybeSingle();
       
-    if (usersError) {
-      console.error('Error checking user profiles:', usersError);
-      throw usersError;
+    if (currentUserError || !currentUserProfile) {
+      console.error('Error fetching current user profile:', currentUserError || 'Profile not found');
+      return { error: new Error('Your profile could not be found. Please try again later.') };
     }
     
-    if (!users || users.length < 2) {
-      console.error('Could not find both user profiles');
-      return { error: new Error('One of the users no longer has an account') };
-    }
+    console.log('Found current user profile:', currentUserProfile);
     
-    const inviterProfile = users.find(u => u.id === invite.inviter_id);
-    const currentUserProfile = users.find(u => u.id === currentUserId);
-    
-    if (!inviterProfile) {
-      console.error('Inviter profile not found');
-      return { error: new Error('The inviter no longer has an account') };
-    }
-    
-    if (!currentUserProfile) {
-      console.error('Current user profile not found');
-      return { error: new Error('Your profile could not be found') };
-    }
-    
-    if (inviterProfile.partner_id) {
-      console.error('Inviter already has a partner:', inviterProfile.partner_id);
-      return { error: new Error(`The inviter (${inviterProfile.full_name || 'User'}) already has a partner`) };
-    }
-    
+    // Check if the current user already has a partner
     if (currentUserProfile.partner_id) {
       console.error('Current user already has a partner:', currentUserProfile.partner_id);
       return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
+    }
+    
+    // Check if the inviter's profile exists
+    const { data: inviterProfile, error: inviterError } = await supabase
+      .from('user_profiles')
+      .select('id, partner_id, full_name')
+      .eq('id', invite.inviter_id)
+      .maybeSingle();
+      
+    if (inviterError || !inviterProfile) {
+      console.error('Error fetching inviter profile:', inviterError || 'Profile not found');
+      return { error: new Error('The inviter no longer has an account or their profile could not be found.') };
+    }
+    
+    console.log('Found inviter profile:', inviterProfile);
+    
+    // Check if the inviter already has a partner
+    if (inviterProfile.partner_id) {
+      console.error('Inviter already has a partner:', inviterProfile.partner_id);
+      return { error: new Error(`${inviterProfile.full_name || 'The inviter'} already has a partner.`) };
     }
     
     console.log('Starting partner linking process...');

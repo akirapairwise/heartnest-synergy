@@ -40,9 +40,10 @@ const CodeInputForm = () => {
     setError(null);
     
     try {
+      console.log('User ID attempting to accept invitation:', user.id);
       console.log('Proceeding to accept invitation with token:', formattedCode);
       
-      // Use the partnership service directly instead of the older partnerCodeService
+      // Use the partnership service directly
       const result = await acceptInvitation(formattedCode, user.id);
       
       if (result.error) {

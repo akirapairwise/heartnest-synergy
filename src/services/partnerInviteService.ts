@@ -33,19 +33,20 @@ export const getInvitationByToken = async (token: string) => {
       return { data: null, error: new Error('Invitation not found, expired, or already accepted') };
     }
 
-    // Check if inviter still exists by querying their profile
-    const { data: inviterProfile, error: profileError } = await supabase
+    // Check if inviter still exists
+    // First try to get the actual auth user to make sure they still exist
+    const { data: inviterAuth, error: authError } = await supabase
       .from('user_profiles')
       .select('id')
       .eq('id', invite.inviter_id)
       .maybeSingle();
       
-    if (profileError) {
-      console.error('Error checking inviter profile:', profileError);
+    if (authError) {
+      console.error('Error checking inviter auth:', authError);
       // Continue with the process, we'll check this result below
     }
     
-    if (!inviterProfile) {
+    if (!inviterAuth) {
       console.log('Inviter no longer has an account:', invite.inviter_id);
       return { 
         data: null, 

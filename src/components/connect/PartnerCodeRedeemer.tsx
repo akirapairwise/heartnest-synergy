@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,7 +66,7 @@ const PartnerCodeRedeemer = () => {
           
           // If profile already has a partner, navigate to dashboard
           if (data.partner_id) {
-            console.log('User already has a partner, redirecting to dashboard');
+            console.log('User already has a partner connected, redirecting to dashboard');
             toast.info('You already have a partner connected');
             navigate('/dashboard');
           }

@@ -15,6 +15,7 @@ export interface PartnerCode {
 export interface CodeResult {
   code: string | null;
   error: Error | null;
+  inviterId?: string | null; // Added to help with debugging
 }
 
 /**
@@ -100,7 +101,11 @@ export const getActivePartnerCode = async (): Promise<CodeResult> => {
     }
     
     const partnerCode = data as unknown as PartnerCode;
-    return { code: partnerCode?.code || null, error: null };
+    return { 
+      code: partnerCode?.code || null, 
+      error: null,
+      inviterId: partnerCode?.inviter_id || null 
+    };
     
   } catch (error) {
     console.error('Error getting active partner code:', error);
@@ -250,6 +255,30 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
     }
     
     const currentUserProfile = currentUserProfileData as unknown as Profile;
+    
+    // Check if the inviter exists as a user in the auth system first
+    console.log('Checking if inviter exists in auth users:', partnerCode.inviter_id);
+    const { data: authUserData, error: authUserError } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', partnerCode.inviter_id)
+      .maybeSingle();
+      
+    if (authUserError) {
+      console.error('Error checking if inviter exists in auth users:', authUserError);
+      return { 
+        success: false, 
+        message: 'Error checking if inviter exists. Please try again later.' 
+      };
+    }
+    
+    if (!authUserData) {
+      console.error('Inviter does not exist in auth users:', partnerCode.inviter_id);
+      return { 
+        success: false, 
+        message: 'The inviter no longer has an account. Please use a different code.' 
+      };
+    }
     
     // Check if the inviter's profile exists
     console.log('Checking inviter profile for user ID:', partnerCode.inviter_id);

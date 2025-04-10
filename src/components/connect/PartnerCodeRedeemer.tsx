@@ -63,6 +63,13 @@ const PartnerCodeRedeemer = () => {
           }
         } else {
           console.log('Profile found in database:', data);
+          
+          // If profile already has a partner, navigate to dashboard
+          if (data.partner_id) {
+            console.log('User already has a partner, redirecting to dashboard');
+            toast.info('You already have a partner connected');
+            navigate('/dashboard');
+          }
         }
       } catch (err) {
         console.error('Unexpected error checking profile:', err);
@@ -71,7 +78,7 @@ const PartnerCodeRedeemer = () => {
     };
     
     checkProfile();
-  }, [user?.id, isLoading, fetchUserProfile]);
+  }, [user?.id, isLoading, fetchUserProfile, navigate]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +115,12 @@ const PartnerCodeRedeemer = () => {
         navigate('/dashboard');
       } else {
         setError(result.message);
+        
+        // If the error indicates the code is invalid or expired, clear the input
+        if (result.message === 'Invalid or expired code' || 
+            result.message.includes('inviter no longer has an account')) {
+          setCode('');
+        }
       }
     } catch (err) {
       console.error('Error redeeming partner code:', err);

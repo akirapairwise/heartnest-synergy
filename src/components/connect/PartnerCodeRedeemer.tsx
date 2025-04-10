@@ -15,7 +15,7 @@ const PartnerCodeRedeemer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { profile, fetchUserProfile } = useAuth();
+  const { profile, fetchUserProfile, user } = useAuth();
   
   const hasPartner = Boolean(profile?.partner_id);
   
@@ -40,8 +40,8 @@ const PartnerCodeRedeemer = () => {
         toast.success(result.message);
         
         // Refresh the user profile to get updated partner status
-        if (fetchUserProfile) {
-          await fetchUserProfile();
+        if (fetchUserProfile && user) {
+          await fetchUserProfile(user.id);
         }
         
         // Redirect to dashboard

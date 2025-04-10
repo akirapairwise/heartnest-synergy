@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Profile } from "@/types/auth";
 
+// Define interfaces for the partner_codes table
 export interface PartnerCode {
   code: string;
   inviter_id: string;
@@ -22,35 +23,36 @@ export interface CodeResult {
 export const generatePartnerCode = async (): Promise<CodeResult> => {
   try {
     // First delete any existing unused codes
-    const { error: deleteError } = await supabase
-      .from('partner_codes')
-      .delete()
-      .eq('inviter_id', supabase.auth.getSession().then(({ data }) => data.session?.user.id))
-      .eq('is_used', false);
-      
-    if (deleteError) {
-      console.error('Error deleting existing codes:', deleteError);
+    const userId = (await supabase.auth.getSession()).data.session?.user.id;
+    
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
     
+    // Delete existing unused codes
+    await supabase
+      .from('partner_codes')
+      .delete()
+      .eq('inviter_id', userId)
+      .eq('is_used', false);
+    
     // Call the Postgres function to generate a unique code
-    const { data, error } = await supabase
+    const { data: generatedCode, error: rpcError } = await supabase
       .rpc('generate_partner_code');
       
-    if (error) throw error;
-    
-    const generatedCode = data as string;
+    if (rpcError) throw rpcError;
     
     // Insert the new code
     const { error: insertError } = await supabase
       .from('partner_codes')
       .insert({
-        code: generatedCode,
-        inviter_id: (await supabase.auth.getSession()).data.session?.user.id
-      });
+        code: generatedCode as string,
+        inviter_id: userId
+      } as PartnerCode);
       
     if (insertError) throw insertError;
     
-    return { code: generatedCode, error: null };
+    return { code: generatedCode as string, error: null };
     
   } catch (error) {
     console.error('Error generating partner code:', error);
@@ -87,7 +89,8 @@ export const getActivePartnerCode = async (): Promise<CodeResult> => {
       throw error;
     }
     
-    return { code: data.code, error: null };
+    const partnerCode = data as unknown as PartnerCode;
+    return { code: partnerCode.code, error: null };
     
   } catch (error) {
     console.error('Error getting active partner code:', error);
@@ -148,7 +151,7 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
     }
     
     // Fetch the partner code
-    const { data: partnerCode, error: codeError } = await supabase
+    const { data: partnerCodeData, error: codeError } = await supabase
       .from('partner_codes')
       .select('*')
       .eq('code', code)
@@ -158,12 +161,14 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
       
     if (codeError) throw codeError;
     
-    if (!partnerCode) {
+    if (!partnerCodeData) {
       return { 
         success: false, 
         message: 'Invalid or expired code' 
       };
     }
+    
+    const partnerCode = partnerCodeData as unknown as PartnerCode;
     
     // Prevent self-invitation
     if (partnerCode.inviter_id === userId) {
@@ -217,7 +222,7 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
     // Mark the code as used
     const { error: updateCodeError } = await supabase
       .from('partner_codes')
-      .update({ is_used: true })
+      .update({ is_used: true } as Partial<PartnerCode>)
       .eq('code', code);
       
     if (updateCodeError) throw updateCodeError;

@@ -19,7 +19,7 @@ import {
 import { Loader2, UserPlus, UserX } from 'lucide-react';
 
 const PartnerSettings = () => {
-  const { profile, fetchUserProfile } = useAuth();
+  const { profile, fetchUserProfile, user } = useAuth();
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
@@ -76,8 +76,8 @@ const PartnerSettings = () => {
       toast.success('Partner connection removed successfully');
       
       // Refresh user profile
-      if (fetchUserProfile) {
-        await fetchUserProfile();
+      if (fetchUserProfile && user) {
+        await fetchUserProfile(user.id);
       }
       
       // Clear partner profile state

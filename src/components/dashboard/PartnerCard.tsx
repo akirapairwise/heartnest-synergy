@@ -21,7 +21,7 @@ import {
 
 const PartnerCard = () => {
   const navigate = useNavigate();
-  const { profile, fetchUserProfile } = useAuth();
+  const { profile, fetchUserProfile, user } = useAuth();
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
@@ -84,8 +84,8 @@ const PartnerCard = () => {
       toast.success('Partner connection removed successfully');
       
       // Refresh user profile
-      if (fetchUserProfile) {
-        await fetchUserProfile();
+      if (fetchUserProfile && user) {
+        await fetchUserProfile(user.id);
       }
       
       // Clear partner profile state

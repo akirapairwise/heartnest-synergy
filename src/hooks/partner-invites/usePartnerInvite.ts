@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { PartnerInvite } from './types';
@@ -17,6 +17,7 @@ export const usePartnerInvite = () => {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [activeInvite, setActiveInvite] = useState<PartnerInvite | null>(null);
   const { user, fetchUserProfile } = useAuth();
+  const initialFetchDone = useRef(false);
 
   // Function to refresh active invites
   const refreshInvites = useCallback(async () => {
@@ -165,17 +166,20 @@ export const usePartnerInvite = () => {
 
   // Fetch active invitation on mount
   useEffect(() => {
+    // Add a ref guard to prevent multiple fetches
+    if (!user || initialFetchDone.current) return;
+    
     const loadInvite = async () => {
-      if (user) {
-        try {
-          const invite = await fetchActiveInvite(user.id);
-          if (invite) {
-            setActiveInvite(invite);
-            setInviteUrl(generateInviteUrl(invite.token));
-          }
-        } catch (err) {
-          console.error('Error loading active invite:', err);
+      try {
+        const invite = await fetchActiveInvite(user.id);
+        if (invite) {
+          setActiveInvite(invite);
+          setInviteUrl(generateInviteUrl(invite.token));
         }
+        // Mark initial fetch as done
+        initialFetchDone.current = true;
+      } catch (err) {
+        console.error('Error loading active invite:', err);
       }
     };
     

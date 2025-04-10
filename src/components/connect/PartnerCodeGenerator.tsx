@@ -18,10 +18,12 @@ const PartnerCodeGenerator = () => {
   const hasPartner = Boolean(profile?.partner_id);
   
   useEffect(() => {
+    // Only load existing code once when component mounts
     if (!hasPartner) {
+      // Adding this check to prevent repeated calls
       loadExistingCode();
     }
-  }, [hasPartner]);
+  }, [hasPartner]); // Only depend on hasPartner, not profile itself
   
   const loadExistingCode = async () => {
     setIsLoading(true);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,7 @@ const PartnerCodeRedeemer = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isProfileInitialized, setIsProfileInitialized] = useState(false);
   const navigate = useNavigate();
   const { profile, fetchUserProfile, user } = useAuth();
   
@@ -22,32 +22,34 @@ const PartnerCodeRedeemer = () => {
   
   // Ensure the user profile exists when the component mounts
   useEffect(() => {
+    // Add a guard to prevent multiple initialization attempts
+    if (isProfileInitialized || !user?.id) return;
+
     const initializeProfile = async () => {
-      if (user?.id) {
-        try {
-          setIsInitializing(true);
-          // Ensure user profile exists
-          const userProfile = await ensureUserProfile(user.id);
-          
-          if (!userProfile) {
-            setError('Could not create or retrieve your profile. Please refresh and try again.');
-          } else if (fetchUserProfile) {
-            // Refresh the auth context with the latest profile data
-            await fetchUserProfile(user.id);
-          }
-        } catch (err) {
-          console.error('Error initializing profile:', err);
-          setError('There was a problem setting up your profile. Please refresh and try again.');
-        } finally {
-          setIsInitializing(false);
+      try {
+        setIsInitializing(true);
+        // Ensure user profile exists
+        const userProfile = await ensureUserProfile(user.id);
+        
+        if (!userProfile) {
+          setError('Could not create or retrieve your profile. Please refresh and try again.');
+        } else if (fetchUserProfile) {
+          // Refresh the auth context with the latest profile data
+          await fetchUserProfile(user.id);
         }
-      } else {
+        
+        // Mark profile as initialized to prevent repeated calls
+        setIsProfileInitialized(true);
+      } catch (err) {
+        console.error('Error initializing profile:', err);
+        setError('There was a problem setting up your profile. Please refresh and try again.');
+      } finally {
         setIsInitializing(false);
       }
     };
     
     initializeProfile();
-  }, [user?.id, fetchUserProfile]);
+  }, [user?.id, fetchUserProfile, isProfileInitialized]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

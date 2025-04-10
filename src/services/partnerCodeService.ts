@@ -19,6 +19,56 @@ export interface CodeResult {
 }
 
 /**
+ * Ensures that a user profile exists, but doesn't try to create one if RLS policies might prevent it
+ */
+export const ensureUserProfile = async (userId: string): Promise<Profile | null> => {
+  try {
+    console.log('Ensuring user profile exists for user:', userId);
+    
+    if (!userId) {
+      console.error('Invalid user ID provided to ensureUserProfile');
+      return null;
+    }
+    
+    // Try to fetch the profile
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+      
+      // If this is an RLS error, we'll return null without trying to create
+      if (profileError.code === '42501') {
+        console.log('RLS policy preventing profile access');
+        return null;
+      }
+      
+      throw profileError;
+    }
+    
+    // If profile exists, return it
+    if (profile) {
+      console.log('Found existing profile:', profile);
+      return profile as unknown as Profile;
+    }
+    
+    console.log('No profile found for user:', userId);
+    
+    // We won't try to create a profile here if it doesn't exist,
+    // as RLS policies might prevent it. Instead, we'll use the AuthContext
+    // to handle profile creation.
+    
+    return null;
+  } catch (error) {
+    console.error('Error ensuring user profile exists:', error);
+    return null;
+  }
+};
+
+/**
  * Generates a new partner code for the current user
  */
 export const generatePartnerCode = async (): Promise<CodeResult> => {
@@ -110,56 +160,6 @@ export const getActivePartnerCode = async (): Promise<CodeResult> => {
   } catch (error) {
     console.error('Error getting active partner code:', error);
     return { code: null, error: error as Error };
-  }
-};
-
-/**
- * Ensures that a user profile exists, but doesn't try to create one if RLS policies might prevent it
- */
-export const ensureUserProfile = async (userId: string): Promise<Profile | null> => {
-  try {
-    console.log('Ensuring user profile exists for user:', userId);
-    
-    if (!userId) {
-      console.error('Invalid user ID provided to ensureUserProfile');
-      return null;
-    }
-    
-    // Try to fetch the profile
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-      
-    if (profileError) {
-      console.error('Error fetching user profile:', profileError);
-      
-      // If this is an RLS error, we'll return null without trying to create
-      if (profileError.code === '42501') {
-        console.log('RLS policy preventing profile access');
-        return null;
-      }
-      
-      throw profileError;
-    }
-    
-    // If profile exists, return it
-    if (profile) {
-      console.log('Found existing profile:', profile);
-      return profile as unknown as Profile;
-    }
-    
-    console.log('No profile found for user:', userId);
-    
-    // We won't try to create a profile here if it doesn't exist,
-    // as RLS policies might prevent it. Instead, we'll use the AuthContext
-    // to handle profile creation.
-    
-    return null;
-  } catch (error) {
-    console.error('Error ensuring user profile exists:', error);
-    return null;
   }
 };
 

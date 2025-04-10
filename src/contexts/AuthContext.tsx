@@ -165,42 +165,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       console.log('Fetching user profile for:', userId);
       
-      // First check if the profile exists in the profiles table
-      const { data: profileExists, error: checkError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-        
-      if (checkError) {
-        console.error('Error checking if profile exists:', checkError);
-      }
-      
-      // If profile doesn't exist in profiles table, create it
-      if (!profileExists) {
-        console.log('Profile does not exist in profiles table, creating new profile for user:', userId);
-        const defaultProfile = {
-          user_id: userId,
-          is_onboarding_complete: false,
-          partner_id: null
-        };
-        
-        const { error: createError } = await supabase
-          .from('profiles')
-          .insert(defaultProfile);
-          
-        if (createError) {
-          console.error('Error creating new user profile in profiles table:', createError);
-          toast({
-            title: "Error!",
-            description: "Failed to create user profile.",
-          });
-          return;
-        }
-        
-        console.log('Successfully created new profile for user in profiles table:', userId);
-      }
-      
       // Now check if the profile exists in the user_profiles table
       const { data: userProfileExists, error: userProfileCheckError } = await supabase
         .from('user_profiles')

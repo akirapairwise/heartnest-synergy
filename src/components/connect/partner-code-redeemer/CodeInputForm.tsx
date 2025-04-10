@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { acceptInvitation } from '@/services/partners/partnershipService';
+import { getInvitationByToken } from '@/services/partnerInviteService';
 
 /**
  * Form component for entering and submitting a partner code
@@ -19,6 +20,19 @@ const CodeInputForm = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user, fetchUserProfile } = useAuth();
+  
+  const validateCode = async (code: string) => {
+    // Just check if the invitation exists and is valid
+    console.log('Validating code before submission:', code);
+    const { data: invite, error } = await getInvitationByToken(code);
+    
+    if (error || !invite) {
+      console.log('Pre-validation failed:', error?.message);
+      return { valid: false, error: error?.message || 'Invalid invitation code' };
+    }
+    
+    return { valid: true, error: null };
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +57,15 @@ const CodeInputForm = () => {
       console.log('User ID attempting to accept invitation:', user.id);
       console.log('Proceeding to accept invitation with token:', formattedCode);
       
-      // Use the partnership service directly
+      // First validate the code
+      const validation = await validateCode(formattedCode);
+      if (!validation.valid) {
+        setError(validation.error || 'Invalid invitation code');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Use the partnership service to accept the invitation
       const result = await acceptInvitation(formattedCode, user.id);
       
       if (result.error) {

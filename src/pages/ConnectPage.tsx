@@ -5,14 +5,28 @@ import PartnerCodeGenerator from '@/components/connect/PartnerCodeGenerator';
 import PartnerCodeRedeemer from '@/components/connect/PartnerCodeRedeemer';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Heart, UserPlus } from "lucide-react";
+import { ArrowLeft, Heart, UserPlus, Loader2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ConnectPage = () => {
   useDocumentTitle('Connect Partner | HeartNest');
   const navigate = useNavigate();
   // Default to "redeem" tab to minimize API calls on initial load
   const [activeTab, setActiveTab] = useState('redeem');
+  const { isLoading, profile } = useAuth();
+  
+  // Show loading state while auth context is initializing
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50 p-4">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 text-love-500 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50 p-4">

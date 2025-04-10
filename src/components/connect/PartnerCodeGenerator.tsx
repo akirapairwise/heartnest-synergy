@@ -12,20 +12,29 @@ const PartnerCodeGenerator = () => {
   const [code, setCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const codeLoadAttempted = useRef(false);
-  const { profile } = useAuth();
+  const codeLoadInitiated = useRef(false);
+  const { profile, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   const hasPartner = Boolean(profile?.partner_id);
   
   useEffect(() => {
-    // Only load existing code once when component mounts
-    // and only if no partner and we haven't attempted to load yet
-    if (!hasPartner && !codeLoadAttempted.current) {
-      codeLoadAttempted.current = true;
-      loadExistingCode();
+    // Skip if auth is still loading or we have already initiated code loading
+    if (authLoading || codeLoadInitiated.current) {
+      return;
     }
-  }, [hasPartner]); // Only depend on hasPartner, not profile itself
+    
+    // Skip if user has a partner already
+    if (hasPartner) {
+      return;
+    }
+    
+    // Mark that we've started loading code to prevent multiple loads
+    codeLoadInitiated.current = true;
+    
+    // Load existing code
+    loadExistingCode();
+  }, [hasPartner, authLoading]); 
   
   const loadExistingCode = async () => {
     setIsLoading(true);
@@ -72,6 +81,17 @@ const PartnerCodeGenerator = () => {
   const handleSkip = () => {
     navigate('/dashboard');
   };
+  
+  // Show loading state while auth is initializing
+  if (authLoading) {
+    return (
+      <Card className="w-full border-0 bg-transparent shadow-none">
+        <CardContent className="flex justify-center py-10">
+          <p className="text-muted-foreground">Loading profile...</p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   if (hasPartner) {
     return (

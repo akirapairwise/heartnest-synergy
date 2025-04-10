@@ -22,6 +22,7 @@ export const usePartnerInvite = () => {
 
   // Set up cleanup function for component unmount
   useEffect(() => {
+    isMounted.current = true;
     return () => {
       isMounted.current = false;
     };
@@ -200,20 +201,21 @@ export const usePartnerInvite = () => {
     }
   };
 
-  // Fetch active invitation on mount
+  // Fetch active invitation on mount, but only once and only if user is available
   useEffect(() => {
-    // Add a ref guard to prevent multiple fetches
+    // Skip if no user or we've already done the initial fetch
     if (!user || initialFetchDone.current) return;
     
     const loadInvite = async () => {
       try {
+        // Mark initial fetch as started to prevent additional calls
+        initialFetchDone.current = true;
+        
         const invite = await fetchActiveInvite(user.id);
         if (invite && isMounted.current) {
           setActiveInvite(invite);
           setInviteUrl(generateInviteUrl(invite.token));
         }
-        // Mark initial fetch as done
-        initialFetchDone.current = true;
       } catch (err) {
         console.error('Error loading active invite:', err);
       }

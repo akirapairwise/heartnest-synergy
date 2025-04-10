@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,52 +14,25 @@ const PartnerCodeRedeemer = () => {
   const [code, setCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [isProfileInitialized, setIsProfileInitialized] = useState(false);
-  const initializationAttempted = useRef(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const navigate = useNavigate();
-  const { profile, fetchUserProfile, user } = useAuth();
+  const { profile, user, isLoading } = useAuth();
+  const profileInitialized = useRef(false);
   
   const hasPartner = Boolean(profile?.partner_id);
   
-  // Ensure the user profile exists when the component mounts
   useEffect(() => {
-    // Guard against multiple initialization attempts and only run once
-    if (initializationAttempted.current || !user?.id) {
-      // If no user or we already tried to initialize, just mark as not initializing
-      if (!user?.id || isProfileInitialized) {
-        setIsInitializing(false);
-      }
+    // Don't do anything if auth is still loading or user is not authenticated
+    if (isLoading || !user?.id || profileInitialized.current) {
       return;
     }
     
-    // Mark that we've attempted initialization
-    initializationAttempted.current = true;
+    // Set flag to prevent multiple initializations
+    profileInitialized.current = true;
     
-    const initializeProfile = async () => {
-      try {
-        // Ensure user profile exists
-        const userProfile = await ensureUserProfile(user.id);
-        
-        if (!userProfile) {
-          setError('Could not create or retrieve your profile. Please refresh and try again.');
-        } else if (fetchUserProfile) {
-          // Refresh the auth context with the latest profile data
-          await fetchUserProfile(user.id);
-        }
-        
-        // Mark profile as initialized to prevent repeated calls
-        setIsProfileInitialized(true);
-      } catch (err) {
-        console.error('Error initializing profile:', err);
-        setError('There was a problem setting up your profile. Please refresh and try again.');
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-    
-    initializeProfile();
-  }, [user?.id, fetchUserProfile, isProfileInitialized]);
+    // No need to initialize profile here as it should be handled by the AuthContext
+    // This component will just wait for the profile to be available
+  }, [user?.id, isLoading]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,17 +54,6 @@ const PartnerCodeRedeemer = () => {
       if (result.success) {
         toast.success(result.message);
         
-        // Refresh the user profile to get updated partner status
-        if (fetchUserProfile && user) {
-          try {
-            await fetchUserProfile(user.id);
-            console.log("Successfully refreshed user profile after connection");
-          } catch (err) {
-            console.error("Failed to refresh profile after connection:", err);
-            // We can still proceed to dashboard even if this fails
-          }
-        }
-        
         // Redirect to dashboard
         navigate('/dashboard');
       } else {
@@ -108,13 +71,13 @@ const PartnerCodeRedeemer = () => {
     navigate('/dashboard');
   };
 
-  // Show loading state while initializing
-  if (isInitializing) {
+  // Show loading state while profile is initializing
+  if (isLoading || isInitializing) {
     return (
       <Card className="w-full border-0 bg-transparent shadow-none">
         <CardContent className="flex flex-col items-center justify-center py-10">
           <Loader2 className="h-8 w-8 text-love-500 animate-spin mb-4" />
-          <p className="text-muted-foreground">Setting up your profile...</p>
+          <p className="text-muted-foreground">Loading profile...</p>
         </CardContent>
       </Card>
     );

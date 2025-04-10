@@ -109,7 +109,7 @@ export const getActivePartnerCode = async (): Promise<CodeResult> => {
 };
 
 /**
- * Ensures that a user profile exists, creating one if it doesn't
+ * Ensures that a user profile exists, but doesn't try to create one if RLS policies might prevent it
  */
 export const ensureUserProfile = async (userId: string): Promise<Profile | null> => {
   try {
@@ -129,6 +129,13 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
       
     if (profileError) {
       console.error('Error fetching user profile:', profileError);
+      
+      // If this is an RLS error, we'll return null without trying to create
+      if (profileError.code === '42501') {
+        console.log('RLS policy preventing profile access');
+        return null;
+      }
+      
       throw profileError;
     }
     
@@ -138,84 +145,13 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
       return profile as unknown as Profile;
     }
     
-    console.log('No profile found, creating new one for user:', userId);
+    console.log('No profile found for user:', userId);
     
-    // Create a new profile with default values
-    const defaultProfile = {
-      id: userId,
-      is_onboarding_complete: false,
-      partner_id: null,
-      full_name: null,
-      love_language: null,
-      communication_style: null,
-      emotional_needs: null,
-      relationship_goals: null,
-      financial_attitude: null,
-      location: null,
-      bio: null,
-      mood_settings: {
-        showAvatar: true,
-        defaultMood: 'neutral'
-      }
-    };
+    // We won't try to create a profile here if it doesn't exist,
+    // as RLS policies might prevent it. Instead, we'll use the AuthContext
+    // to handle profile creation.
     
-    // Check if profile exists again before inserting (race condition protection)
-    const { data: checkAgain, error: checkError } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
-      
-    if (checkError) {
-      console.error('Error checking profile existence again:', checkError);
-    }
-    
-    if (checkAgain) {
-      console.log('Profile was created by another process, fetching it');
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-        
-      if (fetchError) {
-        console.error('Error fetching existing profile:', fetchError);
-        throw fetchError;
-      }
-      
-      return existingProfile as unknown as Profile;
-    }
-    
-    // Insert the new profile
-    const { data: newProfile, error: createError } = await supabase
-      .from('user_profiles')
-      .insert(defaultProfile)
-      .select()
-      .single();
-      
-    if (createError) {
-      console.error('Error creating new user profile:', createError);
-      // Check if this is a duplicate key error
-      if (createError.code === '23505') {
-        console.log('Profile was created by another process (duplicate key), fetching it');
-        const { data: existingProfile, error: fetchError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-          
-        if (fetchError) {
-          console.error('Error fetching profile after duplicate key error:', fetchError);
-          throw fetchError;
-        }
-        
-        return existingProfile as unknown as Profile;
-      }
-      throw createError;
-    }
-    
-    console.log('Created new profile successfully:', newProfile);
-    return newProfile as unknown as Profile;
+    return null;
   } catch (error) {
     console.error('Error ensuring user profile exists:', error);
     return null;
@@ -250,6 +186,15 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
       
     if (codeError) {
       console.error('Error fetching partner code:', codeError);
+      
+      // Return more specific message if it's an RLS error
+      if (codeError.code === '42501') {
+        return { 
+          success: false, 
+          message: 'Unable to access partner codes due to permission restrictions' 
+        };
+      }
+      
       throw codeError;
     }
     
@@ -272,25 +217,73 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
       };
     }
     
-    console.log('Ensuring both user profiles exist...');
-    // Ensure both user profiles exist
-    const inviterProfile = await ensureUserProfile(partnerCode.inviter_id);
-    if (!inviterProfile) {
-      console.error('Could not ensure inviter profile exists');
+    // Check if the current user's profile exists
+    const { data: currentUserProfileData, error: currentUserProfileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (currentUserProfileError) {
+      console.error('Error checking current user profile:', currentUserProfileError);
+      
+      // Return more specific message if it's an RLS error
+      if (currentUserProfileError.code === '42501') {
+        return { 
+          success: false, 
+          message: 'Unable to access your profile due to permission restrictions' 
+        };
+      }
+      
       return { 
         success: false, 
-        message: 'Could not retrieve inviter profile. Please try again later.' 
+        message: 'Error checking your profile. Please try again later.' 
       };
     }
     
-    const currentUserProfile = await ensureUserProfile(userId);
-    if (!currentUserProfile) {
-      console.error('Could not ensure current user profile exists');
+    if (!currentUserProfileData) {
+      console.error('Current user profile not found');
       return { 
         success: false, 
-        message: 'Could not set up your profile. Please try again later.' 
+        message: 'Your profile is not set up properly. Please try again later.' 
       };
     }
+    
+    const currentUserProfile = currentUserProfileData as unknown as Profile;
+    
+    // Check if the inviter's profile exists
+    const { data: inviterProfileData, error: inviterProfileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', partnerCode.inviter_id)
+      .maybeSingle();
+      
+    if (inviterProfileError) {
+      console.error('Error checking inviter profile:', inviterProfileError);
+      
+      // Return more specific message if it's an RLS error
+      if (inviterProfileError.code === '42501') {
+        return { 
+          success: false, 
+          message: 'Unable to access inviter profile due to permission restrictions' 
+        };
+      }
+      
+      return { 
+        success: false, 
+        message: 'Error checking inviter profile. Please try again later.' 
+      };
+    }
+    
+    if (!inviterProfileData) {
+      console.error('Inviter profile not found');
+      return { 
+        success: false, 
+        message: 'Inviter profile not found. Please try another code.' 
+      };
+    }
+    
+    const inviterProfile = inviterProfileData as unknown as Profile;
     
     console.log('Found both profiles:', {
       inviterProfile: inviterProfile.id,
@@ -323,6 +316,15 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
       
     if (updateInviterError) {
       console.error('Error updating inviter profile:', updateInviterError);
+      
+      // Return more specific message if it's an RLS error
+      if (updateInviterError.code === '42501') {
+        return { 
+          success: false, 
+          message: 'Unable to update inviter profile due to permission restrictions' 
+        };
+      }
+      
       throw updateInviterError;
     }
     
@@ -333,6 +335,15 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
       
     if (updateCurrentUserError) {
       console.error('Error updating current user profile:', updateCurrentUserError);
+      
+      // Return more specific message if it's an RLS error
+      if (updateCurrentUserError.code === '42501') {
+        return { 
+          success: false, 
+          message: 'Unable to update your profile due to permission restrictions' 
+        };
+      }
+      
       throw updateCurrentUserError;
     }
     

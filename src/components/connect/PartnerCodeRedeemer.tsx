@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,8 @@ const PartnerCodeRedeemer = () => {
     const checkProfile = async () => {
       try {
         console.log('Checking if profile exists for user:', user.id);
+        
+        // First check if we can access the profile
         const { data, error } = await supabase
           .from('user_profiles')
           .select('id, partner_id')
@@ -41,19 +44,29 @@ const PartnerCodeRedeemer = () => {
           
         if (error) {
           console.error('Error checking profile:', error);
-        } else if (!data) {
-          console.log('Profile not found in database, will attempt to create one');
+          setError('There was an issue accessing your profile. Please try again later.');
+          return;
+        } 
+        
+        if (!data) {
+          console.log('Profile not found in database, will attempt to create one via AuthContext');
           
-          // Explicitly try to create profile
+          // Explicitly try to create profile via AuthContext
           if (fetchUserProfile) {
-            await fetchUserProfile(user.id);
-            console.log('Profile created via fetchUserProfile');
+            try {
+              await fetchUserProfile(user.id);
+              console.log('Profile created via fetchUserProfile');
+            } catch (err) {
+              console.error('Error creating profile via fetchUserProfile:', err);
+              setError('Unable to set up your profile. Please try again later.');
+            }
           }
         } else {
           console.log('Profile found in database:', data);
         }
       } catch (err) {
         console.error('Unexpected error checking profile:', err);
+        setError('An unexpected error occurred. Please try again later.');
       }
     };
     
@@ -68,6 +81,11 @@ const PartnerCodeRedeemer = () => {
       return;
     }
     
+    if (!user?.id) {
+      setError('You must be logged in to redeem a partner code');
+      return;
+    }
+    
     // Format code: remove spaces, uppercase
     const formattedCode = code.trim().toUpperCase();
     
@@ -75,43 +93,6 @@ const PartnerCodeRedeemer = () => {
     setError(null);
     
     try {
-      // First check if we can get the current user's profile
-      if (user?.id) {
-        console.log('Checking current user profile before redeeming code...');
-        const { data: profileCheck, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('id')
-          .eq('id', user.id)
-          .maybeSingle();
-          
-        if (profileError) {
-          console.error('Error checking user profile:', profileError);
-        } else if (!profileCheck) {
-          console.log('Profile not found, attempting to create one...');
-          
-          // Try to create a profile if it doesn't exist
-          const defaultProfile = {
-            id: user.id,
-            is_onboarding_complete: false,
-            partner_id: null
-          };
-          
-          const { error: createError } = await supabase
-            .from('user_profiles')
-            .insert(defaultProfile);
-            
-          if (createError) {
-            console.error('Error creating profile:', createError);
-            setError('Could not create your profile. Please try again later.');
-            return;
-          }
-          
-          console.log('Profile created successfully');
-        } else {
-          console.log('User profile exists:', profileCheck);
-        }
-      }
-      
       console.log('Proceeding to redeem partner code:', formattedCode);
       const result = await redeemPartnerCode(formattedCode);
       

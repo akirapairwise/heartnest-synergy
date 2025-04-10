@@ -1,13 +1,18 @@
 
 // Helper function to generate a token
 export const generateToken = (): string => {
+  // Generate a 6-character token (letters and numbers)
   return Array.from(
-    { length: 12 },
-    () => Math.floor(Math.random() * 36).toString(36)
+    { length: 6 }, 
+    () => {
+      // Only use easy-to-read characters (no 0/O, 1/I confusion)
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      return chars.charAt(Math.floor(Math.random() * chars.length));
+    }
   ).join('').toUpperCase();
 };
 
 // Helper function to generate the invite URL
 export const generateInviteUrl = (token: string): string => {
-  return `${window.location.origin}/invite?token=${token}`;
+  return `${window.location.origin}/invite?token=${token.toUpperCase()}`;
 };

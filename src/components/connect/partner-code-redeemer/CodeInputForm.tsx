@@ -22,16 +22,26 @@ const CodeInputForm = () => {
   const { user, fetchUserProfile } = useAuth();
   
   const validateCode = async (code: string) => {
-    // First format the code (remove spaces, uppercase)
+    // Clean the code (remove spaces, uppercase)
     const formattedCode = code.trim().toUpperCase();
     
-    // Just check if the invitation exists and is valid
+    if (!formattedCode) {
+      return { valid: false, error: 'Please enter a valid invitation code' };
+    }
+    
     console.log('Validating code before submission:', formattedCode);
+    
+    // Check if the invitation exists and is valid
     const { data: invite, error } = await getInvitationByToken(formattedCode);
     
     if (error || !invite) {
       console.log('Pre-validation failed:', error?.message);
       return { valid: false, error: error?.message || 'Invalid invitation code' };
+    }
+    
+    // Extra validation to ensure user isn't inviting themselves
+    if (user?.id && invite.inviter_id === user.id) {
+      return { valid: false, error: 'You cannot accept your own invitation' };
     }
     
     return { valid: true, error: null };

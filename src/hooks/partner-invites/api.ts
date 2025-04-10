@@ -36,6 +36,9 @@ export const fetchActiveInvite = async (userId: string): Promise<PartnerInvite |
 // Create a new invitation
 export const createNewInvitation = async (userId: string, token: string): Promise<InviteResult> => {
   try {
+    // Always uppercase the token for consistency
+    const formattedToken = token.toUpperCase();
+    
     // First ensure user profile exists
     const profile = await ensureUserProfile(userId);
     if (!profile) {
@@ -57,12 +60,24 @@ export const createNewInvitation = async (userId: string, token: string): Promis
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
+    // Delete any existing invitations from this user
+    const { error: deleteError } = await supabase
+      .from('partner_invites')
+      .delete()
+      .eq('inviter_id', userId)
+      .eq('is_accepted', false);
+      
+    if (deleteError) {
+      console.error('Error cleaning up old invitations:', deleteError);
+      // Continue anyway, non-critical error
+    }
+    
     // Insert new invitation
     const { data, error } = await supabase
       .from('partner_invites')
       .insert({
         inviter_id: userId,
-        token,
+        token: formattedToken,
         expires_at: expiresAt.toISOString(),
         is_accepted: false
       })
@@ -73,6 +88,8 @@ export const createNewInvitation = async (userId: string, token: string): Promis
       console.error('Error creating invitation:', error);
       return { success: false, error };
     }
+    
+    console.log('Successfully created invitation with token:', formattedToken);
     
     return { success: true, invite: data as PartnerInvite };
   } catch (err) {
@@ -91,6 +108,9 @@ export const acceptInvite = async (userId: string, token: string): Promise<{ err
   }
   
   try {
+    // Always uppercase the token for consistency
+    const formattedToken = token.trim().toUpperCase();
+    
     // Ensure user profile exists first
     const currentUserProfile = await ensureUserProfile(userId);
     if (!currentUserProfile) {
@@ -106,7 +126,7 @@ export const acceptInvite = async (userId: string, token: string): Promise<{ err
     const { data: invite, error: tokenError } = await supabase
       .from('partner_invites')
       .select('*')
-      .eq('token', token)
+      .eq('token', formattedToken)
       .eq('is_accepted', false)
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
@@ -180,6 +200,9 @@ export const acceptInvite = async (userId: string, token: string): Promise<{ err
 // Function to delete existing invitations and create a new one
 export const regenerateInvitation = async (userId: string, token: string): Promise<InviteResult> => {
   try {
+    // Always uppercase the token for consistency
+    const formattedToken = token.toUpperCase();
+    
     // Delete any existing invitations
     await supabase
       .from('partner_invites')
@@ -188,7 +211,7 @@ export const regenerateInvitation = async (userId: string, token: string): Promi
       .eq('is_accepted', false);
     
     // Create a new invitation
-    return await createNewInvitation(userId, token);
+    return await createNewInvitation(userId, formattedToken);
   } catch (err) {
     console.error('Error regenerating token:', err);
     return { 

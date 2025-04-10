@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
 import { getInvitationByToken } from "../partnerInviteService";
@@ -9,10 +10,13 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
   try {
     console.log('Starting invitation acceptance process...');
     console.log('Current user ID:', currentUserId);
-    console.log('Token:', token);
+    console.log('Token:', token.trim().toUpperCase());
+    
+    // Format token to be consistent
+    const formattedToken = token.trim().toUpperCase();
     
     // First get the invitation with enhanced validation
-    const { data: invite, error: fetchError } = await getInvitationByToken(token);
+    const { data: invite, error: fetchError } = await getInvitationByToken(formattedToken);
     
     if (fetchError || !invite) {
       console.error('Failed to find invitation:', fetchError || 'Invitation not found');
@@ -49,6 +53,18 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
         console.error('Error creating user profile:', createError);
         return { error: new Error('Could not create user profile. Please try again.') };
       }
+      
+      // Verify profile was created
+      const { data: newProfile, error: checkError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', currentUserId)
+        .maybeSingle();
+        
+      if (checkError || !newProfile) {
+        console.error('Failed to verify profile creation:', checkError);
+        return { error: new Error('Profile creation could not be verified. Please try again.') };
+      }
     } else if (userProfileCheck.partner_id) {
       // Check if the current user already has a partner
       console.error('Current user already has a partner:', userProfileCheck.partner_id);
@@ -76,6 +92,18 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       if (createError) {
         console.error('Error creating inviter profile:', createError);
         return { error: new Error('Could not create inviter profile. Please try again.') };
+      }
+      
+      // Verify profile was created
+      const { data: newProfile, error: checkError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', invite.inviter_id)
+        .maybeSingle();
+        
+      if (checkError || !newProfile) {
+        console.error('Failed to verify inviter profile creation:', checkError);
+        return { error: new Error('Inviter profile creation could not be verified. Please try again.') };
       }
     } else if (inviterProfileCheck.partner_id) {
       // Check if the inviter already has a partner

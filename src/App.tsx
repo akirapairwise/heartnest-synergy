@@ -14,9 +14,7 @@ import GoalsPage from '@/pages/GoalsPage';
 import RecommendationsPage from '@/pages/RecommendationsPage';
 import InvitePage from '@/pages/InvitePage';
 import PartnerInvitationPage from '@/pages/PartnerInvitationPage';
-import ConnectPartner from '@/components/connect/ConnectPartner';
-
-// Add the debug page to the routes
+import ConnectPage from '@/pages/ConnectPage';
 import PartnerDebugPage from './pages/PartnerDebugPage';
 
 function App() {
@@ -46,7 +44,7 @@ function App() {
         <Route path="/recommendations" element={isLoggedIn ? <RecommendationsPage /> : <Navigate to="/auth" />} />
         <Route path="/invite" element={isLoggedIn ? <InvitePage /> : <Navigate to="/auth" />} />
         <Route path="/invitation/:code" element={isLoggedIn ? <PartnerInvitationPage /> : <Navigate to="/auth" />} />
-        <Route path="/connect" element={isLoggedIn ? <ConnectPartner /> : <Navigate to="/auth" />} />
+        <Route path="/connect" element={isLoggedIn ? <ConnectPage /> : <Navigate to="/auth" />} />
         <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route path="/partner-debug" element={<PartnerDebugPage />} />
       </Routes>

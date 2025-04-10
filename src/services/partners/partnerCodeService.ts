@@ -71,7 +71,7 @@ export const getCurrentUserCode = async (userId: string): Promise<{code: string 
 const ensureUserProfile = async (userId: string, name?: string): Promise<{profile: Profile | null, error: any}> => {
   try {
     // First try to get the profile
-    const { data: profile, error } = await supabase
+    const { data: profileData, error } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('id', userId)
@@ -79,15 +79,23 @@ const ensureUserProfile = async (userId: string, name?: string): Promise<{profil
       
     if (error) throw error;
     
-    // If profile exists, return it
-    if (profile) {
+    // If profile exists, cast it to the correct type and return it
+    if (profileData) {
+      // Convert the JSON type to the expected Profile type
+      const profile: Profile = {
+        ...profileData,
+        mood_settings: profileData.mood_settings as { 
+          showAvatar?: boolean; 
+          defaultMood?: string;
+        } | null
+      };
       return { profile, error: null };
     }
     
     // Profile doesn't exist, create it
     console.log('Creating profile for user:', userId);
     
-    const { data: newProfile, error: createError } = await supabase
+    const { data: newProfileData, error: createError } = await supabase
       .from('user_profiles')
       .insert({ 
         id: userId,
@@ -100,6 +108,15 @@ const ensureUserProfile = async (userId: string, name?: string): Promise<{profil
       .single();
     
     if (createError) throw createError;
+    
+    // Cast the new profile to the correct type
+    const newProfile: Profile = {
+      ...newProfileData,
+      mood_settings: newProfileData.mood_settings as {
+        showAvatar?: boolean;
+        defaultMood?: string;
+      } | null
+    };
     
     return { profile: newProfile, error: null };
   } catch (error) {

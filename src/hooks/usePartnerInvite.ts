@@ -58,6 +58,24 @@ export const usePartnerInvite = () => {
     }
   }, [user]);
 
+  // Function to refresh active invites - this is the method we're adding
+  const refreshInvites = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const invite = await fetchActiveInvite();
+      if (invite) {
+        setActiveInvite(invite);
+        setInviteUrl(generateInviteUrl(invite.token));
+      } else {
+        setActiveInvite(null);
+        setInviteUrl(null);
+      }
+    } catch (err) {
+      console.error('Error refreshing invites:', err);
+    }
+  }, [user, fetchActiveInvite]);
+
   // Function to create an invitation
   const createInvitation = async (): Promise<string | null> => {
     if (!user) {
@@ -300,7 +318,8 @@ export const usePartnerInvite = () => {
     activeInvite,
     createInvitation,
     regenerateToken,
-    acceptInvitation
+    acceptInvitation,
+    refreshInvites  // Add the new method to the returned object
   };
 };
 

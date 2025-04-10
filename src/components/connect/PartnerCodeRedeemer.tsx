@@ -35,7 +35,7 @@ const PartnerCodeRedeemer = () => {
       try {
         console.log('Checking if profile exists for user:', user.id);
         
-        // First check if we can access the profile
+        // First check if we can access the profile in user_profiles
         const { data, error } = await supabase
           .from('user_profiles')
           .select('id, partner_id')
@@ -43,26 +43,46 @@ const PartnerCodeRedeemer = () => {
           .maybeSingle();
           
         if (error) {
-          console.error('Error checking profile:', error);
-          setError('There was an issue accessing your profile. Please try again later.');
-          return;
-        } 
-        
-        if (!data) {
-          console.log('Profile not found in database, will attempt to create one via AuthContext');
+          console.error('Error checking profile in user_profiles:', error);
           
-          // Explicitly try to create profile via AuthContext
-          if (fetchUserProfile) {
-            try {
-              await fetchUserProfile(user.id);
-              console.log('Profile created via fetchUserProfile');
-            } catch (err) {
-              console.error('Error creating profile via fetchUserProfile:', err);
-              setError('Unable to set up your profile. Please try again later.');
+          // Also check the profiles table as a fallback
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('user_id, partner_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+            
+          if (profileError) {
+            console.error('Error checking profile in profiles table:', profileError);
+            setError('There was an issue accessing your profile. Please try again later.');
+            return;
+          }
+          
+          if (!profileData) {
+            console.log('Profile not found in either table, will attempt to create one');
+            
+            // Explicitly try to create profile via AuthContext
+            if (fetchUserProfile) {
+              try {
+                await fetchUserProfile(user.id);
+                console.log('Profile created via fetchUserProfile');
+              } catch (err) {
+                console.error('Error creating profile via fetchUserProfile:', err);
+                setError('Unable to set up your profile. Please try again later.');
+              }
+            }
+          } else {
+            console.log('Profile found in profiles table:', profileData);
+            
+            // If profile already has a partner, navigate to dashboard
+            if (profileData.partner_id) {
+              console.log('User already has a partner, redirecting to dashboard');
+              toast.info('You already have a partner connected');
+              navigate('/dashboard');
             }
           }
         } else {
-          console.log('Profile found in database:', data);
+          console.log('Profile found in user_profiles table:', data);
           
           // If profile already has a partner, navigate to dashboard
           if (data.partner_id) {

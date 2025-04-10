@@ -23,7 +23,8 @@ export interface CodeResult {
 export const generatePartnerCode = async (): Promise<CodeResult> => {
   try {
     // First delete any existing unused codes
-    const userId = (await supabase.auth.getSession()).data.session?.user.id;
+    const { data: session } = await supabase.auth.getSession();
+    const userId = session?.session?.user.id;
     
     if (!userId) {
       throw new Error('User not authenticated');
@@ -71,14 +72,14 @@ export const generatePartnerCode = async (): Promise<CodeResult> => {
  */
 export const getActivePartnerCode = async (): Promise<CodeResult> => {
   try {
-    const userId = (await supabase.auth.getSession()).data.session?.user.id;
+    const { data: session } = await supabase.auth.getSession();
+    const userId = session?.session?.user.id;
     
     if (!userId) {
       throw new Error('User not authenticated');
     }
     
-    // Ensure user profile exists
-    await ensureUserProfile(userId);
+    // We'll skip profile creation here as it might not be necessary just to get a code
     
     const { data, error } = await supabase
       .from('partner_codes')
@@ -88,7 +89,7 @@ export const getActivePartnerCode = async (): Promise<CodeResult> => {
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
       
     if (error) {
       if (error.code === 'PGRST116') {
@@ -99,7 +100,7 @@ export const getActivePartnerCode = async (): Promise<CodeResult> => {
     }
     
     const partnerCode = data as unknown as PartnerCode;
-    return { code: partnerCode.code, error: null };
+    return { code: partnerCode?.code || null, error: null };
     
   } catch (error) {
     console.error('Error getting active partner code:', error);
@@ -173,7 +174,6 @@ export const ensureUserProfile = async (userId: string): Promise<Profile | null>
     return newProfile as unknown as Profile;
   } catch (error) {
     console.error('Error ensuring user profile exists:', error);
-    toast.error('Could not create or retrieve user profile');
     return null;
   }
 };
@@ -185,7 +185,7 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
   try {
     console.log('Attempting to redeem partner code:', code);
     const { data: session } = await supabase.auth.getSession();
-    const userId = session.session?.user.id;
+    const userId = session?.session?.user.id;
     
     if (!userId) {
       console.error('No authenticated user found');
@@ -231,21 +231,20 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
     console.log('Ensuring both user profiles exist...');
     // Ensure both user profiles exist
     const inviterProfile = await ensureUserProfile(partnerCode.inviter_id);
-    const currentUserProfile = await ensureUserProfile(userId);
-    
     if (!inviterProfile) {
       console.error('Could not ensure inviter profile exists');
       return { 
         success: false, 
-        message: 'Could not retrieve inviter profile. Please try again or contact support.' 
+        message: 'Could not retrieve inviter profile. Please try again later.' 
       };
     }
     
+    const currentUserProfile = await ensureUserProfile(userId);
     if (!currentUserProfile) {
       console.error('Could not ensure current user profile exists');
       return { 
         success: false, 
-        message: 'Could not set up your profile. Please try again or contact support.' 
+        message: 'Could not set up your profile. Please try again later.' 
       };
     }
     
@@ -297,7 +296,7 @@ export const redeemPartnerCode = async (code: string): Promise<{ success: boolea
     // Mark the code as used
     const { error: updateCodeError } = await supabase
       .from('partner_codes')
-      .update({ is_used: true } as unknown as Partial<PartnerCode>)
+      .update({ is_used: true })
       .eq('code', code);
       
     if (updateCodeError) {

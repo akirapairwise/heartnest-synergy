@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, ArrowLeft, Heart, Lock } from "lucide-react";
-import { redeemPartnerCode, ensureUserProfile } from "@/services/partnerCodeService";
+import { redeemPartnerCode } from "@/services/partnerCodeService";
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,24 +14,22 @@ const PartnerCodeRedeemer = () => {
   const [code, setCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isInitializing, setIsInitializing] = useState(false);
   const navigate = useNavigate();
-  const { profile, user, isLoading } = useAuth();
-  const profileInitialized = useRef(false);
+  const { profile, user, isLoading, fetchUserProfile } = useAuth();
+  const initialized = useRef(false);
   
   const hasPartner = Boolean(profile?.partner_id);
   
+  // Only handle profile loading if auth is ready
   useEffect(() => {
-    // Don't do anything if auth is still loading or user is not authenticated
-    if (isLoading || !user?.id || profileInitialized.current) {
+    if (isLoading || !user?.id || initialized.current) {
       return;
     }
     
-    // Set flag to prevent multiple initializations
-    profileInitialized.current = true;
+    // Set the initialization flag to prevent multiple fetches
+    initialized.current = true;
     
-    // No need to initialize profile here as it should be handled by the AuthContext
-    // This component will just wait for the profile to be available
+    // No need to call fetchUserProfile here as it's handled by the AuthContext
   }, [user?.id, isLoading]);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +52,11 @@ const PartnerCodeRedeemer = () => {
       if (result.success) {
         toast.success(result.message);
         
+        // Refresh user profile after successful redemption
+        if (user?.id && fetchUserProfile) {
+          await fetchUserProfile(user.id);
+        }
+        
         // Redirect to dashboard
         navigate('/dashboard');
       } else {
@@ -72,7 +75,7 @@ const PartnerCodeRedeemer = () => {
   };
 
   // Show loading state while profile is initializing
-  if (isLoading || isInitializing) {
+  if (isLoading) {
     return (
       <Card className="w-full border-0 bg-transparent shadow-none">
         <CardContent className="flex flex-col items-center justify-center py-10">

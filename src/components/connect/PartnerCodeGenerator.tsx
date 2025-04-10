@@ -19,13 +19,9 @@ const PartnerCodeGenerator = () => {
   const hasPartner = Boolean(profile?.partner_id);
   
   useEffect(() => {
-    // Skip if auth is still loading or we have already initiated code loading
-    if (authLoading || codeLoadInitiated.current) {
-      return;
-    }
-    
-    // Skip if user has a partner already
-    if (hasPartner) {
+    // Skip if auth is still loading or we've already initiated code loading
+    // or if user already has a partner
+    if (authLoading || codeLoadInitiated.current || hasPartner) {
       return;
     }
     
@@ -40,7 +36,10 @@ const PartnerCodeGenerator = () => {
     setIsLoading(true);
     try {
       const { code, error } = await getActivePartnerCode();
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading existing code:', error);
+        return;
+      }
       
       if (code) {
         setCode(code);
@@ -56,7 +55,11 @@ const PartnerCodeGenerator = () => {
     setIsLoading(true);
     try {
       const { code, error } = await generatePartnerCode();
-      if (error) throw error;
+      if (error) {
+        console.error('Error generating code:', error);
+        toast.error('Failed to generate partner code');
+        return;
+      }
       
       setCode(code);
       toast.success('Partner code generated successfully');

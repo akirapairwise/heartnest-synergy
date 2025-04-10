@@ -42,14 +42,19 @@ const PartnerCodeRedeemer = () => {
     
     setIsSubmitting(true);
     try {
+      console.log('Redeeming code:', values.code, 'for user:', user.id);
       const { error } = await redeemPartnerCode(user.id, values.code);
       
       if (error) {
+        console.error('Error from redeemPartnerCode:', error.message);
         form.setError("code", { message: error.message });
+        toast.error(error.message || "Failed to connect with partner");
+        setIsSubmitting(false);
         return;
       }
       
       // Refresh user profile to get the updated partner_id
+      console.log('Connection successful, refreshing user profile');
       await fetchUserProfile(user.id);
       
       toast.success("Successfully connected with your partner!");
@@ -57,6 +62,7 @@ const PartnerCodeRedeemer = () => {
     } catch (error: any) {
       console.error('Error redeeming partner code:', error);
       toast.error(error.message || "Failed to connect with your partner. Please try again.");
+      form.setError("code", { message: "An unexpected error occurred. Please try again." });
     } finally {
       setIsSubmitting(false);
     }

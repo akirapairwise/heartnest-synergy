@@ -74,7 +74,7 @@ export const redeemPartnerCode = async (currentUserId: string, code: string): Pr
       .from('partner_codes')
       .select('inviter_id, is_used')
       .eq('code', code.toUpperCase())
-      .maybeSingle();
+      .maybeSingle() as { data: PartnerCode | null, error: any };
       
     if (codeError) throw codeError;
     
@@ -92,18 +92,39 @@ export const redeemPartnerCode = async (currentUserId: string, code: string): Pr
     }
     
     // Check if users already have partners
+    console.log('Looking up user profiles for:', partnerCode.inviter_id, 'and', currentUserId);
+    
     const { data: users, error: usersError } = await supabase
       .from('user_profiles')
       .select('id, partner_id, full_name')
       .in('id', [partnerCode.inviter_id, currentUserId]);
       
-    if (usersError) throw usersError;
+    if (usersError) {
+      console.error('Error fetching user profiles:', usersError);
+      throw usersError;
+    }
     
-    const inviter = users?.find(u => u.id === partnerCode.inviter_id);
-    const currentUser = users?.find(u => u.id === currentUserId);
+    console.log('User profiles found:', users);
     
-    if (!inviter || !currentUser) {
-      return { error: new Error('Could not find user profiles.') };
+    if (!users || users.length < 2) {
+      console.error('Could not find both user profiles:', {
+        expected: [partnerCode.inviter_id, currentUserId],
+        found: users
+      });
+      return { error: new Error('Could not find both user profiles. Please try again or contact support.') };
+    }
+    
+    const inviter = users.find(u => u.id === partnerCode.inviter_id);
+    const currentUser = users.find(u => u.id === currentUserId);
+    
+    if (!inviter) {
+      console.error('Code owner profile not found:', partnerCode.inviter_id);
+      return { error: new Error('Could not find the code owner\'s profile.') };
+    }
+    
+    if (!currentUser) {
+      console.error('Current user profile not found:', currentUserId);
+      return { error: new Error('Could not find your user profile.') };
     }
     
     if (inviter.partner_id) {
@@ -115,6 +136,7 @@ export const redeemPartnerCode = async (currentUserId: string, code: string): Pr
     }
     
     // Start transaction to link both users
+    console.log('Linking users:', inviter.id, 'and', currentUser.id);
     
     // 1. Link the inviter to the current user
     const { error: updateInviterError } = await supabase
@@ -122,7 +144,10 @@ export const redeemPartnerCode = async (currentUserId: string, code: string): Pr
       .update({ partner_id: currentUserId })
       .eq('id', partnerCode.inviter_id);
       
-    if (updateInviterError) throw updateInviterError;
+    if (updateInviterError) {
+      console.error('Error updating inviter:', updateInviterError);
+      throw updateInviterError;
+    }
     
     // 2. Link the current user to the inviter
     const { error: updateCurrentUserError } = await supabase
@@ -130,7 +155,10 @@ export const redeemPartnerCode = async (currentUserId: string, code: string): Pr
       .update({ partner_id: partnerCode.inviter_id })
       .eq('id', currentUserId);
       
-    if (updateCurrentUserError) throw updateCurrentUserError;
+    if (updateCurrentUserError) {
+      console.error('Error updating current user:', updateCurrentUserError);
+      throw updateCurrentUserError;
+    }
     
     // 3. Mark the code as used
     const { error: updateCodeError } = await supabase
@@ -138,7 +166,12 @@ export const redeemPartnerCode = async (currentUserId: string, code: string): Pr
       .update({ is_used: true })
       .eq('code', code.toUpperCase());
       
-    if (updateCodeError) throw updateCodeError;
+    if (updateCodeError) {
+      console.error('Error updating code:', updateCodeError);
+      throw updateCodeError;
+    }
+    
+    console.log('Successfully connected users!');
     
     // If all operations succeeded, return success
     return { error: null };

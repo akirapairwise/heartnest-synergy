@@ -33,7 +33,8 @@ const ProfileChecker = ({ onError }: ProfileCheckerProps) => {
         console.log('Checking if profile exists for user:', user.id);
         setIsInitializing(true);
         
-        // Try to directly fetch the profile
+        // Try to directly fetch the profile using the straightforward approach
+        // This should work with our updated RLS policies
         const { data: profileData, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')

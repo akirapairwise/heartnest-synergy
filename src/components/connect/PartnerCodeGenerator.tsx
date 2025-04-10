@@ -2,16 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, Copy, Check, Clock } from "lucide-react";
+import { RefreshCw, Copy, Check, Clock, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { generatePartnerCode, getActivePartnerCode } from "@/services/partnerCodeService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from 'react-router-dom';
 
 const PartnerCodeGenerator = () => {
   const [code, setCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const { profile } = useAuth();
+  const navigate = useNavigate();
   
   const hasPartner = Boolean(profile?.partner_id);
   
@@ -63,6 +65,10 @@ const PartnerCodeGenerator = () => {
     setTimeout(() => setCopied(false), 2000);
   };
   
+  const handleSkip = () => {
+    navigate('/dashboard');
+  };
+  
   if (hasPartner) {
     return (
       <Card className="w-full">
@@ -75,6 +81,17 @@ const PartnerCodeGenerator = () => {
             You are currently connected with a partner and cannot generate a new code.
           </p>
         </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2"
+            onClick={handleSkip}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Return to Dashboard
+          </Button>
+        </CardFooter>
       </Card>
     );
   }
@@ -134,8 +151,8 @@ const PartnerCodeGenerator = () => {
           </div>
         )}
       </CardContent>
-      {code && (
-        <CardFooter className="flex justify-center">
+      <CardFooter className="flex justify-center gap-2">
+        {code && (
           <Button 
             variant="outline" 
             size="sm" 
@@ -150,8 +167,17 @@ const PartnerCodeGenerator = () => {
             )}
             Generate New Code
           </Button>
-        </CardFooter>
-      )}
+        )}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="gap-2"
+          onClick={handleSkip}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Skip
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

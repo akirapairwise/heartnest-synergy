@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
 import { redeemPartnerCode } from "@/services/partnerCodeService";
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -57,6 +57,10 @@ const PartnerCodeRedeemer = () => {
     }
   };
   
+  const handleSkip = () => {
+    navigate('/dashboard');
+  };
+  
   if (hasPartner) {
     return (
       <Card className="w-full">
@@ -69,6 +73,17 @@ const PartnerCodeRedeemer = () => {
             You already have a partner connected to your account.
           </p>
         </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2"
+            onClick={handleSkip}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Return to Dashboard
+          </Button>
+        </CardFooter>
       </Card>
     );
   }
@@ -111,6 +126,17 @@ const PartnerCodeRedeemer = () => {
           </div>
         </form>
       </CardContent>
+      <CardFooter className="flex justify-center">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="gap-2"
+          onClick={handleSkip}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Skip
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

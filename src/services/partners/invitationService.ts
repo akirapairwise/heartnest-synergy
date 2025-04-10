@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from '@supabase/supabase-js';
 import { PartnerInvite, InvitationResult, InvitationsResult } from "./types";
@@ -66,7 +67,36 @@ export const createInvitation = async (user: User): Promise<InvitationResult> =>
  */
 export const getInvitationByToken = async (token: string): Promise<InvitationResult> => {
   try {
+    console.log('⚠️ DEBUG: Looking for invitation with token:', token);
     const now = new Date().toISOString();
+    console.log('⚠️ DEBUG: Current time:', now);
+    
+    // First, check if the token exists at all (regardless of expiration or acceptance)
+    const { data: allInvites, error: allInvitesError } = await supabase
+      .from('partner_invites')
+      .select('*')
+      .eq('token', token);
+      
+    if (allInvitesError) {
+      console.error('Error checking if token exists:', allInvitesError);
+    } else {
+      // If we found any invites with this token, log details about them
+      if (allInvites && allInvites.length > 0) {
+        console.log('⚠️ DEBUG: Found invites with this token:', allInvites.length);
+        allInvites.forEach((invite, index) => {
+          console.log(`⚠️ DEBUG: Invite #${index + 1}:`, {
+            id: invite.id,
+            inviter_id: invite.inviter_id,
+            is_accepted: invite.is_accepted,
+            expires_at: invite.expires_at,
+            created_at: invite.created_at,
+            expired: new Date(invite.expires_at) < new Date(),
+          });
+        });
+      } else {
+        console.log('⚠️ DEBUG: No invites found with token:', token);
+      }
+    }
     
     // Get the invitation data (must be valid and not expired)
     // Use maybeSingle instead of single to avoid the "multiple or no rows" error
@@ -85,9 +115,19 @@ export const getInvitationByToken = async (token: string): Promise<InvitationRes
     
     // If no invite is found
     if (!invite) {
-      console.log('No valid invitation found for token:', token);
+      console.log('⚠️ DEBUG: No valid invitation found for token. Possible reasons:');
+      console.log('⚠️ DEBUG: - Token doesn\'t exist');
+      console.log('⚠️ DEBUG: - Invitation was already accepted');
+      console.log('⚠️ DEBUG: - Invitation has expired');
       return { data: null, error: new Error('Invitation not found, expired, or already accepted') };
     }
+    
+    console.log('⚠️ DEBUG: Found valid invitation:', {
+      id: invite.id,
+      inviter_id: invite.inviter_id,
+      expires_at: invite.expires_at,
+      expires_in_hours: Math.round((new Date(invite.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60)),
+    });
     
     // Enhance the invite with the inviter's name
     const enhancedInvite = await enhanceInviteWithInviterName(invite as PartnerInvite);

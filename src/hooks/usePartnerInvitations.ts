@@ -1,6 +1,6 @@
 
 import { usePartnerInvite } from './partner-invites/usePartnerInvite';
-export { PartnerInvite } from './partner-invites/types';
+export type { PartnerInvite } from './partner-invites/types';
 
 // This is just a compatibility wrapper to avoid breaking changes
 // New code should use usePartnerInvite directly

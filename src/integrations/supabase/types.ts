@@ -346,6 +346,44 @@ export type Database = {
         Args: { length?: number }
         Returns: string
       }
+      get_partner_profile: {
+        Args: { user_id: string }
+        Returns: {
+          bio: string | null
+          communication_style: string | null
+          created_at: string
+          emotional_needs: string | null
+          financial_attitude: string | null
+          full_name: string | null
+          id: string
+          is_onboarding_complete: boolean
+          location: string | null
+          love_language: string | null
+          mood_settings: Json | null
+          partner_id: string | null
+          relationship_goals: string | null
+          updated_at: string
+        }[]
+      }
+      get_profile_by_user_id: {
+        Args: { user_id: string }
+        Returns: {
+          bio: string | null
+          communication_style: string | null
+          created_at: string
+          emotional_needs: string | null
+          financial_attitude: string | null
+          full_name: string | null
+          id: string
+          is_onboarding_complete: boolean
+          location: string | null
+          love_language: string | null
+          mood_settings: Json | null
+          partner_id: string | null
+          relationship_goals: string | null
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

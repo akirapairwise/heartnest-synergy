@@ -165,25 +165,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       console.log('Fetching user profile for:', userId);
       
-      // Directly fetch the profile from user_profiles without checking existence first
-      // This avoids the infinite recursion issue that was happening with the RLS policy
+      // Use the security definer RPC function to avoid RLS recursion issues
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
+        .rpc('get_profile_by_user_id', { user_id: userId })
         .maybeSingle();
 
       if (error) {
         console.error('Error fetching user profile:', error);
         toast({
           title: "Error!",
-          description: "Failed to fetch user profile.",
+          description: "Failed to fetch user profile. " + error.message,
         });
         
-        // If there's an error but profile doesn't exist, try to create it
-        if (error.code !== 'PGRST116') { // Not found error
-          // Try to create a basic profile
-          const { error: insertError } = await supabase
+        // If profile doesn't exist, try to create it
+        if (error.code === 'PGRST116') { // No results found error
+          console.log('No profile found, creating new profile for user:', userId);
+          
+          const { error: createError } = await supabase
             .from('user_profiles')
             .insert({
               id: userId,
@@ -191,16 +189,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
-          
-          if (insertError) {
-            if (insertError.code === '23505') {
-              console.log('Profile already exists, this is a duplicate key error');
-              // If it's a duplicate key error, try fetching again
+            
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            
+            // If it's a duplicate key error, that might mean the profile was created in parallel
+            if (createError.code === '23505') {
+              console.log('Profile might have been created in parallel, trying to fetch again');
               const { data: retryData, error: retryError } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
+                .rpc('get_profile_by_user_id', { user_id: userId })
+                .maybeSingle();
                 
               if (retryError) {
                 console.error('Error on retry fetch:', retryError);
@@ -214,16 +212,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 return;
               }
             } else {
-              console.error('Error creating profile:', insertError);
+              console.error('Non-duplicate error creating profile:', createError);
               return;
             }
           } else {
             console.log('Profile created successfully, fetching it');
             const { data: newData, error: newFetchError } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', userId)
-              .single();
+              .rpc('get_profile_by_user_id', { user_id: userId })
+              .maybeSingle();
               
             if (newFetchError) {
               console.error('Error fetching newly created profile:', newFetchError);
@@ -273,6 +269,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         setProfile(formattedProfile);
         setIsOnboardingComplete(data?.is_onboarding_complete ?? false);
+        console.log('Successfully fetched and set user profile:', data.id);
       } else {
         // Profile doesn't exist, create it
         console.log('No profile found, creating new profile for user:', userId);
@@ -292,10 +289,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             console.log('Profile already exists (duplicate key), trying to fetch again');
             // If it's a duplicate key error, try fetching once more
             const { data: retryData, error: retryError } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', userId)
-              .single();
+              .rpc('get_profile_by_user_id', { user_id: userId })
+              .maybeSingle();
               
             if (retryError) {
               console.error('Error on retry fetch after duplicate key:', retryError);
@@ -310,10 +305,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           // Fetch the newly created profile
           const { data: newData, error: newFetchError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
+            .rpc('get_profile_by_user_id', { user_id: userId })
+            .maybeSingle();
             
           if (newFetchError) {
             console.error('Error fetching newly created profile:', newFetchError);

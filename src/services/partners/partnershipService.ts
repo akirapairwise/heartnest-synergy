@@ -31,75 +31,65 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       return { error: new Error('You cannot accept your own invitation') };
     }
     
-    // Verify current user profile exists first
+    // Verify current user profile exists using the RPC function
     const { data: currentUserProfile, error: currentUserError } = await supabase
-      .from('user_profiles')
-      .select('id, partner_id')
-      .eq('id', currentUserId)
+      .rpc('get_profile_by_user_id', { user_id: currentUserId })
       .maybeSingle();
       
     if (currentUserError) {
       console.error('Error fetching current user profile:', currentUserError);
-      return { error: new Error('Error verifying your profile. Please refresh and try again.') };
-    }
-    
-    // If profile doesn't exist, create it first
-    if (!currentUserProfile) {
-      console.log('Creating profile for current user before proceeding');
-      const { error: createError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: currentUserId,
-          is_onboarding_complete: false, 
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        
-      if (createError) {
-        console.error('Error creating current user profile:', createError);
-        // If it's a duplicate key error, that's actually okay - means profile was created in parallel
-        if (createError.code !== '23505') {
+      
+      if (currentUserError.code === 'PGRST116') { // No results found error
+        console.log('Creating profile for current user before proceeding');
+        const { error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: currentUserId,
+            is_onboarding_complete: false, 
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        if (createError && createError.code !== '23505') {
+          console.error('Error creating current user profile:', createError);
           return { error: new Error('Could not create your profile. Please try again.') };
         }
+      } else {
+        return { error: new Error('Error verifying your profile. Please refresh and try again.') };
       }
-    } else if (currentUserProfile.partner_id) {
+    } else if (currentUserProfile?.partner_id) {
       // Check if the current user already has a partner
       console.error('Current user already has a partner:', currentUserProfile.partner_id);
       return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }
     
-    // Verify inviter profile exists
+    // Verify inviter profile exists using the RPC function
     const { data: inviterProfile, error: inviterError } = await supabase
-      .from('user_profiles')
-      .select('id, partner_id')
-      .eq('id', invite.inviter_id)
+      .rpc('get_profile_by_user_id', { user_id: invite.inviter_id })
       .maybeSingle();
       
     if (inviterError) {
       console.error('Error fetching inviter profile:', inviterError);
-      return { error: new Error('Error verifying inviter profile. Please try again.') };
-    }
-    
-    // If inviter profile doesn't exist, create it
-    if (!inviterProfile) {
-      console.log('Creating profile for inviter before proceeding');
-      const { error: createError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: invite.inviter_id,
-          is_onboarding_complete: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        
-      if (createError) {
-        console.error('Error creating inviter profile:', createError);
-        // If it's a duplicate key error, that's actually okay - means profile was created in parallel
-        if (createError.code !== '23505') {
+      
+      if (inviterError.code === 'PGRST116') { // No results found error
+        console.log('Creating profile for inviter before proceeding');
+        const { error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: invite.inviter_id,
+            is_onboarding_complete: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        if (createError && createError.code !== '23505') {
+          console.error('Error creating inviter profile:', createError);
           return { error: new Error('Could not create inviter profile. Please try again.') };
         }
+      } else {
+        return { error: new Error('Error verifying inviter profile. Please try again.') };
       }
-    } else if (inviterProfile.partner_id) {
+    } else if (inviterProfile?.partner_id) {
       // Check if the inviter already has a partner
       console.error('Inviter already has a partner:', inviterProfile.partner_id);
       return { error: new Error('The inviter already has a partner.') };

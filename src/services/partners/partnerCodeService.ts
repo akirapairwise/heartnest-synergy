@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
 import { PartnerCode, PartnerCodeInsert } from "@/types/partnerCodes";
 import { toast } from 'sonner';
+import { Profile } from "@/types/auth";
 
 /**
  * Generates a new partner code for the current user
@@ -65,10 +66,55 @@ export const getCurrentUserCode = async (userId: string): Promise<{code: string 
 };
 
 /**
+ * Ensures a user profile exists, creating it if needed
+ */
+const ensureUserProfile = async (userId: string, name?: string): Promise<{profile: Profile | null, error: any}> => {
+  try {
+    // First try to get the profile
+    const { data: profile, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (error) throw error;
+    
+    // If profile exists, return it
+    if (profile) {
+      return { profile, error: null };
+    }
+    
+    // Profile doesn't exist, create it
+    console.log('Creating profile for user:', userId);
+    
+    const { data: newProfile, error: createError } = await supabase
+      .from('user_profiles')
+      .insert({ 
+        id: userId,
+        full_name: name || 'Partner',
+        is_onboarding_complete: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (createError) throw createError;
+    
+    return { profile: newProfile, error: null };
+  } catch (error) {
+    console.error('Error ensuring user profile exists:', error);
+    return { profile: null, error };
+  }
+};
+
+/**
  * Redeems a partner code to connect two users
  */
 export const redeemPartnerCode = async (currentUserId: string, code: string): Promise<OperationResult> => {
   try {
+    console.log('Starting to redeem partner code:', code, 'for user:', currentUserId);
+    
     // First find the code
     const { data: partnerCode, error: codeError } = await supabase
       .from('partner_codes')
@@ -94,44 +140,28 @@ export const redeemPartnerCode = async (currentUserId: string, code: string): Pr
       return { error: new Error('You cannot use your own partner code.') };
     }
     
-    // Retrieve both user profiles separately to ensure we get results
-    // 1. First, get the inviter's profile
-    const { data: inviterProfile, error: inviterError } = await supabase
-      .from('user_profiles')
-      .select('id, partner_id, full_name')
-      .eq('id', partnerCode.inviter_id)
-      .maybeSingle();
-      
-    if (inviterError) {
-      console.error('Error fetching inviter profile:', inviterError);
-      return { error: new Error('Unable to complete invitation. Try again or contact support.') };
+    console.log('Valid partner code found. Inviter ID:', partnerCode.inviter_id);
+    
+    // Ensure both profiles exist
+    // 1. First, ensure the inviter's profile exists
+    const { profile: inviterProfile, error: inviterError } = await ensureUserProfile(partnerCode.inviter_id);
+    
+    if (inviterError || !inviterProfile) {
+      console.error('Error ensuring inviter profile exists:', inviterError);
+      return { error: new Error('Unable to complete invitation. Please try again later.') };
     }
     
-    if (!inviterProfile) {
-      console.error('Inviter profile not found:', partnerCode.inviter_id);
-      return { error: new Error('Unable to complete invitation. Try again or contact support.') };
+    // 2. Ensure the current user's profile exists
+    const { profile: currentUserProfile, error: userError } = await ensureUserProfile(currentUserId);
+    
+    if (userError || !currentUserProfile) {
+      console.error('Error ensuring current user profile exists:', userError);
+      return { error: new Error('Unable to complete invitation. Please try again later.') };
     }
     
-    // 2. Get the current user's profile
-    const { data: currentUserProfile, error: userError } = await supabase
-      .from('user_profiles')
-      .select('id, partner_id, full_name')
-      .eq('id', currentUserId)
-      .maybeSingle();
-      
-    if (userError) {
-      console.error('Error fetching current user profile:', userError);
-      return { error: new Error('Unable to complete invitation. Try again or contact support.') };
-    }
-    
-    if (!currentUserProfile) {
-      console.error('Current user profile not found:', currentUserId);
-      return { error: new Error('Unable to complete invitation. Try again or contact support.') };
-    }
-    
-    console.log('Found profiles:', { 
-      inviter: inviterProfile,
-      currentUser: currentUserProfile
+    console.log('Both profiles confirmed:', { 
+      inviter: inviterProfile.id,
+      currentUser: currentUserProfile.id
     });
     
     // Check if either user already has a partner

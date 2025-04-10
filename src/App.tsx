@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
@@ -6,9 +7,9 @@ import {
   Navigate
 } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import Dashboard from '@/pages/Dashboard';
+import DashboardPage from '@/pages/DashboardPage';
 import AuthPage from '@/pages/AuthPage';
-import ProfilePage from '@/pages/ProfilePage';
+import ProfileSettingsPage from '@/pages/ProfileSettingsPage';
 import GoalsPage from '@/pages/GoalsPage';
 import RecommendationsPage from '@/pages/RecommendationsPage';
 import InvitePage from '@/pages/InvitePage';
@@ -19,8 +20,11 @@ import ConnectPartner from '@/components/connect/ConnectPartner';
 import PartnerDebugPage from './pages/PartnerDebugPage';
 
 function App() {
-  const { isLoggedIn, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [firstLoad, setFirstLoad] = useState(true);
+
+  // Check if user is logged in
+  const isLoggedIn = !!user;
 
   useEffect(() => {
     if (!isLoading) {
@@ -36,8 +40,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/auth" element={isLoggedIn ? <Navigate to="/dashboard" /> : <AuthPage />} />
-        <Route path="/profile" element={isLoggedIn ? <ProfilePage /> : <Navigate to="/auth" />} />
-        <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/auth" />} />
+        <Route path="/profile" element={isLoggedIn ? <ProfileSettingsPage /> : <Navigate to="/auth" />} />
+        <Route path="/dashboard" element={isLoggedIn ? <DashboardPage /> : <Navigate to="/auth" />} />
         <Route path="/goals" element={isLoggedIn ? <GoalsPage /> : <Navigate to="/auth" />} />
         <Route path="/recommendations" element={isLoggedIn ? <RecommendationsPage /> : <Navigate to="/auth" />} />
         <Route path="/invite" element={isLoggedIn ? <InvitePage /> : <Navigate to="/auth" />} />

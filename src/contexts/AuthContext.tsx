@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -166,7 +165,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       console.log('Fetching user profile for:', userId);
       
-      // Directly query user_profiles table instead of using RPC
+      // Use a simple direct query with no JOINs or nested selects
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -184,7 +183,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (error.code === 'PGRST116') { // No results found error
           console.log('No profile found, creating new profile for user:', userId);
           
-          const { error: createError } = await supabase
+          const { error: insertError } = await supabase
             .from('user_profiles')
             .insert({
               id: userId,
@@ -192,13 +191,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
+              
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
             
-          if (createError) {
-            console.error('Error creating profile:', createError);
-            
-            // If it's a duplicate key error, that might mean the profile was created in parallel
-            if (createError.code === '23505') {
+            // Special handling for duplicate key errors (profile already exists)
+            if (insertError.code === '23505') {
               console.log('Profile might have been created in parallel, trying to fetch again');
+              
+              // Simple retry with direct query
               const { data: retryData, error: retryError } = await supabase
                 .from('user_profiles')
                 .select('*')
@@ -217,11 +218,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 return;
               }
             } else {
-              console.error('Non-duplicate error creating profile:', createError);
+              console.error('Non-duplicate error creating profile:', insertError);
               return;
             }
           } else {
             console.log('Profile created successfully, fetching it');
+            // Simple fetch of newly created profile
             const { data: newData, error: newFetchError } = await supabase
               .from('user_profiles')
               .select('*')
@@ -278,7 +280,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsOnboardingComplete(data?.is_onboarding_complete ?? false);
         console.log('Successfully fetched and set user profile:', data.id);
       } else {
-        // Profile doesn't exist, create it
+        // Profile doesn't exist, create it with direct insert
         console.log('No profile found, creating new profile for user:', userId);
         
         const { error: createError } = await supabase
@@ -294,7 +296,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.error('Error creating profile:', createError);
           if (createError.code === '23505') {
             console.log('Profile already exists (duplicate key), trying to fetch again');
-            // If it's a duplicate key error, try fetching once more
+            // Simple retry with direct query
             const { data: retryData, error: retryError } = await supabase
               .from('user_profiles')
               .select('*')
@@ -312,7 +314,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
           }
         } else {
-          // Fetch the newly created profile
+          // Simple fetch of newly created profile
           const { data: newData, error: newFetchError } = await supabase
             .from('user_profiles')
             .select('*')

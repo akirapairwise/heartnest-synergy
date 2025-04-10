@@ -33,11 +33,11 @@ const ProfileChecker = ({ onError }: ProfileCheckerProps) => {
         console.log('Checking if profile exists for user:', user.id);
         setIsInitializing(true);
         
-        // Try to directly fetch the profile using the straightforward approach
-        // This should work with our updated RLS policies
+        // Use a simple query with no JOINs or subqueries to avoid recursion
+        // Just get the user's own profile directly by ID
         const { data: profileData, error: profileError } = await supabase
           .from('user_profiles')
-          .select('*')
+          .select('id, is_onboarding_complete, partner_id')
           .eq('id', user.id)
           .maybeSingle();
           

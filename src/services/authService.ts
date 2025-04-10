@@ -7,6 +7,7 @@ export const fetchUserProfile = async (userId: string) => {
   try {
     console.log('Fetching profile for user:', userId);
     
+    // Use a simple query with no JOINs or subqueries to avoid recursion
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')

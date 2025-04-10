@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
 import { getInvitationByToken } from "./invitationService";
@@ -8,28 +7,19 @@ import { getInvitationByToken } from "./invitationService";
  */
 export const acceptInvitation = async (token: string, currentUserId: string): Promise<OperationResult> => {
   try {
-    console.log('⚠️ DEBUG: Starting invitation acceptance process...');
-    console.log('⚠️ DEBUG: Current user ID:', currentUserId);
+    console.log('Starting invitation acceptance process...');
     
     // First get the invitation
     const { data: invite, error: fetchError } = await getInvitationByToken(token);
     
     if (fetchError || !invite) {
-      console.error('⚠️ DEBUG: Failed to find invitation:', fetchError || 'Invitation not found');
+      console.error('Failed to find invitation:', fetchError || 'Invitation not found');
       return { error: fetchError || new Error('Invitation not found, expired, or already accepted') };
     }
     
-    console.log('⚠️ DEBUG: Invitation found:', {
-      id: invite.id,
-      inviter_id: invite.inviter_id,
-      inviter_name: invite.inviter_name
-    });
-    
     // Check that user isn't inviting themselves
     if (invite.inviter_id === currentUserId) {
-      console.error('⚠️ DEBUG: User tried to accept their own invitation');
-      console.error('⚠️ DEBUG: Inviter ID:', invite.inviter_id);
-      console.error('⚠️ DEBUG: Current user ID:', currentUserId);
+      console.error('User tried to accept their own invitation');
       return { error: new Error('You cannot accept your own invitation') };
     }
     
@@ -40,27 +30,24 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       .in('id', [invite.inviter_id, currentUserId]);
       
     if (usersError) {
-      console.error('⚠️ DEBUG: Error checking user profiles:', usersError);
+      console.error('Error checking user profiles:', usersError);
       throw usersError;
     }
     
     const inviterProfile = users?.find(u => u.id === invite.inviter_id);
     const currentUserProfile = users?.find(u => u.id === currentUserId);
     
-    console.log('⚠️ DEBUG: Inviter profile:', inviterProfile);
-    console.log('⚠️ DEBUG: Current user profile:', currentUserProfile);
-    
     if (inviterProfile?.partner_id) {
-      console.error('⚠️ DEBUG: Inviter already has a partner:', inviterProfile.partner_id);
+      console.error('Inviter already has a partner:', inviterProfile.partner_id);
       return { error: new Error(`The inviter (${inviterProfile.full_name || 'User'}) already has a partner`) };
     }
     
     if (currentUserProfile?.partner_id) {
-      console.error('⚠️ DEBUG: Current user already has a partner:', currentUserProfile.partner_id);
+      console.error('Current user already has a partner:', currentUserProfile.partner_id);
       return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }
     
-    console.log('⚠️ DEBUG: Starting partner linking process...');
+    console.log('Starting partner linking process...');
     
     // Update the invite status
     const { error: updateError } = await supabase
@@ -69,11 +56,11 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       .eq('id', invite.id);
       
     if (updateError) {
-      console.error('⚠️ DEBUG: Error updating invitation status:', updateError);
+      console.error('Error updating invitation status:', updateError);
       throw updateError;
     }
     
-    console.log('⚠️ DEBUG: Updated invitation status to accepted');
+    console.log('Updated invitation status to accepted');
     
     // Link the inviter to the current user
     const { error: updateInviterError } = await supabase
@@ -82,11 +69,11 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       .eq('id', invite.inviter_id);
       
     if (updateInviterError) {
-      console.error('⚠️ DEBUG: Error linking inviter to current user:', updateInviterError);
+      console.error('Error linking inviter to current user:', updateInviterError);
       throw updateInviterError;
     }
     
-    console.log('⚠️ DEBUG: Linked inviter to current user');
+    console.log('Linked inviter to current user');
     
     // Link the current user to the inviter
     const { error: updateCurrentUserError } = await supabase
@@ -95,15 +82,15 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       .eq('id', currentUserId);
       
     if (updateCurrentUserError) {
-      console.error('⚠️ DEBUG: Error linking current user to inviter:', updateCurrentUserError);
+      console.error('Error linking current user to inviter:', updateCurrentUserError);
       throw updateCurrentUserError;
     }
     
-    console.log('⚠️ DEBUG: Linked current user to inviter. Connection complete!');
+    console.log('Linked current user to inviter. Connection complete!');
     
     return { error: null };
   } catch (error) {
-    console.error('⚠️ DEBUG: Error in acceptInvitation:', error);
+    console.error('Error in acceptInvitation:', error);
     return { error };
   }
 };

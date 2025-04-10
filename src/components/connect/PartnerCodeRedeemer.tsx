@@ -42,7 +42,7 @@ const PartnerCodeRedeemer = () => {
     
     setIsSubmitting(true);
     try {
-      const { error } = await redeemPartnerCode(user.id, values.form.code);
+      const { error } = await redeemPartnerCode(user.id, values.code);
       
       if (error) {
         form.setError("code", { message: error.message });
@@ -50,7 +50,7 @@ const PartnerCodeRedeemer = () => {
       }
       
       // Refresh user profile to get the updated partner_id
-      await fetchUserProfile();
+      await fetchUserProfile(user.id);
       
       toast.success("Successfully connected with your partner!");
       navigate('/dashboard');

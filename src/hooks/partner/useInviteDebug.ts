@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { PartnerCode } from '@/types/partnerCodes';
 
 export const useInviteDebug = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,11 +30,12 @@ export const useInviteDebug = () => {
         
       if (invitesError) throw invitesError;
       
+      // This is a workaround since the type definitions don't include partner_codes yet
       // Get partner codes
       const { data: codes, error: codesError } = await supabase
         .from('partner_codes')
         .select('*')
-        .eq('inviter_id', userId);
+        .eq('inviter_id', userId) as { data: PartnerCode[] | null, error: any };
         
       if (codesError) throw codesError;
       
@@ -65,12 +67,12 @@ export const useInviteDebug = () => {
         
       if (inviteError) throw inviteError;
       
-      // Check in partner_codes
+      // Check in partner_codes - casting needed due to type issue
       const { data: code, error: codeError } = await supabase
         .from('partner_codes')
         .select('*')
         .eq('code', token.toUpperCase())
-        .maybeSingle();
+        .maybeSingle() as { data: PartnerCode | null, error: any };
         
       if (codeError) throw codeError;
       

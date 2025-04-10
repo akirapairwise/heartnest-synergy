@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
+import { PartnerCode, PartnerCodeInsert } from "@/types/partnerCodes";
 import { toast } from 'sonner';
 
 /**
@@ -29,7 +30,7 @@ export const generatePartnerCode = async (userId: string): Promise<{code: string
         code,
         inviter_id: userId,
         is_used: false
-      });
+      } as PartnerCodeInsert);
       
     if (insertError) throw insertError;
     

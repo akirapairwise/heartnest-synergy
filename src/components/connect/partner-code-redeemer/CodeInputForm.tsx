@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ArrowRight, ArrowLeft, Lock } from "lucide-react";
-import { redeemPartnerCode } from "@/services/partnerCodeService";
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { acceptInvitation } from '@/services/partners/partnershipService';
 
 /**
  * Form component for entering and submitting a partner code
@@ -40,11 +40,23 @@ const CodeInputForm = () => {
     setError(null);
     
     try {
-      console.log('Proceeding to redeem partner code:', formattedCode);
-      const result = await redeemPartnerCode(formattedCode);
+      console.log('Proceeding to accept invitation with token:', formattedCode);
       
-      if (result.success) {
-        toast.success(result.message);
+      // Use the partnership service directly instead of the older partnerCodeService
+      const result = await acceptInvitation(formattedCode, user.id);
+      
+      if (result.error) {
+        console.error('Error accepting invitation:', result.error);
+        setError(result.error.message || 'Failed to accept invitation');
+        
+        // If the error indicates the code is invalid or expired, clear the input
+        if (result.error.message?.includes('invalid') || 
+            result.error.message?.includes('expired') || 
+            result.error.message?.includes('not found')) {
+          setCode('');
+        }
+      } else {
+        toast.success('You are now connected with your partner!');
         
         // Refresh user profile after successful redemption
         if (user?.id && fetchUserProfile) {
@@ -53,18 +65,10 @@ const CodeInputForm = () => {
         
         // Redirect to dashboard
         navigate('/dashboard');
-      } else {
-        setError(result.message);
-        
-        // If the error indicates the code is invalid or expired, clear the input
-        if (result.message === 'Invalid or expired code' || 
-            result.message.includes('inviter no longer has an account')) {
-          setCode('');
-        }
       }
-    } catch (err) {
-      console.error('Error redeeming partner code:', err);
-      setError('An unexpected error occurred. Please try again.');
+    } catch (err: any) {
+      console.error('Error accepting invitation:', err);
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -83,7 +87,7 @@ const CodeInputForm = () => {
           </div>
         </div>
         <CardTitle>Enter Partner Code</CardTitle>
-        <CardDescription>Enter the 6-digit code your partner shared with you</CardDescription>
+        <CardDescription>Enter the code your partner shared with you</CardDescription>
       </CardHeader>
       <CardContent className="px-0">
         {error && (
@@ -97,10 +101,10 @@ const CodeInputForm = () => {
             <div className="flex gap-2">
               <Input
                 className="font-mono text-center uppercase tracking-wider text-lg bg-white/50 border-love-100 focus:border-love-300 focus-visible:ring-love-200 transition-all"
-                placeholder="Enter 6-digit code"
+                placeholder="Enter partner code"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                maxLength={6}
+                maxLength={12}
               />
               <Button 
                 type="submit" 
@@ -116,7 +120,7 @@ const CodeInputForm = () => {
             </div>
             
             <p className="text-sm text-muted-foreground">
-              Ask your partner to generate a partner code and enter it here
+              Ask your partner to generate an invitation code and enter it here
             </p>
           </div>
         </form>

@@ -1,6 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
-import { getInvitationByToken } from "./invitationService";
+import { getInvitationByToken } from "../partnerInviteService";
 
 /**
  * Accepts a partner invitation and connects both users
@@ -9,7 +10,7 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
   try {
     console.log('Starting invitation acceptance process...');
     
-    // First get the invitation
+    // First get the invitation with enhanced validation
     const { data: invite, error: fetchError } = await getInvitationByToken(token);
     
     if (fetchError || !invite) {
@@ -34,15 +35,30 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       throw usersError;
     }
     
-    const inviterProfile = users?.find(u => u.id === invite.inviter_id);
-    const currentUserProfile = users?.find(u => u.id === currentUserId);
+    if (!users || users.length < 2) {
+      console.error('Could not find both user profiles');
+      return { error: new Error('One of the users no longer has an account') };
+    }
     
-    if (inviterProfile?.partner_id) {
+    const inviterProfile = users.find(u => u.id === invite.inviter_id);
+    const currentUserProfile = users.find(u => u.id === currentUserId);
+    
+    if (!inviterProfile) {
+      console.error('Inviter profile not found');
+      return { error: new Error('The inviter no longer has an account') };
+    }
+    
+    if (!currentUserProfile) {
+      console.error('Current user profile not found');
+      return { error: new Error('Your profile could not be found') };
+    }
+    
+    if (inviterProfile.partner_id) {
       console.error('Inviter already has a partner:', inviterProfile.partner_id);
       return { error: new Error(`The inviter (${inviterProfile.full_name || 'User'}) already has a partner`) };
     }
     
-    if (currentUserProfile?.partner_id) {
+    if (currentUserProfile.partner_id) {
       console.error('Current user already has a partner:', currentUserProfile.partner_id);
       return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }

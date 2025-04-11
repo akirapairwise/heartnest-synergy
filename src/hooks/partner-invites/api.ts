@@ -168,7 +168,7 @@ export const acceptInvite = async (userId: string, token: string): Promise<{ err
     }
     
     // Link the users as partners
-    // 1. Update inviter's profile
+    // 1. Update inviter's profile - critical: only update inviter's own record
     const { error: updateInviterError } = await supabase
       .from('user_profiles')
       .update({ partner_id: userId })
@@ -179,7 +179,7 @@ export const acceptInvite = async (userId: string, token: string): Promise<{ err
       throw updateInviterError;
     }
     
-    // 2. Update current user's profile
+    // 2. Update current user's profile - critical: only update current user's own record
     const { error: updateUserError } = await supabase
       .from('user_profiles')
       .update({ partner_id: invite.inviter_id })
@@ -220,3 +220,4 @@ export const regenerateInvitation = async (userId: string, token: string): Promi
     };
   }
 };
+

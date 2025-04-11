@@ -1,133 +1,73 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { PartnerInvite } from "@/services/partners/types";
-import { enhanceInviteWithInviterName } from "./partners/utils";
-import { formatToken } from "@/hooks/partner-invites/utils";
+import { supabase } from '@/integrations/supabase/client';
+import { PartnerInvite } from '@/services/partners/types';
 
-/**
- * Fetches invitation by token
- */
-export const getInvitationByToken = async (token: string) => {
+// Format token consistently (uppercase, no spaces)
+export const formatToken = (token: string): string => {
+  return token.trim().toUpperCase();
+};
+
+// Get an invitation by token with validation
+export const getInvitationByToken = async (token: string): Promise<{ data: PartnerInvite | null, error: Error | null }> => {
   try {
-    const now = new Date().toISOString();
-    
     console.log('Fetching invitation by token:', token);
-    
-    // Format the token consistently
     const formattedToken = formatToken(token);
     
-    // First, check if the token exists at all
-    const { data: allInvites, error: checkError } = await supabase
+    // Fetch the invitation with strict validation
+    const { data, error } = await supabase
       .from('partner_invites')
-      .select('*')
-      .eq('token', formattedToken);
-      
-    if (checkError) {
-      console.error('Error checking for invite:', checkError);
-      return { data: null, error: checkError };
-    }
-    
-    // Debug info about all found invites
-    console.log(`Found ${allInvites?.length || 0} total invites with this token`);
-    if (allInvites && allInvites.length > 0) {
-      allInvites.forEach(invite => {
-        console.log('Invite details:', {
-          id: invite.id,
-          token: invite.token,
-          is_accepted: invite.is_accepted,
-          expires_at: invite.expires_at,
-          current_time: now
-        });
-      });
-    } else {
-      console.log('No invites found with this token in the database');
-      return { data: null, error: new Error('Invitation not found') };
-    }
-    
-    // Get the invitation data (must be valid and not expired)
-    const { data: invite, error: inviteError } = await supabase
-      .from('partner_invites')
-      .select('*')
+      .select(`
+        id, 
+        inviter_id, 
+        token, 
+        expires_at, 
+        is_accepted, 
+        created_at
+      `)
       .eq('token', formattedToken)
       .eq('is_accepted', false)
-      .gt('expires_at', now)
+      .gt('expires_at', new Date().toISOString())
       .maybeSingle();
       
-    if (inviteError) {
-      console.error('Error fetching valid invitation:', inviteError);
-      return { data: null, error: inviteError };
+    if (error) {
+      console.error('Error fetching invitation by token:', error);
+      return { data: null, error };
     }
     
-    // If no valid invite is found
-    if (!invite) {
+    if (!data) {
       console.log('No valid invitation found for token:', formattedToken);
-      
-      // Check why it's invalid - already accepted or expired
-      const { data: acceptedInvite } = await supabase
-        .from('partner_invites')
-        .select('*')
-        .eq('token', formattedToken)
-        .eq('is_accepted', true)
+      return { 
+        data: null, 
+        error: new Error('This invitation is invalid, expired, or has already been used') 
+      };
+    }
+    
+    // Fetch inviter's name if available (for better UX)
+    try {
+      const { data: inviterProfile } = await supabase
+        .from('user_profiles')
+        .select('full_name')
+        .eq('id', data.inviter_id)
         .maybeSingle();
         
-      if (acceptedInvite) {
-        console.log('Invitation was already accepted');
-        return { data: null, error: new Error('This invitation has already been accepted') };
-      }
+      // Augment the invite with inviter name for display purposes
+      const enrichedInvite = {
+        ...data,
+        inviter_name: inviterProfile?.full_name || 'Someone'
+      };
       
-      const { data: expiredInvite } = await supabase
-        .from('partner_invites')
-        .select('*')
-        .eq('token', formattedToken)
-        .lte('expires_at', now)
-        .maybeSingle();
-        
-      if (expiredInvite) {
-        console.log('Invitation has expired');
-        return { data: null, error: new Error('This invitation has expired') };
-      }
-      
-      return { data: null, error: new Error('Invitation not found, expired, or already accepted') };
+      return { data: enrichedInvite as PartnerInvite, error: null };
+    } catch (nameError) {
+      console.error('Error fetching inviter name:', nameError);
+      // Return invite even without the name
+      return { data: data as PartnerInvite, error: null };
     }
-
-    // Check if inviter still exists
-    console.log('Checking if inviter still exists:', invite.inviter_id);
-    
-    // Check user_profiles for the inviter's existence
-    const { data: inviterProfile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('id, full_name')
-      .eq('id', invite.inviter_id)
-      .maybeSingle();
-      
-    if (profileError) {
-      console.error('Error checking inviter profile:', profileError);
-    }
-    
-    if (!inviterProfile) {
-      console.log('Inviter profile not found for ID:', invite.inviter_id);
-      
-      // Double-check in auth.users via admin API if possible
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(invite.inviter_id);
-      
-      if (authError || !authUser?.user) {
-        console.log('Inviter does not exist in auth system either:', invite.inviter_id);
-        return { 
-          data: null, 
-          error: new Error('The invitation is no longer valid because the inviter no longer has an account') 
-        };
-      }
-      
-      console.log('Inviter exists in auth system but not in profiles');
-    }
-    
-    console.log('Inviter exists, continuing with invitation processing');
-    
-    // Enhance the invite with the inviter's name
-    const enhancedInvite = await enhanceInviteWithInviterName(invite as PartnerInvite);
-    return { data: enhancedInvite, error: null };
-  } catch (error) {
-    console.error('Error in getInvitationByToken:', error);
-    return { data: null, error };
+  } catch (err) {
+    console.error('Unexpected error fetching invitation:', err);
+    return { 
+      data: null, 
+      error: err instanceof Error ? err : new Error('Failed to validate invitation') 
+    };
   }
 };
+

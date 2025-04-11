@@ -32,16 +32,17 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       return { error: new Error('You cannot accept your own invitation') };
     }
     
-    // Verify current user profile exists
+    // Step 1: Fetch current user's profile
     const { data: currentUserProfile, error: currentUserError } = await supabase
       .from('user_profiles')
-      .select('*')
+      .select('id, partner_id')
       .eq('id', currentUserId)
       .maybeSingle();
       
     if (currentUserError) {
       console.error('Error fetching current user profile:', currentUserError);
       
+      // Create profile if it doesn't exist
       if (currentUserError.code === 'PGRST116') { // No results found error
         console.log('Creating profile for current user before proceeding');
         const { error: createError } = await supabase
@@ -66,16 +67,17 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }
     
-    // Verify inviter profile exists
+    // Step 2: Fetch inviter's profile
     const { data: inviterProfile, error: inviterError } = await supabase
       .from('user_profiles')
-      .select('*')
+      .select('id, partner_id')
       .eq('id', invite.inviter_id)
       .maybeSingle();
       
     if (inviterError) {
       console.error('Error fetching inviter profile:', inviterError);
       
+      // Create inviter profile if it doesn't exist
       if (inviterError.code === 'PGRST116') { // No results found error
         console.log('Creating profile for inviter before proceeding');
         const { error: createError } = await supabase
@@ -102,7 +104,7 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
     
     console.log('Starting partner linking process...');
     
-    // Update the invite status
+    // Step 3: Update the invite status first
     const { error: updateError } = await supabase
       .from('partner_invites')
       .update({ is_accepted: true })
@@ -115,7 +117,7 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
     
     console.log('Updated invitation status to accepted');
     
-    // Link the inviter to the current user
+    // Step 4: Link the inviter to the current user (critical: only update inviter's own record)
     const { error: updateInviterError } = await supabase
       .from('user_profiles')
       .update({ partner_id: currentUserId })
@@ -128,7 +130,7 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
     
     console.log('Linked inviter to current user');
     
-    // Link the current user to the inviter
+    // Step 5: Link the current user to the inviter (critical: only update current user's own record)
     const { error: updateCurrentUserError } = await supabase
       .from('user_profiles')
       .update({ partner_id: invite.inviter_id })
@@ -192,7 +194,7 @@ export const unlinkPartner = async (userId: string, partnerId: string | null): P
       // Non-critical error, continue
     }
     
-    // 3. Unlink the current user
+    // 3. Unlink the current user - critical: only update current user's own record
     const { error: unlinkUserError } = await supabase
       .from('user_profiles')
       .update({ partner_id: null })
@@ -203,7 +205,7 @@ export const unlinkPartner = async (userId: string, partnerId: string | null): P
       throw unlinkUserError;
     }
     
-    // 4. Unlink the partner
+    // 4. Unlink the partner - critical: only update partner's own record
     const { error: unlinkPartnerError } = await supabase
       .from('user_profiles')
       .update({ partner_id: null })
@@ -222,3 +224,4 @@ export const unlinkPartner = async (userId: string, partnerId: string | null): P
     return { error };
   }
 };
+

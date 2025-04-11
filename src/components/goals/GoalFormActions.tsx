@@ -12,20 +12,20 @@ interface GoalFormActionsProps {
 
 export const GoalFormActions = ({ isSubmitting, onCancel, goal }: GoalFormActionsProps) => {
   return (
-    <div className="flex justify-end gap-2 pt-2">
+    <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-4 mt-2">
       <Button 
         type="button" 
         variant="outline" 
         onClick={onCancel}
         disabled={isSubmitting}
-        className="transition-all hover:bg-secondary/10"
+        className="w-full sm:w-auto transition-all hover:bg-secondary/10"
       >
         Cancel
       </Button>
       <Button 
         type="submit" 
         disabled={isSubmitting}
-        className="transition-all hover:scale-[1.02]"
+        className="w-full sm:w-auto mb-2 sm:mb-0 transition-all hover:scale-[1.02]"
       >
         {isSubmitting ? (
           <>

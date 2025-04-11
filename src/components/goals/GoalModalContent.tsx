@@ -29,10 +29,10 @@ export function GoalModalContent({
   const Description = isDesktop ? DialogDescription : DrawerDescription;
 
   return (
-    <Content>
-      <Header>
-        <Title>{goal ? 'Edit Goal' : 'Create New Goal'}</Title>
-        <Description>
+    <Content className="sm:max-w-md md:max-w-lg lg:max-w-xl">
+      <Header className="pb-4">
+        <Title className="text-xl">{goal ? 'Edit Goal' : 'Create New Goal'}</Title>
+        <Description className="text-sm md:text-base">
           {goal 
             ? 'Update your relationship goal details' 
             : 'Add a new goal to strengthen your relationship'}

@@ -93,10 +93,7 @@ export const fetchSharedGoals = async (): Promise<Goal[]> => {
   // 2. Partner's goals that are shared with me
   const { data, error } = await supabase
     .from('goals')
-    .select(`
-      *,
-      owner_profile:user_profiles!goals_owner_id_fkey(full_name)
-    `)
+    .select('*')
     .eq('goal_type', 'shared')
     .or(`owner_id.eq.${userId},owner_id.eq.${partnerId}`)
     .order('created_at', { ascending: false });
@@ -106,13 +103,30 @@ export const fetchSharedGoals = async (): Promise<Goal[]> => {
     return [];
   }
 
-  // Format the response to include owner name and create proper Goal objects
-  return data.map(goalWithOwner => {
-    const { owner_profile, ...goalData } = goalWithOwner;
-    
+  // Get owner names in a separate query
+  const ownerIds = [...new Set(data.map(goal => goal.owner_id))];
+  const { data: ownerProfiles, error: ownersError } = await supabase
+    .from('user_profiles')
+    .select('id, full_name')
+    .in('id', ownerIds);
+
+  if (ownersError) {
+    console.error('Error fetching owner profiles:', ownersError);
+  }
+
+  // Create a map of owner IDs to names for quick lookup
+  const ownerNameMap = new Map();
+  if (ownerProfiles) {
+    ownerProfiles.forEach(profile => {
+      ownerNameMap.set(profile.id, profile.full_name || 'Unknown');
+    });
+  }
+
+  // Format the response and create proper Goal objects
+  return data.map(goalData => {
     return {
       ...goalData,
-      owner_name: owner_profile?.full_name || 'Unknown',
+      owner_name: ownerNameMap.get(goalData.owner_id) || 'Unknown',
       is_self_owned: goalData.owner_id === userId,
       progress: getGoalProgress(goalData.status),
       completed: goalData.status === 'completed'

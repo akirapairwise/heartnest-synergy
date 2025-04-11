@@ -7,6 +7,9 @@
 
 @layer base {
   :root {
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-rounded: 'Quicksand', system-ui, sans-serif;
+    
     --background: 210 40% 98%;
     --foreground: 222.2 47.4% 11.2%;
 

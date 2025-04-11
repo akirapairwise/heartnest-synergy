@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Goal } from '@/types/goals';
 
@@ -29,16 +28,76 @@ export const fetchPartnerGoals = async (): Promise<Goal[]> => {
   const userId = (await supabase.auth.getUser()).data.user?.id;
   if (!userId) return [];
 
-  // Get shared goals where current user is listed as partner_id
+  // Get user's profile to find partner_id
+  const { data: profileData, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('partner_id')
+    .eq('id', userId)
+    .single();
+
+  if (profileError || !profileData?.partner_id) {
+    console.error('Error fetching user profile or no partner found:', profileError);
+    return [];
+  }
+
+  const partnerId = profileData.partner_id;
+
+  // Get all goals where:
+  // 1. Partner is the owner AND goal is shared with current user
+  // 2. OR Partner is the owner AND we're specifically fetching their goals
+  const { data: partnerGoals, error: goalsError } = await supabase
+    .from('goals')
+    .select('*')
+    .eq('owner_id', partnerId)
+    .eq('partner_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (goalsError) {
+    console.error('Error fetching partner goals:', goalsError);
+    return [];
+  }
+
+  // Add UI convenience properties
+  return partnerGoals.map(goal => ({
+    ...goal,
+    progress: getGoalProgress(goal.status),
+    completed: goal.status === 'completed'
+  })) as Goal[];
+};
+
+export const fetchSharedGoals = async (): Promise<Goal[]> => {
+  const userId = (await supabase.auth.getUser()).data.user?.id;
+  if (!userId) return [];
+
+  // Get user's profile to find partner_id
+  const { data: profileData, error: profileError } = await supabase
+    .from('user_profiles')
+    .select('partner_id')
+    .eq('id', userId)
+    .single();
+
+  if (profileError) {
+    console.error('Error fetching user profile:', profileError);
+    return [];
+  }
+
+  const partnerId = profileData?.partner_id;
+  if (!partnerId) {
+    // No partner, so no shared goals
+    return [];
+  }
+
+  // Get all goals where:
+  // 1. Current user is the owner AND goal is shared
+  // 2. OR Partner is the owner AND goal is shared with current user
   const { data, error } = await supabase
     .from('goals')
     .select('*')
-    .eq('partner_id', userId)
-    .eq('is_shared', true)
+    .or(`and(owner_id.eq.${userId},is_shared.eq.true),and(owner_id.eq.${partnerId},partner_id.eq.${userId},is_shared.eq.true)`)
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching partner goals:', error);
+    console.error('Error fetching shared goals:', error);
     return [];
   }
 

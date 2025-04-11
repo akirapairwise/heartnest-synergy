@@ -6,10 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { GoalCategoryBadge } from './GoalCategoryBadge';
 import { Card } from "@/components/ui/card";
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, UserCircle2, Users } from 'lucide-react';
 import { updateGoalStatus } from '@/services/goalService';
 import { useToast } from '@/components/ui/use-toast';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface GoalsListProps {
@@ -17,13 +18,25 @@ interface GoalsListProps {
   onEdit: (goal: Goal) => void;
   onDelete: (goalId: string) => void;
   onRefresh: () => void;
+  isSharedView?: boolean;
+  isPartnerView?: boolean;
+  partnerId?: string | null;
 }
 
-export function GoalsList({ goals, onEdit, onDelete, onRefresh }: GoalsListProps) {
+export function GoalsList({ 
+  goals, 
+  onEdit, 
+  onDelete, 
+  onRefresh, 
+  isSharedView = false,
+  isPartnerView = false,
+  partnerId
+}: GoalsListProps) {
   const { toast } = useToast();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [goalToDelete, setGoalToDelete] = React.useState<string | null>(null);
+  const { user, profile } = useAuth();
 
   const handleStatusToggle = async (goal: Goal) => {
     try {
@@ -57,10 +70,30 @@ export function GoalsList({ goals, onEdit, onDelete, onRefresh }: GoalsListProps
     }
   };
   
+  const isOwner = (goal: Goal) => {
+    return goal.owner_id === user?.id;
+  };
+  
+  const getOwnerLabel = (goal: Goal) => {
+    if (isOwner(goal)) {
+      return "You";
+    } else if (goal.owner_id === profile?.partner_id) {
+      return profile?.partner_name || "Partner";
+    } else {
+      return "Unknown";
+    }
+  };
+  
   if (goals.length === 0) {
     return (
       <Card className="p-6 text-center">
-        <p className="text-muted-foreground">No goals found. Create one to get started!</p>
+        <p className="text-muted-foreground">
+          {isSharedView 
+            ? "No shared goals found. Create a shared goal to get started!" 
+            : isPartnerView
+              ? "Your partner hasn't shared any goals with you yet."
+              : "No goals found. Create one to get started!"}
+        </p>
       </Card>
     );
   }
@@ -72,6 +105,7 @@ export function GoalsList({ goals, onEdit, onDelete, onRefresh }: GoalsListProps
           <TableHeader>
             <TableRow>
               <TableHead>Title</TableHead>
+              {(isSharedView || isPartnerView) && <TableHead>Owner</TableHead>}
               <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
@@ -81,11 +115,86 @@ export function GoalsList({ goals, onEdit, onDelete, onRefresh }: GoalsListProps
           <TableBody>
             {goals.map((goal) => (
               <TableRow key={goal.id}>
-                <TableCell className="font-medium">{goal.title}</TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex items-center">
+                    {goal.is_shared && <Users className="h-4 w-4 mr-2 text-blue-500" />}
+                    {goal.title}
+                  </div>
+                </TableCell>
+                {(isSharedView || isPartnerView) && (
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <UserCircle2 className="h-4 w-4 text-muted-foreground" />
+                      <span>{getOwnerLabel(goal)}</span>
+                    </div>
+                  </TableCell>
+                )}
                 <TableCell><GoalCategoryBadge category={goal.category as any} /></TableCell>
                 <TableCell><GoalStatusBadge status={goal.status as any} /></TableCell>
                 <TableCell>{new Date(goal.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right space-x-2">
+                  {(isOwner(goal) || goal.is_shared) && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleStatusToggle(goal)}
+                      >
+                        {goal.status === 'completed' ? 'Reopen' : 'Complete'}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => onEdit(goal)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      {isOwner(goal) && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => confirmDelete(goal.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <div className="space-y-4">
+          {goals.map((goal) => (
+            <Card key={goal.id} className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-medium flex items-center">
+                    {goal.is_shared && <Users className="h-4 w-4 mr-2 text-blue-500" />}
+                    {goal.title}
+                  </h3>
+                  {goal.description && <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>}
+                </div>
+                <GoalStatusBadge status={goal.status as any} />
+              </div>
+              
+              <div className="flex flex-wrap gap-2 my-2">
+                {(isSharedView || isPartnerView) && (
+                  <span className="text-xs flex items-center gap-1 bg-muted px-2 py-1 rounded-full">
+                    <UserCircle2 className="h-3 w-3" />
+                    {getOwnerLabel(goal)}
+                  </span>
+                )}
+                <GoalCategoryBadge category={goal.category as any} />
+                <span className="text-xs bg-muted px-2 py-1 rounded-full">
+                  Created: {new Date(goal.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              
+              {(isOwner(goal) || goal.is_shared) && (
+                <div className="flex justify-end gap-2 mt-3">
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -100,60 +209,17 @@ export function GoalsList({ goals, onEdit, onDelete, onRefresh }: GoalsListProps
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => confirmDelete(goal.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : (
-        <div className="space-y-4">
-          {goals.map((goal) => (
-            <Card key={goal.id} className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="font-medium">{goal.title}</h3>
-                  {goal.description && <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>}
+                  {isOwner(goal) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => confirmDelete(goal.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                <GoalStatusBadge status={goal.status as any} />
-              </div>
-              
-              <div className="flex flex-wrap gap-2 my-2">
-                <GoalCategoryBadge category={goal.category as any} />
-                <span className="text-xs bg-muted px-2 py-1 rounded-full">
-                  Created: {new Date(goal.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              
-              <div className="flex justify-end gap-2 mt-3">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleStatusToggle(goal)}
-                >
-                  {goal.status === 'completed' ? 'Reopen' : 'Complete'}
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => onEdit(goal)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => confirmDelete(goal.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              )}
             </Card>
           ))}
         </div>

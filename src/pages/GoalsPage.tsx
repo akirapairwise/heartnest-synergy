@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { Goal } from '@/types/goals';
-import { fetchMyGoals, fetchPartnerGoals } from '@/services/goalService';
+import { fetchMyGoals, fetchPartnerGoals, fetchSharedGoals } from '@/services/goalService';
 import { useToast } from '@/components/ui/use-toast';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Dialog } from "@/components/ui/dialog";
@@ -26,13 +25,21 @@ const GoalsPage = () => {
   const fetchGoals = async () => {
     setIsLoading(true);
     try {
-      const [myGoalsData, sharedGoalsData] = await Promise.all([
+      const [myGoalsData, partnerGoalsData, sharedGoalsData] = await Promise.all([
         fetchMyGoals(),
-        fetchPartnerGoals()
+        fetchPartnerGoals(),
+        fetchSharedGoals()
       ]);
       
       setMyGoals(myGoalsData);
-      setSharedGoals(sharedGoalsData);
+      
+      // Combine partner goals and shared goals for the partner/shared views
+      const allPartnerAndSharedGoals = [...partnerGoalsData, ...sharedGoalsData.filter(
+        // Only add shared goals that aren't already in partnerGoals
+        sharedGoal => !partnerGoalsData.some(pg => pg.id === sharedGoal.id)
+      )];
+      
+      setSharedGoals(allPartnerAndSharedGoals);
     } catch (error) {
       console.error('Error fetching goals:', error);
       toast.error('There was an error loading your goals. Please try again.');
@@ -96,7 +103,11 @@ const GoalsPage = () => {
     setSelectedGoal(undefined);
   };
   
-  // Calculate overall progress
+  // Calculate overall progress based on all goals
+  const allGoals = [...myGoals, ...sharedGoals.filter(sg => 
+    !myGoals.some(mg => mg.id === sg.id)
+  )];
+  
   const myGoalsCompleted = myGoals.filter(goal => goal.status === 'completed').length;
   const myGoalsProgress = myGoals.length > 0 
     ? Math.round((myGoalsCompleted / myGoals.length) * 100) 
@@ -107,8 +118,8 @@ const GoalsPage = () => {
     ? Math.round((sharedGoalsCompleted / sharedGoals.length) * 100) 
     : 0;
   
-  const totalGoals = myGoals.length + sharedGoals.length;
-  const totalCompleted = myGoalsCompleted + sharedGoalsCompleted;
+  const totalGoals = allGoals.length;
+  const totalCompleted = allGoals.filter(goal => goal.status === 'completed').length;
   const overallProgress = totalGoals > 0 
     ? Math.round((totalCompleted / totalGoals) * 100) 
     : 0;

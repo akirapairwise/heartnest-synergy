@@ -22,4 +22,5 @@ export type MoodEntry = {
   mood: number;
   note?: string | null;
   is_visible_to_partner?: boolean;
+  timestamp?: string; // Added to track time of update
 };

@@ -10,6 +10,7 @@ export type DailyMood = {
   mood_value: number;
   note: string | null;
   is_visible_to_partner?: boolean;
+  created_at?: string; // Added to track the time
 };
 
 export const useDailyMood = () => {
@@ -33,7 +34,7 @@ export const useDailyMood = () => {
       
       const { data, error } = await supabase
         .from('daily_moods')
-        .select('id, mood_date, mood_value, note, is_visible_to_partner')
+        .select('id, mood_date, mood_value, note, is_visible_to_partner, created_at')
         .eq('user_id', user.id)
         .eq('mood_date', today)
         .maybeSingle();
@@ -61,25 +62,26 @@ export const useDailyMood = () => {
     
     try {
       const today = new Date().toISOString().split('T')[0];
+      const now = new Date().toISOString(); // Get current timestamp with time
       
       const moodData = {
         user_id: user.id,
         mood_date: today,
         mood_value: moodValue,
         note: note || null,
-        is_visible_to_partner: isVisibleToPartner
+        is_visible_to_partner: isVisibleToPartner,
+        created_at: now // Add current timestamp
       };
       
       console.log('Saving mood data:', moodData, 'Existing mood:', dailyMood);
       
       // Use upsert operation with the unique constraint on (user_id, mood_date)
-      // Fixed by removing 'returning' option and using proper syntax
       const { data, error } = await supabase
         .from('daily_moods')
         .upsert(moodData, { 
           onConflict: 'user_id,mood_date'
         })
-        .select('id, mood_date, mood_value, note, is_visible_to_partner')
+        .select('id, mood_date, mood_value, note, is_visible_to_partner, created_at')
         .single();
         
       if (error) {

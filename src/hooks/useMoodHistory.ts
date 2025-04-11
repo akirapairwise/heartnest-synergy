@@ -19,7 +19,7 @@ export const useMoodHistory = () => {
       // First try to get moods from daily_moods (newer format)
       const { data: dailyMoodsData, error: dailyMoodsError } = await supabase
         .from('daily_moods')
-        .select('id, mood_date, mood_value, note')
+        .select('id, mood_date, mood_value, note, created_at')
         .eq('user_id', user.id)
         .order('mood_date', { ascending: false })
         .limit(10);
@@ -35,7 +35,8 @@ export const useMoodHistory = () => {
           id: entry.id,
           date: entry.mood_date,
           mood: entry.mood_value, // This is already a number between 1-5
-          note: entry.note || ''
+          note: entry.note || '',
+          timestamp: entry.created_at // Include the created_at time
         }));
         
         setMoodHistory(formattedData);
@@ -59,7 +60,8 @@ export const useMoodHistory = () => {
             id: entry.id,
             date: entry.timestamp,
             mood: isNaN(moodValue) ? 3 : moodValue, // Default to 3 if parsing fails
-            note: entry.reflection || ''
+            note: entry.reflection || '',
+            timestamp: entry.timestamp // Include the timestamp
           };
         });
         

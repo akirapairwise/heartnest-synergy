@@ -2,6 +2,7 @@
 import React from 'react';
 import { Heart, Loader2 } from "lucide-react";
 import { MoodEntry } from '@/types/check-ins';
+import { format } from 'date-fns';
 
 interface MoodHistoryProps {
   moodHistory: MoodEntry[];
@@ -37,6 +38,11 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ moodHistory, isLoading }) => 
                         month: 'short', 
                         day: 'numeric' 
                       })}
+                      {entry.timestamp && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {format(new Date(entry.timestamp), 'h:mm a')}
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">{entry.note}</p>
                   </div>

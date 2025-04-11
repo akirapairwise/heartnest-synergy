@@ -109,6 +109,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_visible_to_partner: boolean | null
           mood_date: string
           mood_value: number
           note: string | null
@@ -117,6 +118,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_visible_to_partner?: boolean | null
           mood_date?: string
           mood_value: number
           note?: string | null
@@ -125,6 +127,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_visible_to_partner?: boolean | null
           mood_date?: string
           mood_value?: number
           note?: string | null
@@ -138,6 +141,7 @@ export type Database = {
           created_at: string
           deadline: string | null
           description: string | null
+          goal_type: string | null
           id: string
           is_shared: boolean
           milestones: string[] | null
@@ -152,6 +156,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           description?: string | null
+          goal_type?: string | null
           id?: string
           is_shared?: boolean
           milestones?: string[] | null
@@ -166,6 +171,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           description?: string | null
+          goal_type?: string | null
           id?: string
           is_shared?: boolean
           milestones?: string[] | null
@@ -335,7 +341,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      partner_links: {
+        Row: {
+          partner_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          partner_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          partner_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       connect_users_by_code: {

@@ -12,6 +12,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 interface GoalsListProps {
   goals: Goal[];
@@ -83,6 +85,15 @@ export function GoalsList({
       return "Unknown";
     }
   };
+
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name.split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2) || 'PA';
+  };
   
   if (goals.length === 0) {
     return (
@@ -106,6 +117,7 @@ export function GoalsList({
             <TableRow>
               <TableHead>Title</TableHead>
               {(isSharedView || isPartnerView) && <TableHead>Owner</TableHead>}
+              <TableHead>Type</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
@@ -123,12 +135,28 @@ export function GoalsList({
                 </TableCell>
                 {(isSharedView || isPartnerView) && (
                   <TableCell>
-                    <div className="flex items-center gap-1">
-                      <UserCircle2 className="h-4 w-4 text-muted-foreground" />
-                      <span>{getOwnerLabel(goal)}</span>
+                    <div className="flex items-center gap-2">
+                      {isOwner(goal) ? (
+                        <div className="flex items-center">
+                          <UserCircle2 className="h-4 w-4 text-primary" />
+                          <span className="ml-1">You</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-xs">{getInitials("Partner")}</AvatarFallback>
+                          </Avatar>
+                          <span className="ml-1">{getOwnerLabel(goal)}</span>
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                 )}
+                <TableCell>
+                  <Badge variant={goal.is_shared ? "default" : "outline"} className={goal.is_shared ? "bg-blue-100 text-blue-800 hover:bg-blue-100" : ""}>
+                    {goal.is_shared ? "Shared" : "Personal"}
+                  </Badge>
+                </TableCell>
                 <TableCell><GoalCategoryBadge category={goal.category as any} /></TableCell>
                 <TableCell><GoalStatusBadge status={goal.status as any} /></TableCell>
                 <TableCell>{new Date(goal.created_at).toLocaleDateString()}</TableCell>
@@ -182,11 +210,25 @@ export function GoalsList({
               
               <div className="flex flex-wrap gap-2 my-2">
                 {(isSharedView || isPartnerView) && (
-                  <span className="text-xs flex items-center gap-1 bg-muted px-2 py-1 rounded-full">
-                    <UserCircle2 className="h-3 w-3" />
-                    {getOwnerLabel(goal)}
-                  </span>
+                  <div className="flex items-center gap-1 bg-muted px-2 py-1 rounded-full">
+                    {isOwner(goal) ? (
+                      <>
+                        <UserCircle2 className="h-3 w-3" />
+                        <span className="text-xs">You</span>
+                      </>
+                    ) : (
+                      <>
+                        <Avatar className="h-4 w-4">
+                          <AvatarFallback className="text-[10px]">{getInitials("Partner")}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs">{getOwnerLabel(goal)}</span>
+                      </>
+                    )}
+                  </div>
                 )}
+                <Badge variant={goal.is_shared ? "default" : "outline"} className={goal.is_shared ? "bg-blue-100 text-blue-800 hover:bg-blue-100" : ""}>
+                  {goal.is_shared ? "Shared" : "Personal"}
+                </Badge>
                 <GoalCategoryBadge category={goal.category as any} />
                 <span className="text-xs bg-muted px-2 py-1 rounded-full">
                   Created: {new Date(goal.created_at).toLocaleDateString()}

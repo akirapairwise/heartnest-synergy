@@ -13,6 +13,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import ConnectPage from "./pages/ConnectPage";
 import DashboardPage from "./pages/DashboardPage";
 import MoodsPage from "./pages/MoodsPage";
+import MoodHistoryPage from "./pages/MoodHistoryPage";
 import GoalsPage from "./pages/GoalsPage";
 import CheckInsPage from "./pages/CheckInsPage";
 import RecommendationsPage from "./pages/RecommendationsPage";
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/moods" element={<MoodsPage />} />
+            <Route path="/mood-history" element={<MoodHistoryPage />} />
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/check-ins" element={<CheckInsPage />} />
             <Route path="/recommendations" element={<RecommendationsPage />} />

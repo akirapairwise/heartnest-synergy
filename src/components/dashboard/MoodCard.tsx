@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, TrendingUp, SmilePlus, Loader2 } from "lucide-react";
+import { Heart, TrendingUp, SmilePlus, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -143,13 +142,21 @@ const MoodCard = () => {
               )}
             </div>
             
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-between">
               <button 
                 onClick={() => navigate('/moods')}
                 className="inline-flex items-center text-sm text-harmony-600 hover:text-harmony-700"
               >
                 <SmilePlus className="h-4 w-4 mr-1" />
-                Add new mood entry
+                Add mood
+              </button>
+              
+              <button 
+                onClick={() => navigate('/mood-history')}
+                className="inline-flex items-center text-sm text-harmony-600 hover:text-harmony-700"
+              >
+                <History className="h-4 w-4 mr-1" />
+                View history
               </button>
             </div>
           </div>

@@ -5,10 +5,11 @@ import MoodHistory from '@/components/moods/MoodHistory';
 import { useMoodHistory } from '@/hooks/useMoodHistory';
 import { useDailyMood } from '@/hooks/useDailyMood';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, History } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 const MoodsPage = () => {
   const { moodHistory, isFetchingHistory, fetchMoodHistory } = useMoodHistory();
@@ -66,9 +67,19 @@ const MoodsPage = () => {
   
   return (
     <div className="animate-fade-in space-y-6 pb-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Mood Tracker</h1>
-        <p className="text-muted-foreground">Track how you feel about your relationship over time</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Mood Tracker</h1>
+          <p className="text-muted-foreground">Track how you feel about your relationship over time</p>
+        </div>
+        <Button 
+          variant="outline"
+          onClick={() => navigate('/mood-history')}
+          className="flex items-center gap-2"
+        >
+          <History className="h-4 w-4" />
+          View Full History
+        </Button>
       </div>
       
       {isLoadingDailyMood ? (

@@ -41,18 +41,20 @@ const ConflictForm = ({ onSuccess, partnerId }: ConflictFormProps) => {
       return;
     }
 
-    try {
-      const { initiator_statement, responder_id } = {
-        initiator_statement: `${data.topic}: ${data.description}`,
-        responder_id: data.partner_id
-      };
+    if (!data.topic || !data.description || !data.partner_id) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
 
+    try {
       const { error } = await supabase
         .from('conflicts')
         .insert({
           initiator_id: user.id,
-          responder_id,
-          initiator_statement
+          responder_id: data.partner_id,
+          topic: data.topic,
+          initiator_statement: data.description,
+          created_at: new Date().toISOString()
         });
 
       if (error) throw error;
@@ -100,7 +102,7 @@ const ConflictForm = ({ onSuccess, partnerId }: ConflictFormProps) => {
           )}
         />
         
-        <Button type="submit" className="w-full">
+        <Button type="submit" variant="gradient" className="w-full">
           Record Conflict
         </Button>
       </form>

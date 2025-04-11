@@ -55,6 +55,7 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       body: {
         initiatorStatement: conflict.initiator_statement,
         responderStatement: conflict.responder_statement,
+        topic: conflict.topic,
         conflictId: conflictId
       }
     });

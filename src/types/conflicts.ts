@@ -3,6 +3,7 @@ export type Conflict = {
   id: string;
   initiator_id: string;
   responder_id: string;
+  topic: string;
   initiator_statement: string;
   responder_statement: string | null;
   ai_summary: string | null;

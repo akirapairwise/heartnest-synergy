@@ -78,6 +78,7 @@ export type Database = {
           resolved_at: string | null
           responder_id: string
           responder_statement: string | null
+          topic: string | null
         }
         Insert: {
           ai_reflection?: string | null
@@ -90,6 +91,7 @@ export type Database = {
           resolved_at?: string | null
           responder_id: string
           responder_statement?: string | null
+          topic?: string | null
         }
         Update: {
           ai_reflection?: string | null
@@ -102,6 +104,7 @@ export type Database = {
           resolved_at?: string | null
           responder_id?: string
           responder_statement?: string | null
+          topic?: string | null
         }
         Relationships: []
       }

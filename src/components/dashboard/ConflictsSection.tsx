@@ -122,7 +122,7 @@ const ConflictsSection = () => {
           </div>
           {user && (
             <ConflictFormDialog 
-              partnerId={mockPartnerId} 
+              partnerId={profile?.partner_id || mockPartnerId} 
               onSuccess={loadConflicts} 
             />
           )}
@@ -153,7 +153,7 @@ const ConflictsSection = () => {
                 <div key={conflict.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="font-medium">
-                      {extractTopic(conflict.initiator_statement)}
+                      {conflict.topic || "Untitled Conflict"}
                     </h3>
                     <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${statusInfo.bg}`}>
                       {statusInfo.icon}
@@ -162,7 +162,7 @@ const ConflictsSection = () => {
                   </div>
                   
                   <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                    {conflict.initiator_statement.split(':').slice(1).join(':').trim() || conflict.initiator_statement}
+                    {conflict.initiator_statement}
                   </p>
                   
                   <div className="flex items-center text-xs text-muted-foreground mb-3">

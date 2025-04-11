@@ -290,6 +290,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          avatar_url: string | null
           bio: string | null
           communication_style: string | null
           created_at: string
@@ -307,6 +308,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
           bio?: string | null
           communication_style?: string | null
           created_at?: string
@@ -324,6 +326,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
           bio?: string | null
           communication_style?: string | null
           created_at?: string
@@ -376,6 +379,7 @@ export type Database = {
       get_partner_profile: {
         Args: { user_id: string }
         Returns: {
+          avatar_url: string | null
           bio: string | null
           communication_style: string | null
           created_at: string
@@ -396,6 +400,7 @@ export type Database = {
       get_profile_by_user_id: {
         Args: { user_id: string }
         Returns: {
+          avatar_url: string | null
           bio: string | null
           communication_style: string | null
           created_at: string

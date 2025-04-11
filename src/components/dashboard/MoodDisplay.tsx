@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Heart, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,7 @@ const moodColors = ["text-red-500", "text-orange-400", "text-yellow-500", "text-
 const MoodDisplay = () => {
   const [userMood, setUserMood] = useState<MoodEntry | null>(null);
   const [partnerMood, setPartnerMood] = useState<MoodEntry | null>(null);
+  const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, profile } = useAuth();
@@ -22,10 +24,32 @@ const MoodDisplay = () => {
   useEffect(() => {
     if (user) {
       fetchLatestMoods();
+      if (profile?.partner_id) {
+        fetchPartnerProfile();
+      }
     } else {
       setIsLoading(false);
     }
   }, [user, profile?.partner_id]);
+  
+  const fetchPartnerProfile = async () => {
+    if (!profile?.partner_id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', profile.partner_id)
+        .single();
+        
+      if (error) throw error;
+      if (data) {
+        setPartnerProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching partner profile:', error);
+    }
+  };
   
   const fetchLatestMoods = async () => {
     setIsLoading(true);
@@ -96,6 +120,8 @@ const MoodDisplay = () => {
     note: "No recent check-in" 
   };
 
+  // Check if partner's mood should be visible (respect partner's preference)
+  const isMoodVisible = partnerProfile?.mood_settings?.isVisibleToPartner !== false;
   const showAvatar = profile?.mood_settings?.showAvatar !== false;
   
   if (isLoading) {
@@ -137,8 +163,8 @@ const MoodDisplay = () => {
             <div className="flex items-center gap-2">
               {showAvatar && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://api.dicebear.com/7.x/initials/svg?seed=AU" />
-                  <AvatarFallback>AU</AvatarFallback>
+                  <AvatarImage src={profile?.avatar_url} />
+                  <AvatarFallback>{profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'AU'}</AvatarFallback>
                 </Avatar>
               )}
               <div>
@@ -163,25 +189,41 @@ const MoodDisplay = () => {
               <div className="flex items-center gap-2">
                 {showAvatar && (
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=Partner`} />
-                    <AvatarFallback>PA</AvatarFallback>
+                    <AvatarImage src={partnerProfile?.avatar_url} />
+                    <AvatarFallback>{partnerProfile?.full_name ? partnerProfile.full_name.substring(0, 2).toUpperCase() : 'PA'}</AvatarFallback>
                   </Avatar>
                 )}
                 <div>
-                  <p className="text-xs text-muted-foreground">Partner</p>
-                  <p className={`text-sm font-medium ${moodColors[defaultPartnerMood.mood-1]}`}>{moodLabels[defaultPartnerMood.mood-1]}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {partnerProfile?.full_name || 'Partner'}
+                  </p>
+                  {isMoodVisible ? (
+                    <p className={`text-sm font-medium ${moodColors[defaultPartnerMood.mood-1]}`}>
+                      {moodLabels[defaultPartnerMood.mood-1]}
+                    </p>
+                  ) : (
+                    <p className="text-xs italic text-muted-foreground">Mood not shared</p>
+                  )}
                 </div>
               </div>
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Heart
-                    key={star}
-                    className={`h-4 w-4 ${star <= defaultPartnerMood.mood ? moodColors[defaultPartnerMood.mood-1] : 'text-gray-200'}`}
-                    fill={star <= defaultPartnerMood.mood ? 'currentColor' : 'none'}
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground line-clamp-1">{defaultPartnerMood.note}</p>
+              {isMoodVisible ? (
+                <>
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Heart
+                        key={star}
+                        className={`h-4 w-4 ${star <= defaultPartnerMood.mood ? moodColors[defaultPartnerMood.mood-1] : 'text-gray-200'}`}
+                        fill={star <= defaultPartnerMood.mood ? 'currentColor' : 'none'}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{defaultPartnerMood.note}</p>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground pt-2">
+                  Your partner has chosen to keep their mood private.
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-2 flex items-center justify-center">

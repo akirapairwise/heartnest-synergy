@@ -3,10 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Goal } from '@/types/goals';
 
 export const fetchMyGoals = async (): Promise<Goal[]> => {
+  const userId = (await supabase.auth.getUser()).data.user?.id;
+  if (!userId) return [];
+
   const { data, error } = await supabase
     .from('goals')
     .select('*')
-    .eq('owner_id', (await supabase.auth.getUser()).data.user?.id || '')
+    .eq('owner_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -23,10 +26,14 @@ export const fetchMyGoals = async (): Promise<Goal[]> => {
 };
 
 export const fetchPartnerGoals = async (): Promise<Goal[]> => {
+  const userId = (await supabase.auth.getUser()).data.user?.id;
+  if (!userId) return [];
+
+  // Get shared goals where current user is listed as partner_id
   const { data, error } = await supabase
     .from('goals')
     .select('*')
-    .eq('partner_id', (await supabase.auth.getUser()).data.user?.id || '')
+    .eq('partner_id', userId)
     .eq('is_shared', true)
     .order('created_at', { ascending: false });
 
@@ -63,7 +70,7 @@ export const createGoal = async (goal: Partial<Goal>): Promise<{ goal: Goal | nu
     status: goal.status || 'pending',
     is_shared: goal.is_shared || false,
     owner_id: userId,
-    partner_id: goal.partner_id || null,
+    partner_id: goal.is_shared ? goal.partner_id || null : null, // Only set partner_id if is_shared is true
     milestones: goal.milestones || null,
     deadline: goal.deadline || null
   };

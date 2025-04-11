@@ -338,6 +338,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      connect_users_by_code: {
+        Args: { current_user_id: string; entered_code: string }
+        Returns: string
+      }
       generate_invitation_code: {
         Args: Record<PropertyKey, never>
         Returns: string

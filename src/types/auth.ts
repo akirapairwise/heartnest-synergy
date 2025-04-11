@@ -16,9 +16,11 @@ export type Profile = {
   updated_at: string;
   location: string | null;
   bio: string | null;
+  avatar_url?: string | null;
   mood_settings: {
     showAvatar?: boolean;
     defaultMood?: string;
+    isVisibleToPartner?: boolean;
   } | null;
 };
 

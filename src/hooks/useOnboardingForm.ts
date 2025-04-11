@@ -7,6 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 export type OnboardingFormData = {
+  full_name: string;
+  nickname: string;
   location: string;
   bio: string;
   love_language: string;
@@ -30,6 +32,8 @@ export const useOnboardingForm = (totalSteps: number) => {
   const [isLoading, setIsLoading] = useState(false);
   const [skippedSteps, setSkippedSteps] = useState<number[]>([]);
   const [formData, setFormData] = useState<OnboardingFormData>({
+    full_name: "",
+    nickname: "",
     location: "",
     bio: "",
     love_language: "",

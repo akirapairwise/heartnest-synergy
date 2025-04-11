@@ -301,6 +301,7 @@ export type Database = {
           location: string | null
           love_language: string | null
           mood_settings: Json | null
+          nickname: string | null
           partner_id: string | null
           relationship_goals: string | null
           updated_at: string
@@ -317,6 +318,7 @@ export type Database = {
           location?: string | null
           love_language?: string | null
           mood_settings?: Json | null
+          nickname?: string | null
           partner_id?: string | null
           relationship_goals?: string | null
           updated_at?: string
@@ -333,6 +335,7 @@ export type Database = {
           location?: string | null
           love_language?: string | null
           mood_settings?: Json | null
+          nickname?: string | null
           partner_id?: string | null
           relationship_goals?: string | null
           updated_at?: string
@@ -384,6 +387,7 @@ export type Database = {
           location: string | null
           love_language: string | null
           mood_settings: Json | null
+          nickname: string | null
           partner_id: string | null
           relationship_goals: string | null
           updated_at: string
@@ -403,6 +407,7 @@ export type Database = {
           location: string | null
           love_language: string | null
           mood_settings: Json | null
+          nickname: string | null
           partner_id: string | null
           relationship_goals: string | null
           updated_at: string

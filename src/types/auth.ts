@@ -12,6 +12,7 @@ export type Profile = {
   relationship_goals: string | null;
   financial_attitude: string | null;
   full_name: string | null;
+  nickname: string | null;
   created_at: string;
   updated_at: string;
   location: string | null;

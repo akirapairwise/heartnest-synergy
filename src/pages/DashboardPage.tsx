@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,11 +21,24 @@ import { useNavigate } from 'react-router-dom';
 const DashboardPage = () => {
   const { profile, isLoading } = useAuth();
   const { activeInvite, refreshInvites } = usePartnerInvite();
-  const userName = profile?.full_name || 'Partner';
-  const [activeTab, setActiveTab] = useState('overview');
   const navigate = useNavigate();
   
   useDocumentTitle('Dashboard | HeartNest');
+
+  // Get user's nickname or default to first name from full name or 'Partner'
+  const getUserDisplayName = () => {
+    if (profile?.nickname) {
+      return profile.nickname;
+    } else if (profile?.full_name) {
+      // Extract first name from full name
+      return profile.full_name.split(' ')[0];
+    } else {
+      return 'Partner';
+    }
+  };
+  
+  const userName = getUserDisplayName();
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     // Refresh invites when dashboard loads

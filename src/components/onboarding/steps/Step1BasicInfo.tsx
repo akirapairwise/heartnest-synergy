@@ -18,11 +18,32 @@ const Step1BasicInfo: React.FC<Step1Props> = ({ formData, handleChange }) => {
         <Label htmlFor="fullName">Full Name</Label>
         <Input 
           id="fullName" 
-          placeholder="Your full name" 
+          placeholder="Your legal name" 
           value={formData.full_name || ''}
           onChange={(e) => handleChange('full_name', e.target.value)}
+          required
         />
       </div>
+      
+      <div className="space-y-2 mb-4">
+        <Label htmlFor="nickname">
+          Nickname <span className="text-xs text-muted-foreground">(What should we call you?)</span>
+        </Label>
+        <Input 
+          id="nickname" 
+          placeholder="Your preferred name" 
+          value={formData.nickname || ''}
+          onChange={(e) => handleChange('nickname', e.target.value.substring(0, 20))}
+          maxLength={20}
+        />
+        {formData.nickname && (
+          <div className="mt-2 text-sm text-muted-foreground animate-fade-in">
+            <span>Preview: </span>
+            <span className="font-medium text-primary">Welcome, {formData.nickname}!</span>
+          </div>
+        )}
+      </div>
+      
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="dob">Date of Birth</Label>

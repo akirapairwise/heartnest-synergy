@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Heart, Loader2, AlertCircle, RefreshCw, EyeOff, Plus } from "lucide-react";
+import { Heart, Loader2, AlertCircle, RefreshCw, EyeOff, Plus, UserPlus, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MoodEntry } from '@/types/check-ins';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import MoodTracker from '../moods/MoodTracker';
 import { useDailyMood } from '@/hooks/useDailyMood';
 import { format } from 'date-fns';
@@ -30,6 +30,52 @@ interface PartnerMood {
   is_visible_to_partner: boolean;
 }
 
+interface MoodModalProps {
+  open: boolean;
+  onClose: () => void;
+  name: string;
+  mood: {
+    emoji: string;
+    label: string;
+    color: string;
+  };
+  note: string | null;
+  timestamp: string;
+}
+
+const MoodDetailModal: React.FC<MoodModalProps> = ({ open, onClose, name, mood, note, timestamp }) => {
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{name}'s Mood for Today</DialogTitle>
+          <DialogClose className="absolute right-4 top-4">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
+        </DialogHeader>
+        <div className="flex flex-col items-center p-4">
+          <div className="text-6xl mb-2" aria-label={`Mood: ${mood.label}`}>
+            {mood.emoji}
+          </div>
+          <h3 className={`text-xl font-bold ${mood.color}`}>{mood.label}</h3>
+          
+          {note && (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-muted-foreground mb-1">Note:</p>
+              <p className="text-base">"{note}"</p>
+            </div>
+          )}
+          
+          <p className="text-xs text-muted-foreground mt-4">
+            Logged at {format(new Date(timestamp), 'h:mm a')}
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const MoodDisplay = () => {
   const [userMood, setUserMood] = useState<MoodEntry | null>(null);
   const [partnerMood, setPartnerMood] = useState<PartnerMood | null>(null);
@@ -37,6 +83,18 @@ const MoodDisplay = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMoodDialogOpen, setIsMoodDialogOpen] = useState(false);
+  const [viewingMoodDetails, setViewingMoodDetails] = useState<{
+    isOpen: boolean;
+    isPartner: boolean;
+    mood: any;
+    name: string;
+  }>({
+    isOpen: false,
+    isPartner: false,
+    mood: null,
+    name: '',
+  });
+  
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { dailyMood, fetchDailyMood } = useDailyMood();
@@ -190,6 +248,15 @@ const MoodDisplay = () => {
     fetchDailyMood();
   };
   
+  const openMoodDetails = (isPartner: boolean, moodData: any, name: string) => {
+    setViewingMoodDetails({
+      isOpen: true,
+      isPartner,
+      mood: moodData,
+      name
+    });
+  };
+  
   // Default display if no data is available
   const defaultUserMood: MoodEntry = userMood || { 
     id: "default-user",
@@ -208,6 +275,7 @@ const MoodDisplay = () => {
   };
   
   const userMoodDisplay = getMoodDisplay(defaultUserMood.mood);
+  const partnerMoodDisplay = partnerMood ? getMoodDisplay(partnerMood.mood) : null;
   
   // Format the mood timestamp
   const formatMoodTime = (dateString: string) => {
@@ -217,6 +285,19 @@ const MoodDisplay = () => {
     } catch (e) {
       return '';
     }
+  };
+  
+  // Get user's name or default
+  const getUserName = () => {
+    if (profile?.nickname) return profile.nickname;
+    if (profile?.full_name) return profile.full_name.split(' ')[0];
+    return 'You';
+  };
+  
+  const getPartnerName = () => {
+    if (partnerProfile?.nickname) return partnerProfile.nickname;
+    if (partnerProfile?.full_name) return partnerProfile.full_name.split(' ')[0];
+    return 'Partner';
   };
 
   if (isLoading) {
@@ -256,86 +337,137 @@ const MoodDisplay = () => {
             Today's Mood
           </h3>
           
-          <div className="flex flex-col items-center text-center p-2">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* User's mood card */}
             <div 
-              className="text-5xl mb-2" 
-              aria-label={`Mood: ${userMoodDisplay.label}`}
+              className="flex-1 bg-love-50/30 p-4 rounded-xl shadow-sm hover:shadow transition-shadow cursor-pointer"
+              onClick={() => defaultUserMood.id !== "default-user" && openMoodDetails(
+                false, 
+                userMoodDisplay, 
+                getUserName()
+              )}
+              tabIndex={0}
+              role="button"
+              aria-label={`View ${getUserName()}'s mood details`}
             >
-              {userMoodDisplay.emoji}
-            </div>
-            
-            <h4 className={`font-bold text-lg mb-1 ${userMoodDisplay.color} font-rounded`}>
-              {userMoodDisplay.label}
-            </h4>
-            
-            {defaultUserMood.note && (
-              <p className="text-sm text-muted-foreground mb-2 max-w-[250px] mx-auto">
-                "{defaultUserMood.note}"
-              </p>
-            )}
-            
-            <div className="text-xs text-muted-foreground mb-3">
-              {defaultUserMood.id !== "default-user" ? (
-                <>Logged at {formatMoodTime(defaultUserMood.date)}</>
-              ) : (
-                <>No mood logged today</>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={profile?.avatar_url} alt={getUserName()} />
+                  <AvatarFallback>{profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'ME'}</AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">{getUserName()}</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-3xl" aria-label={`Mood: ${userMoodDisplay.label}`}>
+                      {userMoodDisplay.emoji}
+                    </span>
+                    <div>
+                      <p className={`font-bold ${userMoodDisplay.color}`}>{userMoodDisplay.label}</p>
+                      {defaultUserMood.note && (
+                        <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+                          {defaultUserMood.note}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {defaultUserMood.id !== "default-user" && (
+                <p className="text-xs text-right text-muted-foreground mt-2">
+                  {formatMoodTime(defaultUserMood.date)}
+                </p>
               )}
             </div>
             
+            {/* Partner's mood card or invite prompt */}
+            {profile?.partner_id ? (
+              <div 
+                className={`flex-1 ${partnerMood && isMoodVisible ? 'bg-harmony-50/30' : 'bg-gray-50'} p-4 rounded-xl shadow-sm ${partnerMood && isMoodVisible ? 'hover:shadow transition-shadow cursor-pointer' : ''}`}
+                onClick={() => partnerMood && isMoodVisible && openMoodDetails(
+                  true,
+                  partnerMoodDisplay,
+                  getPartnerName()
+                )}
+                tabIndex={partnerMood && isMoodVisible ? 0 : -1}
+                role={partnerMood && isMoodVisible ? "button" : "presentation"}
+                aria-label={partnerMood && isMoodVisible ? `View ${getPartnerName()}'s mood details` : undefined}
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={partnerProfile?.avatar_url} alt={getPartnerName()} />
+                    <AvatarFallback>{partnerProfile?.full_name ? partnerProfile.full_name.substring(0, 2).toUpperCase() : 'PA'}</AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1 min-width-0">
+                    <p className="text-xs text-muted-foreground">{getPartnerName()}</p>
+                    
+                    {partnerMood ? (
+                      isMoodVisible ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-3xl" aria-label={`Mood: ${partnerMoodDisplay?.label}`}>
+                            {partnerMoodDisplay?.emoji}
+                          </span>
+                          <div>
+                            <p className={`font-bold ${partnerMoodDisplay?.color}`}>{partnerMoodDisplay?.label}</p>
+                            {partnerMood.note && (
+                              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                {partnerMood.note}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center text-muted-foreground gap-1.5 mt-2">
+                          <EyeOff className="h-4 w-4" />
+                          <span className="text-sm">Private mood</span>
+                        </div>
+                      )
+                    ) : (
+                      <div className="text-sm text-muted-foreground mt-2">
+                        No mood shared yet
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {partnerMood && isMoodVisible && (
+                  <p className="text-xs text-right text-muted-foreground mt-2">
+                    {formatMoodTime(partnerMood.date)}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="flex-1 bg-gray-50 p-4 rounded-xl">
+                <div className="flex flex-col items-center justify-center h-full min-h-[80px] text-center">
+                  <UserPlus className="h-6 w-6 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground mb-2">Connect with your partner to see their mood</p>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/connect')}
+                    variant="outline"
+                  >
+                    Invite Partner
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-4 text-center">
             <Button 
               variant="outline"
               size="sm"
               onClick={() => setIsMoodDialogOpen(true)}
-              className="w-full mt-2"
+              className="w-full"
             >
-              {defaultUserMood.id !== "default-user" ? "Update Mood" : "Log Your Mood"}
+              {defaultUserMood.id !== "default-user" ? "Update Your Mood" : "Log Your Mood"}
             </Button>
-          </div>
-          
-          {/* Partner's mood display - improved layout with avatar and emoji in same line */}
-          {profile?.partner_id && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex items-center gap-2 mb-2">
-                {showAvatar && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={partnerProfile?.avatar_url} />
-                    <AvatarFallback>{partnerProfile?.full_name ? partnerProfile.full_name.substring(0, 2).toUpperCase() : 'PA'}</AvatarFallback>
-                  </Avatar>
-                )}
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      {partnerProfile?.full_name || 'Partner'}
-                    </p>
-                    {partnerMood ? (
-                      isMoodVisible ? (
-                        <div className="flex items-center">
-                          <span className="text-xl mr-1.5" aria-label={getMoodDisplay(partnerMood.mood).label}>
-                            {getMoodDisplay(partnerMood.mood).emoji}
-                          </span>
-                          <span className={`text-sm font-medium ${moodEmojis[partnerMood.mood]?.color || "text-gray-500"}`}>
-                            {getMoodDisplay(partnerMood.mood).label}
-                          </span>
-                        </div>
-                      ) : (
-                        <p className="text-xs italic text-muted-foreground flex items-center gap-1">
-                          <EyeOff className="h-3 w-3" />
-                          Private
-                        </p>
-                      )
-                    ) : (
-                      <p className="text-xs text-muted-foreground">No mood shared yet</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div className="mt-3 text-center">
+            
             <a 
               href="/moods"
-              className="inline-flex items-center text-xs text-harmony-600 hover:text-harmony-700"
+              className="inline-flex items-center text-xs text-harmony-600 hover:text-harmony-700 mt-2"
             >
               View mood history
             </a>
@@ -355,6 +487,22 @@ const MoodDisplay = () => {
           />
         </DialogContent>
       </Dialog>
+      
+      {/* Mood details dialog */}
+      {viewingMoodDetails.isOpen && viewingMoodDetails.mood && (
+        <MoodDetailModal
+          open={viewingMoodDetails.isOpen}
+          onClose={() => setViewingMoodDetails(prev => ({ ...prev, isOpen: false }))}
+          name={viewingMoodDetails.name}
+          mood={viewingMoodDetails.mood}
+          note={viewingMoodDetails.isPartner 
+            ? (partnerMood?.note || null) 
+            : (defaultUserMood.note || null)}
+          timestamp={viewingMoodDetails.isPartner 
+            ? (partnerMood?.date || new Date().toISOString()) 
+            : (defaultUserMood.date || new Date().toISOString())}
+        />
+      )}
     </>
   );
 };

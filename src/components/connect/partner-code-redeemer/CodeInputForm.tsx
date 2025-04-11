@@ -11,6 +11,7 @@ import { acceptInvitation } from '@/services/partners/partnershipService';
 import { getInvitationByToken } from '@/services/partnerInviteService';
 import { formatToken } from '@/hooks/partner-invites/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Form component for entering and submitting a partner code
@@ -32,6 +33,24 @@ const CodeInputForm = () => {
     }
     
     try {
+      console.log('Validating code:', formattedCode);
+      
+      // First try to check in partner_codes table
+      const { data: partnerCodeData, error: partnerCodeError } = await supabase
+        .from('partner_codes')
+        .select('*')
+        .eq('code', formattedCode)
+        .eq('is_used', false)
+        .filter('expires_at', 'is', null)
+        .or('expires_at.gt.now()')
+        .maybeSingle();
+      
+      if (partnerCodeData) {
+        console.log('Found valid partner code:', partnerCodeData);
+        return { valid: true, error: null };
+      }
+      
+      // If not found in partner_codes, try the partner_invites table
       const { data, error } = await getInvitationByToken(formattedCode);
       
       if (error || !data) {

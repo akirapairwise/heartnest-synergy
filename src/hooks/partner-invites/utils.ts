@@ -15,7 +15,7 @@ export const generateToken = (): string => {
 // Helper function to generate the invite URL
 export const generateInviteUrl = (token: string): string => {
   // Always ensure uppercase token in URL
-  const formattedToken = token.trim().toUpperCase();
+  const formattedToken = formatToken(token);
   return `${window.location.origin}/invite?token=${formattedToken}`;
 };
 

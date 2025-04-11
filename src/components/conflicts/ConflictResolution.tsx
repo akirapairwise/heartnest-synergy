@@ -6,6 +6,8 @@ import { CheckCircle, Lightbulb, ScrollText, Sparkles } from "lucide-react";
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import ResolutionSection from './resolution/ResolutionSection';
+import ProcessingState from './resolution/ProcessingState';
 
 type ConflictResolutionProps = {
   conflict: Conflict;
@@ -36,41 +38,33 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
     }
   };
   
+  // If AI hasn't generated resolution content yet
   if (!conflict.ai_summary || !conflict.ai_reflection || !conflict.ai_resolution_plan) {
-    return (
-      <div className="text-center p-8">
-        <Sparkles className="mx-auto h-12 w-12 text-amber-500 mb-4" />
-        <h3 className="text-lg font-medium mb-2">AI is working on a resolution</h3>
-        <p className="text-muted-foreground">The AI is analyzing both perspectives to provide guidance.</p>
-      </div>
-    );
+    return <ProcessingState />;
   }
   
   return (
     <div className="space-y-6">
-      <div className="bg-muted/30 p-4 rounded-md">
-        <div className="flex items-center gap-2 mb-3">
-          <ScrollText className="h-5 w-5 text-blue-500" />
-          <h3 className="font-medium">Summary</h3>
-        </div>
-        <p className="text-sm">{conflict.ai_summary}</p>
-      </div>
+      <ResolutionSection 
+        icon={<ScrollText className="h-5 w-5 text-blue-500" />}
+        title="Summary"
+        content={conflict.ai_summary}
+        iconColor="text-blue-500"
+      />
       
-      <div className="bg-muted/30 p-4 rounded-md">
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className="h-5 w-5 text-amber-500" />
-          <h3 className="font-medium">Reflection</h3>
-        </div>
-        <p className="text-sm">{conflict.ai_reflection}</p>
-      </div>
+      <ResolutionSection 
+        icon={<Lightbulb className="h-5 w-5 text-amber-500" />}
+        title="Reflection"
+        content={conflict.ai_reflection}
+        iconColor="text-amber-500"
+      />
       
-      <div className="bg-muted/30 p-4 rounded-md">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          <h3 className="font-medium">Action Plan</h3>
-        </div>
-        <p className="text-sm">{conflict.ai_resolution_plan}</p>
-      </div>
+      <ResolutionSection 
+        icon={<Sparkles className="h-5 w-5 text-purple-500" />}
+        title="Action Plan"
+        content={conflict.ai_resolution_plan}
+        iconColor="text-purple-500"
+      />
       
       {!conflict.resolved_at && (
         <div className="flex justify-end mt-4">

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,11 +29,26 @@ export interface GoalFormProps {
 
 export const GoalForm = (props: GoalFormProps) => {
   const { form, hasSharingOption, handleSubmit, onCancel, isSubmitting, goal } = useGoalForm(props);
+  const formRef = useRef<HTMLFormElement>(null);
+  
+  // Handle auto-scrolling when an input field gets focus
+  const handleFocusScroll = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.target) {
+      // Use setTimeout to ensure the keyboard has time to open on mobile
+      setTimeout(() => {
+        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  };
   
   return (
-    <ScrollArea className="max-h-[80vh] px-1">
+    <ScrollArea className="max-h-[calc(100vh-120px)] px-1 overflow-y-auto" style={{ minHeight: 'auto', paddingBottom: '80px' }}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 md:space-y-6">
+        <form 
+          ref={formRef}
+          onSubmit={form.handleSubmit(handleSubmit)} 
+          className="space-y-4 md:space-y-6 max-w-[95%] sm:max-w-full mx-auto pb-24 sm:pb-16"
+        >
           <FormField
             control={form.control}
             name="title"
@@ -44,8 +59,10 @@ export const GoalForm = (props: GoalFormProps) => {
                   <Input 
                     placeholder="Enter goal title..." 
                     {...field} 
-                    className="w-full focus:ring-2 focus:ring-primary/30 transition-all"
+                    className="w-full focus:ring-2 focus:ring-primary/30 transition-all text-base"
                     aria-label="Goal title"
+                    onFocus={handleFocusScroll}
+                    style={{ fontSize: '16px', maxWidth: '100%' }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -62,9 +79,11 @@ export const GoalForm = (props: GoalFormProps) => {
                 <FormControl>
                   <Textarea 
                     placeholder="What do you want to achieve? Be specific..."
-                    className="min-h-20 sm:min-h-24 resize-none focus:ring-2 focus:ring-primary/30 transition-all"
+                    className="min-h-20 sm:min-h-24 resize-none focus:ring-2 focus:ring-primary/30 transition-all text-base"
                     {...field}
                     aria-label="Goal description"
+                    onFocus={handleFocusScroll}
+                    style={{ fontSize: '16px' }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -85,13 +104,22 @@ export const GoalForm = (props: GoalFormProps) => {
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className="focus:ring-2 focus:ring-primary/30 transition-all" aria-label="Goal category">
+                      <SelectTrigger 
+                        className="focus:ring-2 focus:ring-primary/30 transition-all text-base" 
+                        aria-label="Goal category"
+                        style={{ fontSize: '16px' }}
+                      >
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent position="popper" className="z-50 min-w-[8rem] bg-background border">
                       {goalCategories.map((category) => (
-                        <SelectItem key={category.value} value={category.value}>
+                        <SelectItem 
+                          key={category.value} 
+                          value={category.value}
+                          className="text-base"
+                          style={{ fontSize: '16px' }}
+                        >
                           {category.label}
                         </SelectItem>
                       ))}
@@ -118,11 +146,13 @@ export const GoalForm = (props: GoalFormProps) => {
             </>
           )}
           
-          <GoalFormActions 
-            isSubmitting={isSubmitting} 
-            onCancel={onCancel} 
-            goal={goal} 
-          />
+          <div className="pt-4 sticky bottom-0 bg-background z-10">
+            <GoalFormActions 
+              isSubmitting={isSubmitting} 
+              onCancel={onCancel} 
+              goal={goal} 
+            />
+          </div>
         </form>
       </Form>
     </ScrollArea>

@@ -29,7 +29,7 @@ export function GoalModalContent({
   const Description = isDesktop ? DialogDescription : DrawerDescription;
 
   return (
-    <Content className="sm:max-w-md md:max-w-lg lg:max-w-xl">
+    <Content className={`sm:max-w-md md:max-w-lg lg:max-w-xl ${!isDesktop ? 'h-[85vh]' : ''}`}>
       <Header className="pb-4">
         <Title className="text-xl font-semibold">{goal ? 'Edit Goal' : 'Create New Goal'}</Title>
         <Description className="text-sm md:text-base text-muted-foreground">

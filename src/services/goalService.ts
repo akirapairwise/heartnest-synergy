@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Goal } from '@/types/goals';
 
@@ -42,13 +43,13 @@ export const fetchPartnerGoals = async (): Promise<Goal[]> => {
 
   const partnerId = profileData.partner_id;
 
-  // Get all goals where:
-  // 1. Partner is the owner AND goal is shared with current user
-  // 2. OR Partner is the owner AND we're specifically fetching their goals
+  // Get goals where:
+  // Partner is the owner AND goal is shared with current user
   const { data: partnerGoals, error: goalsError } = await supabase
     .from('goals')
     .select('*')
     .eq('owner_id', partnerId)
+    .eq('is_shared', true)
     .eq('partner_id', userId)
     .order('created_at', { ascending: false });
 
@@ -87,13 +88,13 @@ export const fetchSharedGoals = async (): Promise<Goal[]> => {
     return [];
   }
 
-  // Get all goals where:
-  // 1. Current user is the owner AND goal is shared
-  // 2. OR Partner is the owner AND goal is shared with current user
+  // Get all shared goals:
+  // 1. My goals that are shared with partner
+  // 2. Partner's goals that are shared with me
   const { data, error } = await supabase
     .from('goals')
     .select('*')
-    .or(`and(owner_id.eq.${userId},is_shared.eq.true),and(owner_id.eq.${partnerId},partner_id.eq.${userId},is_shared.eq.true)`)
+    .or(`and(owner_id.eq.${userId},is_shared.eq.true),and(owner_id.eq.${partnerId},is_shared.eq.true,partner_id.eq.${userId})`)
     .order('created_at', { ascending: false });
 
   if (error) {

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Goal } from '@/types/goals';
 import { fetchMyGoals, fetchPartnerGoals, fetchSharedGoals } from '@/services/goalService';
@@ -31,15 +32,13 @@ const GoalsPage = () => {
         fetchSharedGoals()
       ]);
       
+      // Set my goals (both personal and ones I shared)
       setMyGoals(myGoalsData);
       
-      // Combine partner goals and shared goals for the partner/shared views
-      const allPartnerAndSharedGoals = [...partnerGoalsData, ...sharedGoalsData.filter(
-        // Only add shared goals that aren't already in partnerGoals
-        sharedGoal => !partnerGoalsData.some(pg => pg.id === sharedGoal.id)
-      )];
-      
-      setSharedGoals(allPartnerAndSharedGoals);
+      // For the shared goals tab, we need ALL shared goals:
+      // 1. Goals my partner shared with me (from partnerGoalsData)
+      // 2. Goals I shared with my partner (already in myGoalsData)
+      setSharedGoals([...partnerGoalsData, ...sharedGoalsData]);
     } catch (error) {
       console.error('Error fetching goals:', error);
       toast.error('There was an error loading your goals. Please try again.');
@@ -191,6 +190,6 @@ const GoalsPage = () => {
       )}
     </div>
   );
-};
+}
 
 export default GoalsPage;

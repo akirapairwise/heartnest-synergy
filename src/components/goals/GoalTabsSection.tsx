@@ -45,7 +45,7 @@ export function GoalTabsSection({
     const shared = myGoals.filter(goal => goal.is_shared);
     setMySharedGoals(shared);
     
-    // Filter partner's shared goals
+    // Filter partner's shared goals - ensuring we only get goals shared by the partner
     const partnerShared = sharedGoals.filter(goal => 
       goal.is_shared && goal.owner_id !== profile?.id
     );
@@ -174,7 +174,7 @@ export function GoalTabsSection({
           </div>
         ) : (
           <GoalsList 
-            goals={sharedGoals.filter(goal => goal.is_shared)}
+            goals={sharedGoals}
             onEdit={onEdit} 
             onDelete={onDelete}
             onRefresh={onRefresh}

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Heart, Loader2, AlertCircle, RefreshCw, EyeOff, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -291,34 +292,41 @@ const MoodDisplay = () => {
             </Button>
           </div>
           
-          {/* Partner's mood display - we keep this simplified */}
+          {/* Partner's mood display - improved layout with avatar and emoji in same line */}
           {profile?.partner_id && (
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center gap-2 mb-2">
                 {showAvatar && (
-                  <Avatar className="h-6 w-6">
+                  <Avatar className="h-8 w-8">
                     <AvatarImage src={partnerProfile?.avatar_url} />
                     <AvatarFallback>{partnerProfile?.full_name ? partnerProfile.full_name.substring(0, 2).toUpperCase() : 'PA'}</AvatarFallback>
                   </Avatar>
                 )}
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {partnerProfile?.full_name || 'Partner'}
-                  </p>
-                  {partnerMood ? (
-                    isMoodVisible ? (
-                      <p className={`text-sm font-medium ${moodEmojis[partnerMood.mood]?.color || "text-gray-500"}`}>
-                        {getMoodDisplay(partnerMood.mood).emoji} {getMoodDisplay(partnerMood.mood).label}
-                      </p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      {partnerProfile?.full_name || 'Partner'}
+                    </p>
+                    {partnerMood ? (
+                      isMoodVisible ? (
+                        <div className="flex items-center">
+                          <span className="text-xl mr-1.5" aria-label={getMoodDisplay(partnerMood.mood).label}>
+                            {getMoodDisplay(partnerMood.mood).emoji}
+                          </span>
+                          <span className={`text-sm font-medium ${moodEmojis[partnerMood.mood]?.color || "text-gray-500"}`}>
+                            {getMoodDisplay(partnerMood.mood).label}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-xs italic text-muted-foreground flex items-center gap-1">
+                          <EyeOff className="h-3 w-3" />
+                          Private
+                        </p>
+                      )
                     ) : (
-                      <p className="text-xs italic text-muted-foreground flex items-center gap-1">
-                        <EyeOff className="h-3 w-3" />
-                        Private
-                      </p>
-                    )
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No mood shared yet</p>
-                  )}
+                      <p className="text-xs text-muted-foreground">No mood shared yet</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

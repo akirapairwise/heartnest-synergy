@@ -29,9 +29,9 @@ export function GoalPageHeader({
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-gradient-to-r from-love-50 to-harmony-50 p-4 rounded-xl border border-love-100/50 shadow-sm mb-6">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Relationship Goals</h1>
+        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-love-600 via-harmony-600 to-calm-600 bg-clip-text text-transparent">Relationship Goals</h1>
         <p className="text-muted-foreground">Track and achieve your relationship aspirations together</p>
       </div>
       
@@ -39,7 +39,7 @@ export function GoalPageHeader({
         {isDesktop ? (
           <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
             <DialogTrigger asChild>
-              <Button onClick={handleOpenNewGoal}>
+              <Button onClick={handleOpenNewGoal} variant="gradient">
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Goal
               </Button>
@@ -54,7 +54,7 @@ export function GoalPageHeader({
         ) : (
           <Drawer open={goalModalOpen} onOpenChange={setGoalModalOpen}>
             <DrawerTrigger asChild>
-              <Button onClick={handleOpenNewGoal}>
+              <Button onClick={handleOpenNewGoal} variant="gradient">
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Goal
               </Button>
@@ -68,8 +68,8 @@ export function GoalPageHeader({
           </Drawer>
         )}
         
-        <Button variant="outline" size="icon" onClick={fetchGoals} disabled={isLoading}>
-          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+        <Button variant="outline" size="icon" onClick={fetchGoals} disabled={isLoading} className="border-harmony-200 hover:bg-harmony-100/50">
+          <RefreshCw className={`h-4 w-4 text-harmony-600 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
     </div>

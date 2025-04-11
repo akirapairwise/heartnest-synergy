@@ -29,22 +29,22 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ moodHistory, isLoading }) => 
             const emptyHearts = Math.max(0, 5 - moodValue);
             
             return (
-              <div key={entry.id} className="border-b pb-3 last:border-0">
+              <div key={entry.id} className="border-b border-love-100 pb-3 last:border-0 hover:bg-harmony-50/30 rounded-lg p-2 transition-colors">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-medium text-harmony-700">
                       {new Date(entry.date).toLocaleDateString('en-US', { 
                         weekday: 'short',
                         month: 'short', 
                         day: 'numeric' 
                       })}
                       {entry.timestamp && (
-                        <span className="text-xs text-muted-foreground ml-2">
+                        <span className="text-xs text-calm-600 ml-2">
                           {format(new Date(entry.timestamp), 'h:mm a')}
                         </span>
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">{entry.note}</p>
+                    <p className="text-xs text-muted-foreground mt-1 italic">{entry.note}</p>
                   </div>
                   <div className="flex mt-1">
                     {/* Filled hearts based on mood value */}
@@ -57,7 +57,7 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ moodHistory, isLoading }) => 
                           moodValue === 3 ? 'text-yellow-500' :
                           moodValue === 4 ? 'text-green-400' :
                           'text-green-600'
-                        }`}
+                        } drop-shadow-sm`}
                         fill="currentColor"
                       />
                     ))}

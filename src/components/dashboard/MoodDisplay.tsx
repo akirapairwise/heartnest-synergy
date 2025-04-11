@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,7 +42,12 @@ const MoodDisplay = () => {
         .eq('id', profile.partner_id)
         .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching partner profile:', error);
+        // We don't set a toast here anymore since the error will be displayed in the card
+        return;
+      }
+      
       if (data) {
         setPartnerProfile(data);
       }
@@ -63,7 +68,11 @@ const MoodDisplay = () => {
         .order('timestamp', { ascending: false })
         .limit(1);
         
-      if (userError) throw userError;
+      if (userError) {
+        console.error('Error fetching user mood:', userError);
+        setError('Failed to load your mood data');
+        return;
+      }
       
       if (userData && userData.length > 0) {
         setUserMood({
@@ -83,7 +92,10 @@ const MoodDisplay = () => {
           .order('timestamp', { ascending: false })
           .limit(1);
           
-        if (partnerError) throw partnerError;
+        if (partnerError) {
+          console.error('Error fetching partner mood:', partnerError);
+          // We continue anyway since partner mood is optional
+        }
         
         if (partnerData && partnerData.length > 0) {
           setPartnerMood({
@@ -137,12 +149,14 @@ const MoodDisplay = () => {
   if (error) {
     return (
       <Card className="shadow-sm">
-        <CardContent className="p-4 text-center text-red-500">
-          <p>{error}</p>
+        <CardContent className="p-4 text-center">
+          <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+          <p className="text-sm text-red-500 mb-2">{error}</p>
           <button 
             onClick={() => fetchLatestMoods()} 
-            className="mt-2 text-sm text-harmony-600 hover:text-harmony-700"
+            className="inline-flex items-center text-sm text-harmony-600 hover:text-harmony-700 gap-1"
           >
+            <RefreshCw className="h-3.5 w-3.5" />
             Try again
           </button>
         </CardContent>

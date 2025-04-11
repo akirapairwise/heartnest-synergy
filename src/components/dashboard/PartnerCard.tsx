@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, CalendarHeart, Gift, UserX, Loader2, UserPlus } from "lucide-react";
+import { MessageSquare, CalendarHeart, Gift, UserX, Loader2, UserPlus, AlertCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -49,15 +50,26 @@ const PartnerCard = () => {
         
       if (error) {
         console.error("Error fetching partner profile:", error);
-        setError("Could not load partner information");
+        if (error.code === 'PGRST116') {
+          setError("Partner profile not found. They may have deleted their account.");
+        } else if (error.code === '42501') {
+          setError("You don't have permission to view this partner's profile.");
+        } else {
+          setError("Could not load partner information. Please try again later.");
+        }
         throw error;
+      }
+      
+      if (!data) {
+        setError("Partner profile not found.");
+        return;
       }
       
       console.log("Partner profile fetched successfully:", data);
       setPartnerProfile(data);
     } catch (error) {
       console.error('Error fetching partner profile:', error);
-      toast.error('Could not load partner information');
+      // We don't show the toast here anymore since we're displaying the error in the card
     } finally {
       setIsLoading(false);
     }
@@ -156,6 +168,38 @@ const PartnerCard = () => {
       <Card className="shadow-sm">
         <CardContent className="p-4 flex justify-center items-center min-h-[150px]">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Card className="shadow-sm">
+        <CardContent className="p-4 text-center">
+          <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground mb-3">{error}</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              if (profile?.partner_id) {
+                fetchPartnerProfile(profile.partner_id);
+              }
+            }}
+            className="mb-2"
+          >
+            Try Again
+          </Button>
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={() => setIsUnlinkDialogOpen(true)}
+            className="w-full"
+          >
+            <UserX className="h-4 w-4 mr-2" />
+            Remove Partner Connection
+          </Button>
         </CardContent>
       </Card>
     );

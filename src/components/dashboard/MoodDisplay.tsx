@@ -15,11 +15,11 @@ import { format } from 'date-fns';
 
 // Define mood emojis and their mapping
 const moodEmojis = {
-  1: { emoji: "😢", label: "Struggling", color: "text-red-500" },
-  2: { emoji: "😐", label: "Disconnected", color: "text-orange-400" },
-  3: { emoji: "🙂", label: "Neutral", color: "text-yellow-500" },
-  4: { emoji: "😊", label: "Connected", color: "text-green-400" },
-  5: { emoji: "🥰", label: "Thriving", color: "text-green-600" },
+  1: { emoji: "😢", label: "Struggling", color: "text-red-500", bgColor: "bg-red-50" },
+  2: { emoji: "😐", label: "Disconnected", color: "text-orange-400", bgColor: "bg-orange-50" },
+  3: { emoji: "🙂", label: "Neutral", color: "text-yellow-500", bgColor: "bg-yellow-50" },
+  4: { emoji: "😊", label: "Connected", color: "text-green-400", bgColor: "bg-green-50" },
+  5: { emoji: "🥰", label: "Thriving", color: "text-green-600", bgColor: "bg-green-50" },
 };
 
 interface PartnerMood {
@@ -46,28 +46,30 @@ interface MoodModalProps {
 const MoodDetailModal: React.FC<MoodModalProps> = ({ open, onClose, name, mood, note, timestamp }) => {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] rounded-xl bg-gradient-to-b from-white to-gray-50">
         <DialogHeader>
-          <DialogTitle>{name}'s Mood for Today</DialogTitle>
+          <DialogTitle className="text-xl font-bold">{name}'s Mood for Today</DialogTitle>
           <DialogClose className="absolute right-4 top-4">
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
           </DialogClose>
         </DialogHeader>
-        <div className="flex flex-col items-center p-4">
-          <div className="text-6xl mb-2" aria-label={`Mood: ${mood.label}`}>
+        <div className="flex flex-col items-center p-6">
+          <div className="text-6xl mb-4 animate-pulse-soft" aria-label={`Mood: ${mood.label}`}>
             {mood.emoji}
           </div>
-          <h3 className={`text-xl font-bold ${mood.color}`}>{mood.label}</h3>
+          <h3 className={`text-xl font-bold ${mood.color} mb-2`}>{mood.label}</h3>
           
           {note && (
-            <div className="mt-4 text-center">
-              <p className="text-sm text-muted-foreground mb-1">Note:</p>
-              <p className="text-base">"{note}"</p>
+            <div className="mt-4 text-center w-full">
+              <div className="p-4 rounded-lg bg-white/80 shadow-sm border border-gray-100">
+                <p className="text-sm text-muted-foreground mb-1 font-medium">Note:</p>
+                <p className="text-base italic">"{note}"</p>
+              </div>
             </div>
           )}
           
-          <p className="text-xs text-muted-foreground mt-4">
+          <p className="text-xs text-muted-foreground mt-6">
             Logged at {format(new Date(timestamp), 'h:mm a')}
           </p>
         </div>
@@ -271,7 +273,7 @@ const MoodDisplay = () => {
   
   // Get emoji and label based on mood value
   const getMoodDisplay = (moodValue: number) => {
-    return moodEmojis[moodValue as keyof typeof moodEmojis] || { emoji: "❓", label: "Unknown", color: "text-gray-500" };
+    return moodEmojis[moodValue as keyof typeof moodEmojis] || { emoji: "❓", label: "Unknown", color: "text-gray-500", bgColor: "bg-gray-50" };
   };
   
   const userMoodDisplay = getMoodDisplay(defaultUserMood.mood);
@@ -302,9 +304,12 @@ const MoodDisplay = () => {
 
   if (isLoading) {
     return (
-      <Card className="shadow-sm">
-        <CardContent className="p-4 flex justify-center items-center min-h-[200px]">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <Card className="shadow-sm overflow-hidden bg-gradient-to-b from-white to-gray-50 border-none">
+        <CardContent className="p-6 flex justify-center items-center min-h-[200px]">
+          <div className="flex flex-col items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-harmony-500 mb-3" />
+            <p className="text-sm text-muted-foreground">Loading mood data...</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -312,17 +317,19 @@ const MoodDisplay = () => {
   
   if (error) {
     return (
-      <Card className="shadow-sm">
-        <CardContent className="p-4 text-center">
-          <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-          <p className="text-sm text-red-500 mb-2">{error}</p>
-          <button 
+      <Card className="shadow-sm overflow-hidden bg-gradient-to-b from-white to-gray-50 border-none">
+        <CardContent className="p-6 text-center">
+          <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
+          <p className="text-sm text-red-500 mb-3 font-medium">{error}</p>
+          <Button 
             onClick={() => fetchLatestMoods()} 
-            className="inline-flex items-center text-sm text-harmony-600 hover:text-harmony-700 gap-1"
+            variant="outline"
+            size="sm"
+            className="gap-2 hover:bg-gray-100"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Try again
-          </button>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -330,17 +337,17 @@ const MoodDisplay = () => {
   
   return (
     <>
-      <Card className="shadow-sm overflow-hidden">
-        <CardContent className="p-4">
-          <h3 className="font-medium text-sm mb-4 flex items-center">
-            <Heart className="h-4 w-4 text-love-500 mr-1.5" />
+      <Card className="shadow-md overflow-hidden rounded-xl border-none bg-gradient-to-br from-white via-gray-50 to-white">
+        <CardContent className="p-6">
+          <h3 className="font-medium text-base mb-5 flex items-center text-harmony-700">
+            <Heart className="h-5 w-5 text-love-500 mr-2 animate-pulse-soft" />
             Today's Mood
           </h3>
           
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-5">
             {/* User's mood card */}
             <div 
-              className="flex-1 bg-love-50/30 p-4 rounded-xl shadow-sm hover:shadow transition-shadow cursor-pointer"
+              className={`flex-1 ${userMoodDisplay.bgColor}/40 p-5 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border border-gray-100`}
               onClick={() => defaultUserMood.id !== "default-user" && openMoodDetails(
                 false, 
                 userMoodDisplay, 
@@ -350,23 +357,23 @@ const MoodDisplay = () => {
               role="button"
               aria-label={`View ${getUserName()}'s mood details`}
             >
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
                   <AvatarImage src={profile?.avatar_url} alt={getUserName()} />
-                  <AvatarFallback>{profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'ME'}</AvatarFallback>
+                  <AvatarFallback className="bg-love-100 text-love-800">{profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'ME'}</AvatarFallback>
                 </Avatar>
                 
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">{getUserName()}</p>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-3xl" aria-label={`Mood: ${userMoodDisplay.label}`}>
+                  <p className="text-sm font-medium text-gray-700">{getUserName()}</p>
+                  <div className="flex items-center gap-2.5 mt-1">
+                    <span className="text-4xl drop-shadow-sm" aria-label={`Mood: ${userMoodDisplay.label}`}>
                       {userMoodDisplay.emoji}
                     </span>
                     <div>
                       <p className={`font-bold ${userMoodDisplay.color}`}>{userMoodDisplay.label}</p>
                       {defaultUserMood.note && (
-                        <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                          {defaultUserMood.note}
+                        <p className="text-sm text-muted-foreground truncate max-w-[150px] italic">
+                          "{defaultUserMood.note}"
                         </p>
                       )}
                     </div>
@@ -375,7 +382,7 @@ const MoodDisplay = () => {
               </div>
               
               {defaultUserMood.id !== "default-user" && (
-                <p className="text-xs text-right text-muted-foreground mt-2">
+                <p className="text-xs text-right text-muted-foreground mt-3 font-medium">
                   {formatMoodTime(defaultUserMood.date)}
                 </p>
               )}
@@ -384,7 +391,11 @@ const MoodDisplay = () => {
             {/* Partner's mood card or invite prompt */}
             {profile?.partner_id ? (
               <div 
-                className={`flex-1 ${partnerMood && isMoodVisible ? 'bg-harmony-50/30' : 'bg-gray-50'} p-4 rounded-xl shadow-sm ${partnerMood && isMoodVisible ? 'hover:shadow transition-shadow cursor-pointer' : ''}`}
+                className={`flex-1 ${
+                  partnerMood && isMoodVisible 
+                    ? `${partnerMoodDisplay?.bgColor}/40 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 cursor-pointer` 
+                    : 'bg-gray-50'
+                } p-5 rounded-xl shadow-sm border border-gray-100`}
                 onClick={() => partnerMood && isMoodVisible && openMoodDetails(
                   true,
                   partnerMoodDisplay,
@@ -394,38 +405,38 @@ const MoodDisplay = () => {
                 role={partnerMood && isMoodVisible ? "button" : "presentation"}
                 aria-label={partnerMood && isMoodVisible ? `View ${getPartnerName()}'s mood details` : undefined}
               >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
                     <AvatarImage src={partnerProfile?.avatar_url} alt={getPartnerName()} />
-                    <AvatarFallback>{partnerProfile?.full_name ? partnerProfile.full_name.substring(0, 2).toUpperCase() : 'PA'}</AvatarFallback>
+                    <AvatarFallback className="bg-harmony-100 text-harmony-800">{partnerProfile?.full_name ? partnerProfile.full_name.substring(0, 2).toUpperCase() : 'PA'}</AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1 min-width-0">
-                    <p className="text-xs text-muted-foreground">{getPartnerName()}</p>
+                    <p className="text-sm font-medium text-gray-700">{getPartnerName()}</p>
                     
                     {partnerMood ? (
                       isMoodVisible ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-3xl" aria-label={`Mood: ${partnerMoodDisplay?.label}`}>
+                        <div className="flex items-center gap-2.5 mt-1">
+                          <span className="text-4xl drop-shadow-sm" aria-label={`Mood: ${partnerMoodDisplay?.label}`}>
                             {partnerMoodDisplay?.emoji}
                           </span>
                           <div>
                             <p className={`font-bold ${partnerMoodDisplay?.color}`}>{partnerMoodDisplay?.label}</p>
                             {partnerMood.note && (
-                              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                                {partnerMood.note}
+                              <p className="text-sm text-muted-foreground truncate max-w-[150px] italic">
+                                "{partnerMood.note}"
                               </p>
                             )}
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center text-muted-foreground gap-1.5 mt-2">
+                        <div className="flex items-center text-muted-foreground gap-2 mt-2 bg-white/80 p-2 rounded-lg">
                           <EyeOff className="h-4 w-4" />
                           <span className="text-sm">Private mood</span>
                         </div>
                       )
                     ) : (
-                      <div className="text-sm text-muted-foreground mt-2">
+                      <div className="text-sm text-muted-foreground mt-2 bg-white/80 p-2 rounded-lg">
                         No mood shared yet
                       </div>
                     )}
@@ -433,20 +444,21 @@ const MoodDisplay = () => {
                 </div>
                 
                 {partnerMood && isMoodVisible && (
-                  <p className="text-xs text-right text-muted-foreground mt-2">
+                  <p className="text-xs text-right text-muted-foreground mt-3 font-medium">
                     {formatMoodTime(partnerMood.date)}
                   </p>
                 )}
               </div>
             ) : (
-              <div className="flex-1 bg-gray-50 p-4 rounded-xl">
-                <div className="flex flex-col items-center justify-center h-full min-h-[80px] text-center">
-                  <UserPlus className="h-6 w-6 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground mb-2">Connect with your partner to see their mood</p>
+              <div className="flex-1 bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex flex-col items-center justify-center h-full min-h-[100px] text-center">
+                  <UserPlus className="h-8 w-8 text-harmony-400 mb-3" />
+                  <p className="text-sm text-muted-foreground mb-3">Connect with your partner to see their mood</p>
                   <Button
                     size="sm"
                     onClick={() => navigate('/connect')}
                     variant="outline"
+                    className="bg-white hover:bg-harmony-50 border-harmony-200 text-harmony-700 hover:text-harmony-800"
                   >
                     Invite Partner
                   </Button>
@@ -455,19 +467,20 @@ const MoodDisplay = () => {
             )}
           </div>
           
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <Button 
               variant="outline"
               size="sm"
               onClick={() => setIsMoodDialogOpen(true)}
-              className="w-full"
+              className="w-full bg-gradient-to-r from-love-50 to-harmony-50 hover:from-love-100 hover:to-harmony-100 border-gray-200 text-harmony-700"
             >
+              <Heart className="h-4 w-4 mr-2 text-love-500" />
               {defaultUserMood.id !== "default-user" ? "Update Your Mood" : "Log Your Mood"}
             </Button>
             
             <a 
               href="/moods"
-              className="inline-flex items-center text-xs text-harmony-600 hover:text-harmony-700 mt-2"
+              className="inline-flex items-center text-xs text-harmony-600 hover:text-harmony-700 mt-3 hover:underline"
             >
               View mood history
             </a>
@@ -477,9 +490,9 @@ const MoodDisplay = () => {
       
       {/* Mood update dialog */}
       <Dialog open={isMoodDialogOpen} onOpenChange={setIsMoodDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] rounded-xl bg-gradient-to-b from-white to-gray-50">
           <DialogHeader>
-            <DialogTitle>How are you feeling today?</DialogTitle>
+            <DialogTitle className="text-xl font-bold">How are you feeling today?</DialogTitle>
           </DialogHeader>
           <MoodTracker 
             onMoodSaved={handleMoodSaved} 

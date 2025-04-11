@@ -45,6 +45,7 @@ export const GoalForm = (props: GoalFormProps) => {
                     placeholder="Enter goal title..." 
                     {...field} 
                     className="w-full focus:ring-2 focus:ring-primary/30 transition-all"
+                    aria-label="Goal title"
                   />
                 </FormControl>
                 <FormMessage />
@@ -63,6 +64,7 @@ export const GoalForm = (props: GoalFormProps) => {
                     placeholder="What do you want to achieve? Be specific..."
                     className="min-h-20 sm:min-h-24 resize-none focus:ring-2 focus:ring-primary/30 transition-all"
                     {...field}
+                    aria-label="Goal description"
                   />
                 </FormControl>
                 <FormMessage />
@@ -80,13 +82,14 @@ export const GoalForm = (props: GoalFormProps) => {
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value}
+                    defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className="focus:ring-2 focus:ring-primary/30 transition-all">
+                      <SelectTrigger className="focus:ring-2 focus:ring-primary/30 transition-all" aria-label="Goal category">
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent position="popper" className="z-50 min-w-[8rem] bg-background border">
                       {goalCategories.map((category) => (
                         <SelectItem key={category.value} value={category.value}>
                           {category.label}

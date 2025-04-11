@@ -31,8 +31,8 @@ export function GoalModalContent({
   return (
     <Content className="sm:max-w-md md:max-w-lg lg:max-w-xl">
       <Header className="pb-4">
-        <Title className="text-xl">{goal ? 'Edit Goal' : 'Create New Goal'}</Title>
-        <Description className="text-sm md:text-base">
+        <Title className="text-xl font-semibold">{goal ? 'Edit Goal' : 'Create New Goal'}</Title>
+        <Description className="text-sm md:text-base text-muted-foreground">
           {goal 
             ? 'Update your relationship goal details' 
             : 'Add a new goal to strengthen your relationship'}

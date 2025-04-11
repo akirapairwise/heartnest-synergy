@@ -19,6 +19,7 @@ export const GoalFormActions = ({ isSubmitting, onCancel, goal }: GoalFormAction
         onClick={onCancel}
         disabled={isSubmitting}
         className="w-full sm:w-auto transition-all hover:bg-secondary/10"
+        aria-label="Cancel"
       >
         Cancel
       </Button>
@@ -26,6 +27,7 @@ export const GoalFormActions = ({ isSubmitting, onCancel, goal }: GoalFormAction
         type="submit" 
         disabled={isSubmitting}
         className="w-full sm:w-auto mb-2 sm:mb-0 transition-all hover:scale-[1.02]"
+        aria-label={goal ? "Update goal" : "Create goal"}
       >
         {isSubmitting ? (
           <>

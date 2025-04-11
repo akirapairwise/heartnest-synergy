@@ -73,11 +73,11 @@ export const useDailyMood = () => {
       console.log('Saving mood data:', moodData, 'Existing mood:', dailyMood);
       
       // Use upsert operation with the unique constraint on (user_id, mood_date)
+      // Fixed by removing 'returning' option and using proper syntax
       const { data, error } = await supabase
         .from('daily_moods')
         .upsert(moodData, { 
-          onConflict: 'user_id,mood_date',
-          returning: 'representation' 
+          onConflict: 'user_id,mood_date'
         })
         .select('id, mood_date, mood_value, note, is_visible_to_partner')
         .single();

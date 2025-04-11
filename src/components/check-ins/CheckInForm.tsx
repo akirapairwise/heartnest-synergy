@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Send, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Send, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { moodOptions } from './MoodOptions';
@@ -20,9 +21,11 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
   const [mood, setMood] = useState<string>("");
   const [satisfactionRating, setSatisfactionRating] = useState<number>(5);
   const [reflection, setReflection] = useState<string>("");
+  const [isVisibleToPartner, setIsVisibleToPartner] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
   const { user, profile } = useAuth();
+  const hasPartner = !!profile?.partner_id;
 
   // Set default mood from profile settings or from prop
   useEffect(() => {
@@ -49,7 +52,8 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
     setIsLoading(true);
     
     try {
-      const { error } = await supabase
+      // Save to check_ins table
+      const { error: checkInsError } = await supabase
         .from('check_ins')
         .insert({
           mood,
@@ -58,8 +62,31 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
           user_id: user.id,
         });
 
-      if (error) {
-        throw error;
+      if (checkInsError) {
+        throw checkInsError;
+      }
+      
+      // Also save to daily_moods for consistent tracking
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Derive mood_value (1-5) from satisfaction rating (1-10)
+      const moodValue = Math.ceil(satisfactionRating / 2);
+      
+      const { error: dailyMoodsError } = await supabase
+        .from('daily_moods')
+        .upsert({
+          user_id: user.id,
+          mood_date: today,
+          mood_value: moodValue,
+          note: reflection || null,
+          is_visible_to_partner: isVisibleToPartner
+        }, {
+          onConflict: 'user_id,mood_date'
+        });
+        
+      if (dailyMoodsError) {
+        console.error('Error saving to daily_moods:', dailyMoodsError);
+        // Continue anyway since check-in was saved
       }
 
       toast.success('Check-in saved successfully');
@@ -68,6 +95,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
       setMood("");
       setSatisfactionRating(5);
       setReflection("");
+      setIsVisibleToPartner(true);
       
       // Notify parent component to refresh the check-ins list
       onCheckInSaved();
@@ -137,6 +165,29 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
                 rows={4}
               />
             </div>
+            
+            {hasPartner && (
+              <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                  id="visibility-toggle"
+                  checked={isVisibleToPartner}
+                  onCheckedChange={setIsVisibleToPartner}
+                />
+                <Label htmlFor="visibility-toggle" className="flex items-center gap-1.5 cursor-pointer">
+                  {isVisibleToPartner ? (
+                    <>
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <span>Visible to partner</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <span>Private (only visible to you)</span>
+                    </>
+                  )}
+                </Label>
+              </div>
+            )}
           </div>
           
           <Button type="submit" className="w-full btn-primary-gradient" disabled={isLoading}>

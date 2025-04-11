@@ -9,6 +9,7 @@ export type DailyMood = {
   mood_date: string;
   mood_value: number;
   note: string | null;
+  is_visible_to_partner?: boolean;
 };
 
 export const useDailyMood = () => {
@@ -32,7 +33,7 @@ export const useDailyMood = () => {
       
       const { data, error } = await supabase
         .from('daily_moods')
-        .select('id, mood_date, mood_value, note')
+        .select('id, mood_date, mood_value, note, is_visible_to_partner')
         .eq('user_id', user.id)
         .eq('mood_date', today)
         .maybeSingle();
@@ -52,7 +53,7 @@ export const useDailyMood = () => {
     }
   }, [user]);
   
-  const saveDailyMood = useCallback(async (moodValue: number, note?: string) => {
+  const saveDailyMood = useCallback(async (moodValue: number, note?: string, isVisibleToPartner: boolean = true) => {
     if (!user) {
       console.log("saveDailyMood: No user, cannot save mood");
       return { error: new Error('User not authenticated') };
@@ -65,48 +66,35 @@ export const useDailyMood = () => {
         user_id: user.id,
         mood_date: today,
         mood_value: moodValue,
-        note: note || null
+        note: note || null,
+        is_visible_to_partner: isVisibleToPartner
       };
       
       console.log('Saving mood data:', moodData, 'Existing mood:', dailyMood);
       
-      if (dailyMood?.id) {
-        // Update existing mood
-        const { data, error } = await supabase
-          .from('daily_moods')
-          .update({
-            mood_value: moodValue,
-            note: note || null
-          })
-          .eq('id', dailyMood.id)
-          .select('id, mood_date, mood_value, note')
-          .single();
-          
-        if (error) {
-          console.error('Error updating mood:', error);
-          throw error;
-        }
+      // Use upsert operation with the unique constraint on (user_id, mood_date)
+      const { data, error } = await supabase
+        .from('daily_moods')
+        .upsert(moodData, { 
+          onConflict: 'user_id,mood_date',
+          returning: 'representation' 
+        })
+        .select('id, mood_date, mood_value, note, is_visible_to_partner')
+        .single();
         
-        console.log('Updated mood result:', data);
-        setDailyMood(data as DailyMood);
-        return { data: data as DailyMood, error: null };
-      } else {
-        // Insert new mood
-        const { data, error } = await supabase
-          .from('daily_moods')
-          .insert(moodData)
-          .select('id, mood_date, mood_value, note')
-          .single();
-          
-        if (error) {
-          console.error('Error inserting mood:', error);
-          throw error;
-        }
-        
-        console.log('Inserted mood result:', data);
-        setDailyMood(data as DailyMood);
-        return { data: data as DailyMood, error: null };
+      if (error) {
+        console.error('Error upserting mood:', error);
+        throw error;
       }
+      
+      console.log('Upserted mood result:', data);
+      setDailyMood(data as DailyMood);
+      
+      // Show appropriate message based on whether it was an insert or update
+      const actionMessage = dailyMood?.id ? 'updated' : 'saved';
+      toast.success(`Mood ${actionMessage} successfully`);
+      
+      return { data: data as DailyMood, error: null };
     } catch (error) {
       console.error('Error saving daily mood:', error);
       toast.error('Failed to save mood data');

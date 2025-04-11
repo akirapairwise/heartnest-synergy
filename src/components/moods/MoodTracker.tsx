@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Heart, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,8 +28,9 @@ interface MoodTrackerProps {
 const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => {
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [note, setNote] = useState("");
+  const [isVisibleToPartner, setIsVisibleToPartner] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { saveDailyMood } = useDailyMood();
   
   console.log("MoodTracker rendered with dailyMood:", dailyMood);
@@ -38,9 +41,11 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
       console.log("Setting form values from dailyMood:", dailyMood);
       setSelectedMood(dailyMood.mood_value);
       setNote(dailyMood.note || "");
+      setIsVisibleToPartner(dailyMood.is_visible_to_partner !== false);
     } else {
       setSelectedMood(null);
       setNote("");
+      setIsVisibleToPartner(true);
     }
   }, [dailyMood]);
   
@@ -60,10 +65,10 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
     setIsLoading(true);
     
     try {
-      console.log("Saving mood:", selectedMood, "note:", note);
+      console.log("Saving mood:", selectedMood, "note:", note, "visible:", isVisibleToPartner);
       
-      // Save to daily_moods
-      const { error } = await saveDailyMood(selectedMood, note);
+      // Save to daily_moods with upsert
+      const { error } = await saveDailyMood(selectedMood, note, isVisibleToPartner);
       if (error) throw error;
       
       // Also save to check_ins for backward compatibility
@@ -79,7 +84,6 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
         });
       
       console.log("Mood saved successfully");
-      toast.success(dailyMood ? 'Mood updated successfully!' : 'Mood tracked successfully!');
       
       // Notify parent component
       onMoodSaved();
@@ -91,6 +95,8 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
     }
   };
   
+  const hasPartner = !!profile?.partner_id;
+  
   return (
     <Card>
       <CardHeader>
@@ -98,7 +104,9 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
         <CardDescription>
           {dailyMood 
             ? "You've already recorded your mood today. You can update it if you'd like."
-            : "Your partner won't see your response until they submit theirs"}
+            : hasPartner 
+              ? "Share how you're feeling with your partner"
+              : "Track your relationship mood over time"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -154,6 +162,29 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
                 rows={3}
               />
             </div>
+            
+            {hasPartner && (
+              <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                  id="visibility-mode"
+                  checked={isVisibleToPartner}
+                  onCheckedChange={setIsVisibleToPartner}
+                />
+                <Label htmlFor="visibility-mode" className="flex items-center gap-1.5 cursor-pointer">
+                  {isVisibleToPartner ? (
+                    <>
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <span>Visible to partner</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <span>Private (only visible to you)</span>
+                    </>
+                  )}
+                </Label>
+              </div>
+            )}
           </div>
           
           <Button 

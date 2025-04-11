@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Heart, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Heart, Loader2, AlertCircle, RefreshCw, EyeOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,9 +12,17 @@ import { useNavigate } from 'react-router-dom';
 const moodLabels = ["Struggling", "Disconnected", "Neutral", "Connected", "Thriving"];
 const moodColors = ["text-red-500", "text-orange-400", "text-yellow-500", "text-green-400", "text-green-600"];
 
+interface PartnerMood {
+  id: string;
+  date: string;
+  mood: number;
+  note: string | null;
+  is_visible_to_partner: boolean;
+}
+
 const MoodDisplay = () => {
   const [userMood, setUserMood] = useState<MoodEntry | null>(null);
-  const [partnerMood, setPartnerMood] = useState<MoodEntry | null>(null);
+  const [partnerMood, setPartnerMood] = useState<PartnerMood | null>(null);
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +52,6 @@ const MoodDisplay = () => {
         
       if (error) {
         console.error('Error fetching partner profile:', error);
-        // We don't set a toast here anymore since the error will be displayed in the card
         return;
       }
       
@@ -60,50 +67,98 @@ const MoodDisplay = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Fetch user's latest mood
-      const { data: userData, error: userError } = await supabase
-        .from('check_ins')
-        .select('id, timestamp, mood, reflection')
+      // Fetch today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Fetch user's latest mood from daily_moods
+      const { data: userDailyMood, error: userDailyMoodError } = await supabase
+        .from('daily_moods')
+        .select('id, mood_date, mood_value, note')
         .eq('user_id', user?.id)
-        .order('timestamp', { ascending: false })
-        .limit(1);
-        
-      if (userError) {
-        console.error('Error fetching user mood:', userError);
-        setError('Failed to load your mood data');
-        return;
+        .eq('mood_date', today)
+        .maybeSingle();
+      
+      if (userDailyMoodError) {
+        console.error('Error fetching user daily mood:', userDailyMoodError);
       }
       
-      if (userData && userData.length > 0) {
+      // If found in daily_moods, use that
+      if (userDailyMood) {
         setUserMood({
-          id: userData[0].id,
-          date: userData[0].timestamp,
-          mood: parseInt(userData[0].mood.charAt(0)),
-          note: userData[0].reflection
+          id: userDailyMood.id,
+          date: userDailyMood.mood_date,
+          mood: userDailyMood.mood_value,
+          note: userDailyMood.note
         });
+      } else {
+        // Fallback to check_ins
+        const { data: userData, error: userError } = await supabase
+          .from('check_ins')
+          .select('id, timestamp, mood, reflection')
+          .eq('user_id', user?.id)
+          .order('timestamp', { ascending: false })
+          .limit(1);
+          
+        if (userError) {
+          console.error('Error fetching user mood:', userError);
+          setError('Failed to load your mood data');
+          return;
+        }
+        
+        if (userData && userData.length > 0) {
+          setUserMood({
+            id: userData[0].id,
+            date: userData[0].timestamp,
+            mood: parseInt(userData[0].mood.charAt(0)),
+            note: userData[0].reflection
+          });
+        }
       }
       
       // Fetch partner's mood if partner exists
       if (profile?.partner_id) {
-        const { data: partnerData, error: partnerError } = await supabase
-          .from('check_ins')
-          .select('id, timestamp, mood, reflection')
+        // First try daily_moods with visibility check
+        const { data: partnerDailyMood, error: partnerDailyMoodError } = await supabase
+          .from('daily_moods')
+          .select('id, mood_date, mood_value, note, is_visible_to_partner')
           .eq('user_id', profile.partner_id)
-          .order('timestamp', { ascending: false })
-          .limit(1);
+          .eq('mood_date', today)
+          .maybeSingle();
           
-        if (partnerError) {
-          console.error('Error fetching partner mood:', partnerError);
-          // We continue anyway since partner mood is optional
+        if (partnerDailyMoodError) {
+          console.error('Error fetching partner daily mood:', partnerDailyMoodError);
         }
         
-        if (partnerData && partnerData.length > 0) {
+        if (partnerDailyMood) {
           setPartnerMood({
-            id: partnerData[0].id,
-            date: partnerData[0].timestamp,
-            mood: parseInt(partnerData[0].mood.charAt(0)),
-            note: partnerData[0].reflection
+            id: partnerDailyMood.id,
+            date: partnerDailyMood.mood_date,
+            mood: partnerDailyMood.mood_value,
+            note: partnerDailyMood.note,
+            is_visible_to_partner: partnerDailyMood.is_visible_to_partner !== false
           });
+        } else {
+          // Fallback to check_ins (assuming all check_ins are visible)
+          const { data: partnerData, error: partnerError } = await supabase
+            .from('check_ins')
+            .select('id, timestamp, mood, reflection')
+            .eq('user_id', profile.partner_id)
+            .order('timestamp', { ascending: false })
+            .limit(1);
+            
+          if (partnerError) {
+            console.error('Error fetching partner mood:', partnerError);
+          }
+          
+          if (partnerData && partnerData.length > 0) {
+            setPartnerMood({
+              id: partnerData[0].id,
+              date: partnerData[0].timestamp,
+              mood: parseInt(partnerData[0].mood.charAt(0)),
+              note: partnerData[0].reflection,
+              is_visible_to_partner: true // Legacy entries assumed to be visible
+            });
+          }
         }
       } else {
         // Reset partner mood if no partner
@@ -124,16 +179,9 @@ const MoodDisplay = () => {
     mood: 3, 
     note: "No recent check-in" 
   };
-  
-  const defaultPartnerMood: MoodEntry = partnerMood || { 
-    id: "default-partner",
-    date: new Date().toISOString(), 
-    mood: 3, 
-    note: "No recent check-in" 
-  };
 
   // Check if partner's mood should be visible (respect partner's preference)
-  const isMoodVisible = partnerProfile?.mood_settings?.isVisibleToPartner !== false;
+  const isMoodVisible = partnerMood?.is_visible_to_partner !== false;
   const showAvatar = profile?.mood_settings?.showAvatar !== false;
   
   if (isLoading) {
@@ -211,31 +259,38 @@ const MoodDisplay = () => {
                   <p className="text-xs text-muted-foreground">
                     {partnerProfile?.full_name || 'Partner'}
                   </p>
-                  {isMoodVisible ? (
-                    <p className={`text-sm font-medium ${moodColors[defaultPartnerMood.mood-1]}`}>
-                      {moodLabels[defaultPartnerMood.mood-1]}
-                    </p>
+                  {partnerMood ? (
+                    isMoodVisible ? (
+                      <p className={`text-sm font-medium ${moodColors[partnerMood.mood-1]}`}>
+                        {moodLabels[partnerMood.mood-1]}
+                      </p>
+                    ) : (
+                      <p className="text-xs italic text-muted-foreground flex items-center gap-1">
+                        <EyeOff className="h-3 w-3" />
+                        Private
+                      </p>
+                    )
                   ) : (
-                    <p className="text-xs italic text-muted-foreground">Mood not shared</p>
+                    <p className="text-xs text-muted-foreground">No mood shared yet</p>
                   )}
                 </div>
               </div>
-              {isMoodVisible ? (
+              {partnerMood && isMoodVisible ? (
                 <>
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Heart
                         key={star}
-                        className={`h-4 w-4 ${star <= defaultPartnerMood.mood ? moodColors[defaultPartnerMood.mood-1] : 'text-gray-200'}`}
-                        fill={star <= defaultPartnerMood.mood ? 'currentColor' : 'none'}
+                        className={`h-4 w-4 ${star <= partnerMood.mood ? moodColors[partnerMood.mood-1] : 'text-gray-200'}`}
+                        fill={star <= partnerMood.mood ? 'currentColor' : 'none'}
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-1">{defaultPartnerMood.note}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{partnerMood.note}</p>
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground pt-2">
-                  Your partner has chosen to keep their mood private.
+                  {partnerMood ? 'Your partner has chosen to keep their mood private.' : 'Your partner hasn\'t shared their mood yet.'}
                 </p>
               )}
             </div>

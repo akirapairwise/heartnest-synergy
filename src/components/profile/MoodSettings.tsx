@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { Loader2, Smile, SmilePlus, Frown, Meh } from 'lucide-react';
+import { Loader2, Smile, SmilePlus, Frown, Meh, Eye, EyeOff } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,6 +13,7 @@ const MoodSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAvatar, setShowAvatar] = useState(true);
   const [defaultMood, setDefaultMood] = useState('neutral');
+  const [isVisibleToPartner, setIsVisibleToPartner] = useState(true);
   const { user, profile, updateProfile } = useAuth();
   
   // Load saved settings on component mount
@@ -31,6 +32,7 @@ const MoodSettings = () => {
         const settings = profile.mood_settings;
         setShowAvatar(settings.showAvatar ?? true);
         setDefaultMood(settings.defaultMood ?? 'neutral');
+        setIsVisibleToPartner(settings.isVisibleToPartner !== false); // Default to true if not set
       }
     } catch (error) {
       console.error('Error loading mood settings:', error);
@@ -54,6 +56,7 @@ const MoodSettings = () => {
         mood_settings: {
           showAvatar,
           defaultMood,
+          isVisibleToPartner
         }
       });
       
@@ -67,6 +70,8 @@ const MoodSettings = () => {
       setIsLoading(false);
     }
   };
+  
+  const hasPartner = !!profile?.partner_id;
   
   return (
     <div className="space-y-6">
@@ -140,6 +145,32 @@ const MoodSettings = () => {
           </div>
         </RadioGroup>
       </div>
+      
+      {hasPartner && (
+        <div className="flex items-center justify-between p-4 rounded-lg border">
+          <div className="space-y-1">
+            <h3 className="font-medium">Default Mood Visibility</h3>
+            <p className="text-sm text-muted-foreground">
+              {isVisibleToPartner 
+                ? "Your mood entries are visible to your partner by default" 
+                : "Your mood entries are private by default"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {isVisibleToPartner ? (
+                <Eye className="h-4 w-4" />
+              ) : (
+                <EyeOff className="h-4 w-4" />
+              )}
+            </span>
+            <Switch
+              checked={isVisibleToPartner}
+              onCheckedChange={setIsVisibleToPartner}
+            />
+          </div>
+        </div>
+      )}
       
       <Button 
         onClick={handleSaveSettings} 

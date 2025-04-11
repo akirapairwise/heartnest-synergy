@@ -21,4 +21,5 @@ export type MoodEntry = {
   date: string;
   mood: number;
   note?: string | null;
+  is_visible_to_partner?: boolean;
 };

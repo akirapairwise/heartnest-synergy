@@ -20,9 +20,11 @@ export const PartnerSharingOption = ({ form, hasSharingOption }: PartnerSharingO
       render={({ field }) => (
         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm hover:shadow-md transition-all duration-200">
           <div className="space-y-0.5">
-            <FormLabel className="text-base">Share with Partner</FormLabel>
+            <FormLabel className="text-base">Share this goal with my partner?</FormLabel>
             <div className="text-sm text-muted-foreground">
-              Your partner will be able to see and track this goal with you
+              {field.value ? 
+                "This goal will be shared with your partner" : 
+                "This goal will be kept private"}
             </div>
           </div>
           <FormControl>
@@ -30,6 +32,7 @@ export const PartnerSharingOption = ({ form, hasSharingOption }: PartnerSharingO
               checked={field.value}
               onCheckedChange={field.onChange}
               className="data-[state=checked]:bg-primary"
+              aria-label="Share goal with partner"
             />
           </FormControl>
         </FormItem>

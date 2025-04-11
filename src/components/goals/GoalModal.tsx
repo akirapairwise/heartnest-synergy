@@ -44,6 +44,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
             category: formValues.category || null,
             status: formValues.status,
             is_shared: formValues.isShared,
+            goal_type: formValues.isShared ? 'shared' : 'personal', // Set goal_type based on isShared
             milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
             deadline: formValues.deadline ? formValues.deadline.toISOString() : null
           })
@@ -63,6 +64,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
           category: formValues.category || null,
           is_shared: formValues.isShared,
           status: formValues.status,
+          goal_type: formValues.isShared ? 'shared' : 'personal', // Set goal_type based on isShared
           milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
           deadline: formValues.deadline ? formValues.deadline.toISOString() : null
         });

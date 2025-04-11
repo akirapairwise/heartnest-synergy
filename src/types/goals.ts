@@ -6,6 +6,7 @@ export type Goal = {
   category: string | null;
   status: string;
   is_shared: boolean;
+  goal_type: 'personal' | 'shared'; // Add this field to the type
   owner_id: string;
   partner_id: string | null;
   created_at: string;

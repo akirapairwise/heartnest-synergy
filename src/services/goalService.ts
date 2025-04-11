@@ -129,6 +129,7 @@ export const createGoal = async (goal: Partial<Goal>): Promise<{ goal: Goal | nu
     category: goal.category || null,
     status: goal.status || 'pending',
     is_shared: goal.is_shared || false,
+    goal_type: goal.is_shared ? 'shared' : 'personal', // Set goal_type based on is_shared
     owner_id: userId,
     partner_id: goal.is_shared ? goal.partner_id || null : null, // Only set partner_id if is_shared is true
     milestones: goal.milestones || null,

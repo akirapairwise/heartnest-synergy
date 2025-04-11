@@ -1,7 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import React from 'react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,13 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAuth } from '@/contexts/AuthContext';
 import { Goal } from '@/types/goals';
-import { FormSchema, GoalFormValues, goalCategories } from './GoalFormSchema';
+import { GoalFormValues, goalCategories } from './GoalFormSchema';
 import MilestoneInput from './MilestoneInput';
 import DeadlinePicker from './DeadlinePicker';
 import PartnerSharingOption from './PartnerSharingOption';
 import GoalFormActions from './GoalFormActions';
+import useGoalForm from '@/hooks/useGoalForm';
 
 export interface GoalFormProps {
   goal?: Goal;
@@ -28,32 +26,9 @@ export interface GoalFormProps {
   onCancel: () => void;
 }
 
-export const GoalForm = ({ goal, onSubmit, onCancel, isSubmitting }: GoalFormProps) => {
-  const { profile } = useAuth();
-  const [hasSharingOption, setHasSharingOption] = useState(false);
+export const GoalForm = (props: GoalFormProps) => {
+  const { form, hasSharingOption, handleSubmit, onCancel, isSubmitting, goal } = useGoalForm(props);
   
-  // Check if user has a partner to enable sharing
-  useEffect(() => {
-    setHasSharingOption(!!profile?.partner_id);
-  }, [profile]);
-  
-  const form = useForm<GoalFormValues>({
-    resolver: zodResolver(FormSchema),
-    defaultValues: {
-      title: goal?.title || '',
-      description: goal?.description || '',
-      category: goal?.category || undefined,
-      deadline: goal?.deadline ? new Date(goal.deadline) : undefined,
-      isShared: goal?.is_shared || false,
-      status: goal?.status || 'pending',
-      milestones: goal?.milestones || [],
-    },
-  });
-  
-  const handleSubmit = async (values: GoalFormValues) => {
-    await onSubmit(values);
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">

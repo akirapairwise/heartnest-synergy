@@ -22,6 +22,7 @@ export function GoalModalContent({
 }: GoalModalContentProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   
+  // Determine which components to use based on screen size
   const Content = isDesktop ? DialogContent : DrawerContent;
   const Header = isDesktop ? DialogHeader : DrawerHeader;
   const Title = isDesktop ? DialogTitle : DrawerTitle;

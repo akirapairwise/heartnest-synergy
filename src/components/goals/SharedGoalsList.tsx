@@ -1,17 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Goal } from '@/types/goals';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoalStatusBadge } from './GoalStatusBadge';
-import { GoalCategoryBadge } from './GoalCategoryBadge';
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, User } from 'lucide-react';
+import { Eye, Trash2, Users } from 'lucide-react';
 import { updateGoalStatus } from '@/services/goalService';
 import { useToast } from '@/components/ui/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { GoalDetailsDialog } from './GoalDetailsDialog';
 
 interface SharedGoalsListProps {
   goals: Goal[];
@@ -27,8 +27,10 @@ export function SharedGoalsList({
   onRefresh
 }: SharedGoalsListProps) {
   const { toast } = useToast();
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
-  const [goalToDelete, setGoalToDelete] = React.useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const handleStatusToggle = async (goal: Goal) => {
     try {
@@ -36,7 +38,7 @@ export function SharedGoalsList({
       await updateGoalStatus(goal.id, newStatus);
       toast({
         title: `Goal ${newStatus === 'completed' ? 'completed' : 'reopened'}`,
-        description: `The goal has been marked as ${newStatus === 'completed' ? 'completed' : 'in progress'}.`
+        description: `The goal has been marked as ${newStatus === 'completed' ? 'in progress' : 'in progress'}.`
       });
       onRefresh();
     } catch (error) {
@@ -60,6 +62,11 @@ export function SharedGoalsList({
       setDeleteConfirmOpen(false);
       setGoalToDelete(null);
     }
+  };
+
+  const openDetails = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setDetailsOpen(true);
   };
 
   // Get initials for avatar fallback
@@ -89,7 +96,8 @@ export function SharedGoalsList({
           {goals.map((goal) => (
             <Card 
               key={goal.id} 
-              className={`p-4 ${goal.is_self_owned ? 'border-l-primary border-l-4' : 'border-l-purple-500 border-l-4'}`}
+              className={`p-4 hover:shadow-md transition-shadow cursor-pointer ${goal.is_self_owned ? 'border-l-primary border-l-4' : 'border-l-purple-500 border-l-4'}`}
+              onClick={() => openDetails(goal)}
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-start gap-2">
@@ -104,7 +112,7 @@ export function SharedGoalsList({
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      Shared by {goal.owner_name || (goal.is_self_owned ? 'You' : 'Partner')}
+                      {goal.is_self_owned ? 'Created by you' : `Shared by ${goal.owner_name || 'Partner'}`}
                     </TooltipContent>
                   </Tooltip>
                   
@@ -113,46 +121,52 @@ export function SharedGoalsList({
                       {goal.title}
                     </h3>
                     {goal.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{goal.description}</p>
                     )}
                   </div>
                 </div>
                 <GoalStatusBadge status={goal.status as any} />
               </div>
               
-              <div className="flex flex-wrap gap-2 my-2">
-                <Badge 
-                  variant={goal.is_self_owned ? "default" : "outline"}
-                  className={goal.is_self_owned ? "bg-primary-100 text-primary hover:bg-primary-100" : ""}
-                >
+              <div className="flex flex-wrap gap-2 mt-3">
+                <span className="text-xs bg-muted px-2 py-1 rounded-full">
+                  {new Date(goal.created_at).toLocaleDateString()}
+                </span>
+                <Badge variant="outline" className="text-xs">
                   {goal.is_self_owned ? "Your Goal" : "Partner's Goal"}
                 </Badge>
-                <GoalCategoryBadge category={goal.category as any} />
-                <span className="text-xs bg-muted px-2 py-1 rounded-full">
-                  Created: {new Date(goal.created_at).toLocaleDateString()}
-                </span>
               </div>
               
-              <div className="flex justify-end gap-2 mt-3">
+              <div className="flex justify-end gap-2 mt-3" onClick={e => e.stopPropagation()}>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDetails(goal);
+                  }}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  View
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => handleStatusToggle(goal)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusToggle(goal);
+                  }}
                 >
                   {goal.status === 'completed' ? 'Reopen' : 'Complete'}
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => onEdit(goal)}
-                >
-                  <Edit className="h-4 w-4" />
                 </Button>
                 {goal.is_self_owned && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => confirmDelete(goal.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      confirmDelete(goal.id);
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -176,6 +190,15 @@ export function SharedGoalsList({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <GoalDetailsDialog
+          goal={selectedGoal}
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onRefresh={onRefresh}
+        />
       </>
     </TooltipProvider>
   );

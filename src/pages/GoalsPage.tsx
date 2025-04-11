@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Goal } from '@/types/goals';
-import { fetchMyGoals, fetchPartnerGoals, fetchSharedGoals } from '@/services/goalService';
+import { fetchMyGoals, fetchSharedGoals } from '@/services/goalService';
 import { useToast } from '@/components/ui/use-toast';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Dialog } from "@/components/ui/dialog";
@@ -10,11 +10,12 @@ import { GoalModal } from '@/components/goals/GoalModal';
 import { supabase } from '@/integrations/supabase/client';
 import { GoalPageHeader } from '@/components/goals/GoalPageHeader';
 import { GoalProgressCard } from '@/components/goals/GoalProgressCard';
-import { GoalTabsSection } from '@/components/goals/GoalTabsSection';
 import { SharedGoalsList } from '@/components/goals/SharedGoalsList';
 import { toast } from 'sonner';
-import { Loader2, Share2 } from 'lucide-react';
+import { Loader2, Share2, Target } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GoalsList } from '@/components/goals/GoalsList';
 
 const GoalsPage = () => {
   const [myGoals, setMyGoals] = useState<Goal[]>([]);
@@ -28,14 +29,13 @@ const GoalsPage = () => {
   const fetchGoals = async () => {
     setIsLoading(true);
     try {
-      const [myGoalsData, partnerGoalsData, sharedGoalsData] = await Promise.all([
+      const [myGoalsData, sharedGoalsData] = await Promise.all([
         fetchMyGoals(),
-        fetchPartnerGoals(),
         fetchSharedGoals()
       ]);
       
-      // Set my goals (both personal and ones I shared)
-      setMyGoals(myGoalsData);
+      // Set personal goals (not shared)
+      setMyGoals(myGoalsData.filter(goal => !goal.is_shared));
       
       // Set all shared goals
       setSharedGoals(sharedGoalsData);
@@ -103,19 +103,7 @@ const GoalsPage = () => {
   };
   
   // Calculate overall progress based on all goals
-  const allGoals = [...myGoals, ...sharedGoals.filter(sg => 
-    !myGoals.some(mg => mg.id === sg.id)
-  )];
-  
-  const myGoalsCompleted = myGoals.filter(goal => goal.status === 'completed').length;
-  const myGoalsProgress = myGoals.length > 0 
-    ? Math.round((myGoalsCompleted / myGoals.length) * 100) 
-    : 0;
-    
-  const sharedGoalsCompleted = sharedGoals.filter(goal => goal.status === 'completed').length;
-  const sharedGoalsProgress = sharedGoals.length > 0 
-    ? Math.round((sharedGoalsCompleted / sharedGoals.length) * 100) 
-    : 0;
+  const allGoals = [...myGoals, ...sharedGoals];
   
   const totalGoals = allGoals.length;
   const totalCompleted = allGoals.filter(goal => goal.status === 'completed').length;
@@ -153,62 +141,78 @@ const GoalsPage = () => {
         overallProgress={overallProgress} 
       />
       
-      {/* Shared Goals Section */}
-      <Card className="border-l-4 border-l-blue-500">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Share2 className="h-5 w-5 text-blue-500" />
-            Shared Relationship Goals
-          </CardTitle>
-          <CardDescription>
-            Goals that you and your partner are working on together
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SharedGoalsList 
-            goals={sharedGoals} 
-            onEdit={handleEditGoal} 
-            onDelete={handleDeleteGoal}
-            onRefresh={fetchGoals}
-          />
-        </CardContent>
-      </Card>
-      
-      {/* Personal Goals Section */}
-      <GoalTabsSection 
-        myGoals={myGoals.filter(goal => goal.goal_type === 'personal')}
-        sharedGoals={sharedGoals}
-        isLoading={isLoading}
-        onEdit={handleEditGoal}
-        onDelete={handleDeleteGoal}
-        onRefresh={fetchGoals}
-      />
+      <Tabs defaultValue="shared">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="shared">
+            <Share2 className="h-4 w-4 mr-2" />
+            Shared Goals
+          </TabsTrigger>
+          <TabsTrigger value="personal">
+            <Target className="h-4 w-4 mr-2" />
+            Personal Goals
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="shared" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Shared Relationship Goals</CardTitle>
+              <CardDescription>
+                Goals that you and your partner are working on together
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SharedGoalsList 
+                goals={sharedGoals} 
+                onEdit={handleEditGoal} 
+                onDelete={handleDeleteGoal}
+                onRefresh={fetchGoals}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="personal" className="mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">My Personal Goals</CardTitle>
+              <CardDescription>
+                Goals that only you can see and manage
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GoalsList 
+                goals={myGoals} 
+                onEdit={handleEditGoal} 
+                onDelete={handleDeleteGoal}
+                onRefresh={fetchGoals}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
       
       {/* Render the edit goal modal when a goal is selected for editing */}
-      {selectedGoal && (
-        <>
-          {isDesktop ? (
-            <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
-              {goalModalOpen && (
-                <GoalModal
-                  goal={selectedGoal}
-                  onClose={handleCloseModal}
-                  onSuccess={fetchGoals}
-                />
-              )}
-            </Dialog>
-          ) : (
-            <Drawer open={goalModalOpen} onOpenChange={setGoalModalOpen}>
-              {goalModalOpen && (
-                <GoalModal
-                  goal={selectedGoal}
-                  onClose={handleCloseModal}
-                  onSuccess={fetchGoals}
-                />
-              )}
-            </Drawer>
+      {isDesktop ? (
+        <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
+          {goalModalOpen && (
+            <GoalModal
+              goal={selectedGoal}
+              onClose={handleCloseModal}
+              onSuccess={fetchGoals}
+            />
           )}
-        </>
+        </Dialog>
+      ) : (
+        <Drawer open={goalModalOpen} onOpenChange={setGoalModalOpen}>
+          {goalModalOpen && (
+            <GoalModal
+              goal={selectedGoal}
+              onClose={handleCloseModal}
+              onSuccess={fetchGoals}
+            />
+          )}
+        </Drawer>
       )}
     </div>
   );

@@ -28,7 +28,6 @@ export function GoalTabsSection({
   const { profile } = useAuth();
   const [personalGoals, setPersonalGoals] = useState<Goal[]>([]);
   const [mySharedGoals, setMySharedGoals] = useState<Goal[]>([]);
-  const [partnerSharedGoals, setPartnerSharedGoals] = useState<Goal[]>([]);
   const [partnerId, setPartnerId] = useState<string | null>(null);
   
   useEffect(() => {
@@ -44,12 +43,6 @@ export function GoalTabsSection({
     // Filter my shared goals
     const shared = myGoals.filter(goal => goal.is_shared);
     setMySharedGoals(shared);
-    
-    // Filter partner's shared goals - ensuring we only get goals shared by the partner
-    const partnerShared = sharedGoals.filter(goal => 
-      goal.is_shared && goal.owner_id !== profile?.id
-    );
-    setPartnerSharedGoals(partnerShared);
   }, [myGoals, sharedGoals, profile]);
   
   // Set up subscription for real-time updates on goals

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,7 +6,6 @@ import GoalsCard from '@/components/dashboard/GoalsCard';
 import InsightsCard from '@/components/dashboard/InsightsCard';
 import PartnerCard from '@/components/dashboard/PartnerCard';
 import MyGoalsSection from '@/components/dashboard/MyGoalsSection';
-import PartnerGoalsSection from '@/components/dashboard/PartnerGoalsSection';
 import CheckInsSection from '@/components/dashboard/CheckInsSection';
 import ConflictsSection from '@/components/dashboard/ConflictsSection';
 import SuggestionsSection from '@/components/dashboard/SuggestionsSection';
@@ -70,7 +68,6 @@ const DashboardPage = () => {
             <TabsList className="w-full mb-6 flex justify-start overflow-x-auto">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="my-goals">My Goals</TabsTrigger>
-              <TabsTrigger value="partner-goals">Partner Goals</TabsTrigger>
               <TabsTrigger value="check-ins">Check-Ins</TabsTrigger>
               <TabsTrigger value="conflicts">Conflicts</TabsTrigger>
               <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
@@ -108,10 +105,6 @@ const DashboardPage = () => {
             
             <TabsContent value="my-goals" className="mt-6">
               <MyGoalsSection />
-            </TabsContent>
-            
-            <TabsContent value="partner-goals" className="mt-6">
-              <PartnerGoalsSection />
             </TabsContent>
             
             <TabsContent value="check-ins" className="mt-6">

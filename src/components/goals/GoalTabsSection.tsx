@@ -72,116 +72,56 @@ export function GoalTabsSection({
   }, [onRefresh]);
   
   return (
-    <Tabs defaultValue="all-goals">
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="all-goals">All Goals</TabsTrigger>
-        <TabsTrigger value="my-goals">My Goals</TabsTrigger>
-        <TabsTrigger value="shared-goals">Shared Goals</TabsTrigger>
+    <Tabs defaultValue="shared">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="shared">
+          <Share2 className="h-4 w-4 mr-2" />
+          Shared Goals
+        </TabsTrigger>
+        <TabsTrigger value="personal">
+          <Target className="h-4 w-4 mr-2" />
+          Personal Goals
+        </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="all-goals" className="mt-6 space-y-8">
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <p className="text-muted-foreground">Loading goals...</p>
-          </div>
-        ) : (
-          <>
-            <Card className="border-l-4 border-l-primary">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Target className="h-5 w-5 text-primary" />
-                  My Personal Goals
-                </CardTitle>
-                <CardDescription>
-                  Goals that only you can see and manage
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <GoalsList 
-                  goals={personalGoals} 
-                  onEdit={onEdit} 
-                  onDelete={onDelete}
-                  onRefresh={onRefresh}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-blue-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Share2 className="h-5 w-5 text-blue-500" />
-                  Goals Shared With My Partner
-                </CardTitle>
-                <CardDescription>
-                  Goals you've created and shared with your partner
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <GoalsList 
-                  goals={mySharedGoals}
-                  onEdit={onEdit} 
-                  onDelete={onDelete}
-                  onRefresh={onRefresh}
-                  isSharedView={true}
-                  partnerId={partnerId}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-purple-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Share2 className="h-5 w-5 text-purple-500" />
-                  Goals Shared By My Partner
-                </CardTitle>
-                <CardDescription>
-                  Goals your partner has shared with you
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <GoalsList 
-                  goals={partnerSharedGoals}
-                  onEdit={onEdit} 
-                  onDelete={onDelete}
-                  onRefresh={onRefresh}
-                  isPartnerView={true}
-                />
-              </CardContent>
-            </Card>
-          </>
-        )}
+      <TabsContent value="shared" className="mt-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Shared Relationship Goals</CardTitle>
+            <CardDescription>
+              Goals that you and your partner are working on together
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GoalsList 
+              goals={sharedGoals} 
+              onEdit={onEdit} 
+              onDelete={onDelete}
+              onRefresh={onRefresh}
+              isSharedView={true}
+              partnerId={partnerId}
+            />
+          </CardContent>
+        </Card>
       </TabsContent>
       
-      <TabsContent value="my-goals" className="mt-6">
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <p className="text-muted-foreground">Loading goals...</p>
-          </div>
-        ) : (
-          <GoalsList 
-            goals={myGoals} 
-            onEdit={onEdit} 
-            onDelete={onDelete}
-            onRefresh={onRefresh}
-          />
-        )}
-      </TabsContent>
-      
-      <TabsContent value="shared-goals" className="mt-6">
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <p className="text-muted-foreground">Loading shared goals...</p>
-          </div>
-        ) : (
-          <GoalsList 
-            goals={sharedGoals}
-            onEdit={onEdit} 
-            onDelete={onDelete}
-            onRefresh={onRefresh}
-            isSharedView={true}
-            partnerId={partnerId}
-          />
-        )}
+      <TabsContent value="personal" className="mt-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">My Personal Goals</CardTitle>
+            <CardDescription>
+              Goals that only you can see and manage
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GoalsList 
+              goals={personalGoals} 
+              onEdit={onEdit} 
+              onDelete={onDelete}
+              onRefresh={onRefresh}
+            />
+          </CardContent>
+        </Card>
       </TabsContent>
     </Tabs>
   );

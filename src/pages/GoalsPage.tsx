@@ -2,20 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { Goal } from '@/types/goals';
 import { fetchMyGoals, fetchSharedGoals } from '@/services/goalService';
-import { useToast } from '@/components/ui/use-toast';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Dialog } from "@/components/ui/dialog";
 import { Drawer } from "@/components/ui/drawer";
 import { GoalModal } from '@/components/goals/GoalModal';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { GoalPageHeader } from '@/components/goals/GoalPageHeader';
 import { GoalProgressCard } from '@/components/goals/GoalProgressCard';
-import { SharedGoalsList } from '@/components/goals/SharedGoalsList';
-import { toast } from 'sonner';
-import { Loader2, Share2, Target } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GoalsList } from '@/components/goals/GoalsList';
+import { GoalTabsSection } from '@/components/goals/GoalTabsSection';
 
 const GoalsPage = () => {
   const [myGoals, setMyGoals] = useState<Goal[]>([]);
@@ -23,7 +19,6 @@ const GoalsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<Goal | undefined>(undefined);
-  const { toast: uiToast } = useToast();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   
   const fetchGoals = async () => {
@@ -141,56 +136,14 @@ const GoalsPage = () => {
         overallProgress={overallProgress} 
       />
       
-      <Tabs defaultValue="shared">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="shared">
-            <Share2 className="h-4 w-4 mr-2" />
-            Shared Goals
-          </TabsTrigger>
-          <TabsTrigger value="personal">
-            <Target className="h-4 w-4 mr-2" />
-            Personal Goals
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="shared" className="mt-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Shared Relationship Goals</CardTitle>
-              <CardDescription>
-                Goals that you and your partner are working on together
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SharedGoalsList 
-                goals={sharedGoals} 
-                onEdit={handleEditGoal} 
-                onDelete={handleDeleteGoal}
-                onRefresh={fetchGoals}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="personal" className="mt-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">My Personal Goals</CardTitle>
-              <CardDescription>
-                Goals that only you can see and manage
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <GoalsList 
-                goals={myGoals} 
-                onEdit={handleEditGoal} 
-                onDelete={handleDeleteGoal}
-                onRefresh={fetchGoals}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <GoalTabsSection
+        myGoals={myGoals}
+        sharedGoals={sharedGoals}
+        isLoading={isLoading}
+        onEdit={handleEditGoal}
+        onDelete={handleDeleteGoal}
+        onRefresh={fetchGoals}
+      />
       
       {/* Render the edit goal modal when a goal is selected for editing */}
       {isDesktop ? (

@@ -30,7 +30,6 @@ const AvatarUploader = () => {
       
       const file = files[0];
       const fileExt = file.name.split('.').pop();
-      const filePath = `${user?.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       
       // Check file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
@@ -47,6 +46,11 @@ const AvatarUploader = () => {
       // Use a manual approach to track progress since onUploadProgress is not available
       setUploadProgress(30); // Set initial progress
       
+      // Create proper file path with user ID folder structure
+      const filePath = `${user?.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
+      
+      console.log('Uploading file to path:', filePath);
+      
       // Upload file to storage
       const { error: uploadError, data } = await supabase.storage
         .from('avatars')
@@ -58,6 +62,7 @@ const AvatarUploader = () => {
       setUploadProgress(70); // Update progress after upload
         
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
       
@@ -67,6 +72,8 @@ const AvatarUploader = () => {
         .getPublicUrl(filePath);
       
       setUploadProgress(90); // Update progress
+      
+      console.log('File uploaded successfully, public URL:', publicUrl);
       
       // Update user profile with avatar URL
       if (publicUrl) {
@@ -97,12 +104,16 @@ const AvatarUploader = () => {
       // Extract file path from URL
       const urlParts = profile.avatar_url.split('/');
       const fileName = urlParts[urlParts.length - 1];
+      const folderName = user?.id;
       
       // Remove file from storage (if it exists)
-      if (fileName) {
+      if (fileName && folderName) {
+        const filePath = `${folderName}/${fileName}`;
+        console.log('Removing file at path:', filePath);
+        
         await supabase.storage
           .from('avatars')
-          .remove([fileName]);
+          .remove([filePath]);
       }
       
       // Update profile to remove avatar_url

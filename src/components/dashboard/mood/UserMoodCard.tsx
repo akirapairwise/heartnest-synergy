@@ -36,6 +36,17 @@ const UserMoodCard: React.FC<UserMoodCardProps> = ({
     }
   };
 
+  // Generate initials for avatar fallback
+  const getInitials = () => {
+    if (!profile?.full_name) return 'ME';
+    return profile.full_name
+      .split(' ')
+      .map((part: string) => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <div 
       className={`flex-1 ${userMoodDisplay.bgColor}/40 p-5 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 cursor-pointer border border-gray-100`}
@@ -48,7 +59,7 @@ const UserMoodCard: React.FC<UserMoodCardProps> = ({
         <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
           <AvatarImage src={profile?.avatar_url} alt={userName} />
           <AvatarFallback className="bg-love-100 text-love-800">
-            {profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'ME'}
+            {getInitials()}
           </AvatarFallback>
         </Avatar>
         

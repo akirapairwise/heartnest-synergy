@@ -37,6 +37,17 @@ const PartnerMoodCard: React.FC<PartnerMoodCardProps> = ({
     }
   };
 
+  // Generate initials for avatar fallback
+  const getInitials = () => {
+    if (!partnerProfile?.full_name) return 'PA';
+    return partnerProfile.full_name
+      .split(' ')
+      .map((part: string) => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   if (!hasPartner) {
     return (
       <div className="flex-1 bg-gradient-to-br from-gray-50 to-white p-5 rounded-xl shadow-sm border border-gray-100">
@@ -72,7 +83,7 @@ const PartnerMoodCard: React.FC<PartnerMoodCardProps> = ({
         <Avatar className="h-12 w-12 ring-2 ring-white shadow-sm">
           <AvatarImage src={partnerProfile?.avatar_url} alt={partnerName} />
           <AvatarFallback className="bg-harmony-100 text-harmony-800">
-            {partnerProfile?.full_name ? partnerProfile.full_name.substring(0, 2).toUpperCase() : 'PA'}
+            {getInitials()}
           </AvatarFallback>
         </Avatar>
         

@@ -7,7 +7,7 @@ import { Goal } from "@/types/goals";
 import { createGoal } from "@/services/goalService";
 import { useToast } from "@/components/ui/use-toast";
 import { GoalModalContent } from './GoalModalContent';
-import { GoalFormValues } from './GoalForm';
+import { GoalFormValues } from './GoalFormSchema';
 import { supabase } from '@/integrations/supabase/client';
 
 interface GoalModalProps {

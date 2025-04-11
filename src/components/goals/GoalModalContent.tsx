@@ -4,7 +4,8 @@ import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/c
 import { DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Goal } from "@/types/goals";
-import GoalForm, { GoalFormValues } from './GoalForm';
+import GoalForm from './GoalForm';
+import { GoalFormValues } from './GoalFormSchema';
 
 interface GoalModalContentProps {
   goal?: Goal;

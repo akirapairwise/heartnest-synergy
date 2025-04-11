@@ -47,17 +47,22 @@ const FormSchema = z.object({
   category: z.string().optional(),
   deadline: z.date().optional(),
   isShared: z.boolean().default(false),
+  status: z.string().default('pending'),
+  milestones: z.array(z.string()).default([]),
 });
 
-interface GoalFormProps {
-  onSuccess: () => void;
+// Export this type so it can be used in other components
+export type GoalFormValues = z.infer<typeof FormSchema>;
+
+export interface GoalFormProps {
+  goal?: Goal;
+  isSubmitting: boolean;
+  onSubmit: (values: GoalFormValues) => Promise<void>;
   onCancel: () => void;
-  initialData?: Goal;
 }
 
-export const GoalForm = ({ onSuccess, onCancel, initialData }: GoalFormProps) => {
+export const GoalForm = ({ goal, onSubmit, onCancel, isSubmitting }: GoalFormProps) => {
   const { profile } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSharingOption, setHasSharingOption] = useState(false);
   
   // Check if user has a partner to enable sharing
@@ -65,51 +70,26 @@ export const GoalForm = ({ onSuccess, onCancel, initialData }: GoalFormProps) =>
     setHasSharingOption(!!profile?.partner_id);
   }, [profile]);
   
-  const form = useForm<z.infer<typeof FormSchema>>({
+  const form = useForm<GoalFormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      title: initialData?.title || '',
-      description: initialData?.description || '',
-      category: initialData?.category || undefined,
-      deadline: initialData?.deadline ? new Date(initialData.deadline) : undefined,
-      isShared: initialData?.is_shared || false,
+      title: goal?.title || '',
+      description: goal?.description || '',
+      category: goal?.category || undefined,
+      deadline: goal?.deadline ? new Date(goal.deadline) : undefined,
+      isShared: goal?.is_shared || false,
+      status: goal?.status || 'pending',
+      milestones: goal?.milestones || [],
     },
   });
   
-  const onSubmit = async (values: z.infer<typeof FormSchema>) => {
-    setIsSubmitting(true);
-    
-    try {
-      // If isShared is true but user has no partner, force to false
-      const isShared = values.isShared && hasSharingOption;
-      
-      const goalData: Partial<Goal> = {
-        title: values.title,
-        description: values.description || null,
-        category: values.category || null,
-        deadline: values.deadline ? values.deadline.toISOString() : null,
-        is_shared: isShared,
-        partner_id: isShared ? profile?.partner_id || null : null,
-      };
-      
-      const { goal, error } = await createGoal(goalData);
-      
-      if (error) {
-        throw new Error(error.message || 'Failed to create goal');
-      }
-      
-      onSuccess();
-    } catch (error: any) {
-      console.error('Error creating goal:', error);
-      // Toast notification handled by parent component
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSubmit = async (values: GoalFormValues) => {
+    await onSubmit(values);
   };
   
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="title"
@@ -256,7 +236,7 @@ export const GoalForm = ({ onSuccess, onCancel, initialData }: GoalFormProps) =>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
               </>
-            ) : initialData ? 'Update Goal' : 'Create Goal'}
+            ) : goal ? 'Update Goal' : 'Create Goal'}
           </Button>
         </div>
       </form>

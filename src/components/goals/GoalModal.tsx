@@ -4,7 +4,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Drawer } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Goal } from "@/types/goals";
-import { createGoal, updateGoalStatus } from "@/services/goalService";
+import { createGoal } from "@/services/goalService";
 import { useToast } from "@/components/ui/use-toast";
 import { GoalModalContent } from './GoalModalContent';
 import { GoalFormValues } from './GoalForm';
@@ -43,7 +43,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
             description: formValues.description || null,
             category: formValues.category || null,
             status: formValues.status,
-            is_shared: formValues.is_shared,
+            is_shared: formValues.isShared,
             milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
             deadline: formValues.deadline ? formValues.deadline.toISOString() : null
           })
@@ -61,7 +61,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
           title: formValues.title,
           description: formValues.description,
           category: formValues.category || null,
-          is_shared: formValues.is_shared,
+          is_shared: formValues.isShared,
           status: formValues.status,
           milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
           deadline: formValues.deadline ? formValues.deadline.toISOString() : null
@@ -90,17 +90,6 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
       setIsSubmitting(false);
     }
   };
-
-  if (isDesktop) {
-    return (
-      <GoalModalContent
-        goal={goal}
-        isSubmitting={isSubmitting}
-        onSubmit={handleSubmit}
-        onClose={onClose}
-      />
-    );
-  }
 
   return (
     <GoalModalContent

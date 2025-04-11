@@ -44,17 +44,18 @@ const AvatarUploader = () => {
         return;
       }
       
+      // Use a manual approach to track progress since onUploadProgress is not available
+      setUploadProgress(30); // Set initial progress
+      
       // Upload file to storage
       const { error: uploadError, data } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: true,
-          onUploadProgress: (progress) => {
-            const percent = Math.round((progress.loaded / progress.total) * 100);
-            setUploadProgress(percent);
-          }
+          upsert: true
         });
+        
+      setUploadProgress(70); // Update progress after upload
         
       if (uploadError) {
         throw uploadError;
@@ -65,6 +66,8 @@ const AvatarUploader = () => {
         .from('avatars')
         .getPublicUrl(filePath);
       
+      setUploadProgress(90); // Update progress
+      
       // Update user profile with avatar URL
       if (publicUrl) {
         await updateProfile({ avatar_url: publicUrl });
@@ -72,12 +75,14 @@ const AvatarUploader = () => {
         toast.success('Avatar uploaded successfully!');
       }
       
+      setUploadProgress(100); // Complete
+      
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
       toast.error(error.message || 'Error uploading avatar');
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
+      setTimeout(() => setUploadProgress(0), 1000); // Reset progress after a brief delay
     }
   };
   

@@ -78,7 +78,7 @@ export function GoalsList({
     if (isOwner(goal)) {
       return "You";
     } else if (goal.owner_id === profile?.partner_id) {
-      return profile?.partner_name || "Partner";
+      return "Partner"; // Using a generic "Partner" label instead of partner_name
     } else {
       return "Unknown";
     }

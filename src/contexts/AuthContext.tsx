@@ -165,7 +165,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       console.log('Fetching user profile for:', userId);
       
-      // Use a simple direct query with no JOINs or nested selects
+      // Use simple direct ID lookup to avoid policy recursion
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -183,6 +183,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (error.code === 'PGRST116') { // No results found error
           console.log('No profile found, creating new profile for user:', userId);
           
+          // Create with direct insert
           const { error: insertError } = await supabase
             .from('user_profiles')
             .insert({
@@ -194,93 +195,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               
           if (insertError) {
             console.error('Error creating profile:', insertError);
+            return;
+          }
+          
+          // Retry profile fetch after creation
+          const { data: newData, error: fetchError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
             
-            // Special handling for duplicate key errors (profile already exists)
-            if (insertError.code === '23505') {
-              console.log('Profile might have been created in parallel, trying to fetch again');
-              
-              // Simple retry with direct query
-              const { data: retryData, error: retryError } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('id', userId)
-                .maybeSingle();
-                
-              if (retryError) {
-                console.error('Error on retry fetch:', retryError);
-                return;
-              }
-              
-              if (retryData) {
-                console.log('Successfully retrieved profile on retry');
-                setProfile(retryData as Profile);
-                setIsOnboardingComplete(retryData?.is_onboarding_complete ?? false);
-                return;
-              }
-            } else {
-              console.error('Non-duplicate error creating profile:', insertError);
-              return;
-            }
-          } else {
-            console.log('Profile created successfully, fetching it');
-            // Simple fetch of newly created profile
-            const { data: newData, error: newFetchError } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', userId)
-              .maybeSingle();
-              
-            if (newFetchError) {
-              console.error('Error fetching newly created profile:', newFetchError);
-              return;
-            }
-            
-            if (newData) {
-              console.log('Retrieved newly created profile');
-              setProfile(newData as Profile);
-              setIsOnboardingComplete(newData?.is_onboarding_complete ?? false);
-            }
+          if (fetchError) {
+            console.error('Error fetching newly created profile:', fetchError);
+            return;
+          }
+          
+          if (newData) {
+            setProfile(newData as Profile);
+            setIsOnboardingComplete(newData?.is_onboarding_complete ?? false);
           }
         }
       } else if (data) {
-        // Properly transform mood_settings to ensure type safety
-        let moodSettings = null;
-        
-        if (data.mood_settings) {
-          try {
-            // Convert the JSON to a proper object we can safely access
-            const settings = typeof data.mood_settings === 'object' 
-              ? data.mood_settings as Record<string, any>
-              : {};
-              
-            moodSettings = {
-              showAvatar: typeof settings.showAvatar === 'boolean' 
-                ? settings.showAvatar 
-                : settings.showAvatar === 'true',
-              defaultMood: typeof settings.defaultMood === 'string'
-                ? settings.defaultMood
-                : String(settings.defaultMood || 'neutral')
-            };
-          } catch (e) {
-            console.error('Error parsing mood_settings:', e);
-            // Fallback to default mood settings
-            moodSettings = {
-              showAvatar: true,
-              defaultMood: 'neutral'
-            };
-          }
-        }
-        
-        const formattedProfile: Profile = {
-          ...data,
-          mood_settings: moodSettings
-        };
-        
-        setProfile(formattedProfile);
+        setProfile(data as Profile);
         setIsOnboardingComplete(data?.is_onboarding_complete ?? false);
         console.log('Successfully fetched and set user profile:', data.id);
       } else {
-        // Profile doesn't exist, create it with direct insert
+        // Profile doesn't exist, create it
         console.log('No profile found, creating new profile for user:', userId);
         
         const { error: createError } = await supabase
@@ -294,41 +234,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
         if (createError) {
           console.error('Error creating profile:', createError);
-          if (createError.code === '23505') {
-            console.log('Profile already exists (duplicate key), trying to fetch again');
-            // Simple retry with direct query
-            const { data: retryData, error: retryError } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', userId)
-              .maybeSingle();
-              
-            if (retryError) {
-              console.error('Error on retry fetch after duplicate key:', retryError);
-              return;
-            }
-            
-            if (retryData) {
-              setProfile(retryData as Profile);
-              setIsOnboardingComplete(retryData?.is_onboarding_complete ?? false);
-            }
-          }
         } else {
-          // Simple fetch of newly created profile
-          const { data: newData, error: newFetchError } = await supabase
+          // Fetch the newly created profile
+          const { data: newProfileData } = await supabase
             .from('user_profiles')
             .select('*')
             .eq('id', userId)
             .maybeSingle();
             
-          if (newFetchError) {
-            console.error('Error fetching newly created profile:', newFetchError);
-            return;
-          }
-          
-          if (newData) {
-            setProfile(newData as Profile);
-            setIsOnboardingComplete(newData?.is_onboarding_complete ?? false);
+          if (newProfileData) {
+            setProfile(newProfileData as Profile);
+            setIsOnboardingComplete(false);
           }
         }
       }
@@ -440,18 +356,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateProfile = async (updates: any) => {
+    if (!user) return;
+    
     setIsLoading(true);
     try {
       const { error } = await supabase
         .from('user_profiles')
-        .update(updates)
-        .eq('id', user?.id);
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
 
       if (error) {
         console.error('Profile update error:', error);
         toast({
           title: "Error!",
-          description: "Failed to update profile.",
+          description: "Failed to update profile: " + error.message,
         });
         return { error };
       } else {
@@ -459,7 +380,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           title: "Profile updated!",
           description: "Your profile has been successfully updated.",
         });
-        await fetchUserProfile(user?.id as string);
+        await fetchUserProfile(user.id);
         return { error: null };
       }
     } catch (error) {

@@ -13,7 +13,7 @@ export const getInvitationByToken = async (token: string): Promise<{ data: Partn
     console.log('Fetching invitation by token:', token);
     const formattedToken = formatToken(token);
     
-    // Fetch the invitation with strict validation
+    // Use a direct query without complex joins to avoid policy recursion
     const { data, error } = await supabase
       .from('partner_invites')
       .select(`
@@ -42,7 +42,7 @@ export const getInvitationByToken = async (token: string): Promise<{ data: Partn
       };
     }
     
-    // Fetch inviter's name if available (for better UX)
+    // Fetch inviter's name separately without a join to avoid recursion
     try {
       const { data: inviterProfile } = await supabase
         .from('user_profiles')
@@ -50,7 +50,7 @@ export const getInvitationByToken = async (token: string): Promise<{ data: Partn
         .eq('id', data.inviter_id)
         .maybeSingle();
         
-      // Augment the invite with inviter name for display purposes
+      // Combine the data without complex joins
       const enrichedInvite = {
         ...data,
         inviter_name: inviterProfile?.full_name || 'Someone'
@@ -70,4 +70,3 @@ export const getInvitationByToken = async (token: string): Promise<{ data: Partn
     };
   }
 };
-

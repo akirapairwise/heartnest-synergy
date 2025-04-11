@@ -7,7 +7,7 @@ export const fetchUserProfile = async (userId: string) => {
   try {
     console.log('Fetching profile for user:', userId);
     
-    // Use a simple query with no JOINs or subqueries to avoid recursion
+    // Use direct ID lookup without any joins or complex policies to avoid recursion
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
@@ -26,7 +26,7 @@ export const fetchUserProfile = async (userId: string) => {
     return { 
       profile: data as Profile, 
       isOnboardingComplete: data?.is_onboarding_complete || false,
-      error: null
+      error: null 
     };
   } catch (err) {
     console.error('Unexpected error fetching profile:', err);

@@ -111,14 +111,34 @@ export const acceptInvite = async (userId: string, token: string): Promise<{ err
     // Always uppercase the token for consistency
     const formattedToken = token.trim().toUpperCase();
     
-    // Ensure user profile exists first
-    const currentUserProfile = await ensureUserProfile(userId);
-    if (!currentUserProfile) {
-      throw new Error('Could not create or retrieve your profile');
+    // Ensure user profile exists first with a direct query
+    const { data: currentUserProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id, partner_id')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (profileError) {
+      console.error('Error fetching current user profile:', profileError);
+      throw new Error('Could not retrieve your profile');
     }
     
-    // Check if user already has a partner
-    if (currentUserProfile.partner_id) {
+    // Create profile if it doesn't exist
+    if (!currentUserProfile) {
+      const { error: createError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: userId,
+          is_onboarding_complete: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+      if (createError) {
+        console.error('Error creating user profile:', createError);
+        throw new Error('Could not create your profile');
+      }
+    } else if (currentUserProfile.partner_id) {
       return { error: new Error('You already have a partner connected') };
     }
     
@@ -146,13 +166,33 @@ export const acceptInvite = async (userId: string, token: string): Promise<{ err
     }
     
     // Ensure inviter's profile exists
-    const inviterProfile = await ensureUserProfile(invite.inviter_id);
-    if (!inviterProfile) {
+    const { data: inviterProfile, error: inviterProfileError } = await supabase
+      .from('user_profiles')
+      .select('id, partner_id')
+      .eq('id', invite.inviter_id)
+      .maybeSingle();
+      
+    if (inviterProfileError) {
+      console.error('Error fetching inviter profile:', inviterProfileError);
       throw new Error('Could not retrieve the inviter\'s profile');
     }
     
-    // Check if inviter already has a partner
-    if (inviterProfile.partner_id) {
+    // Create inviter profile if it doesn't exist
+    if (!inviterProfile) {
+      const { error: createInviterError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: invite.inviter_id,
+          is_onboarding_complete: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+      if (createInviterError) {
+        console.error('Error creating inviter profile:', createInviterError);
+        throw new Error('Could not create the inviter\'s profile');
+      }
+    } else if (inviterProfile.partner_id) {
       return { error: new Error('The inviter already has a partner') };
     }
     
@@ -167,8 +207,7 @@ export const acceptInvite = async (userId: string, token: string): Promise<{ err
       throw updateInviteError;
     }
     
-    // Link the users as partners
-    // 1. Update inviter's profile - critical: only update inviter's own record
+    // Link the users as partners - update inviter's profile
     const { error: updateInviterError } = await supabase
       .from('user_profiles')
       .update({ partner_id: userId })
@@ -179,7 +218,7 @@ export const acceptInvite = async (userId: string, token: string): Promise<{ err
       throw updateInviterError;
     }
     
-    // 2. Update current user's profile - critical: only update current user's own record
+    // Update current user's profile separately
     const { error: updateUserError } = await supabase
       .from('user_profiles')
       .update({ partner_id: invite.inviter_id })

@@ -93,8 +93,12 @@ export const fetchSharedGoals = async (): Promise<Goal[]> => {
   // 2. Partner's goals that are shared with me
   const { data, error } = await supabase
     .from('goals')
-    .select('*')
-    .or(`and(owner_id.eq.${userId},is_shared.eq.true),and(owner_id.eq.${partnerId},is_shared.eq.true,partner_id.eq.${userId})`)
+    .select(`
+      *,
+      owner_profile:user_profiles!goals_owner_id_fkey(full_name)
+    `)
+    .eq('goal_type', 'shared')
+    .or(`owner_id.eq.${userId},owner_id.eq.${partnerId}`)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -102,12 +106,18 @@ export const fetchSharedGoals = async (): Promise<Goal[]> => {
     return [];
   }
 
-  // Add UI convenience properties
-  return data.map(goal => ({
-    ...goal,
-    progress: getGoalProgress(goal.status),
-    completed: goal.status === 'completed'
-  })) as Goal[];
+  // Format the response to include owner name and create proper Goal objects
+  return data.map(goalWithOwner => {
+    const { owner_profile, ...goalData } = goalWithOwner;
+    
+    return {
+      ...goalData,
+      owner_name: owner_profile?.full_name || 'Unknown',
+      is_self_owned: goalData.owner_id === userId,
+      progress: getGoalProgress(goalData.status),
+      completed: goalData.status === 'completed'
+    };
+  }) as Goal[];
 };
 
 export const createGoal = async (goal: Partial<Goal>): Promise<{ goal: Goal | null; error: any }> => {

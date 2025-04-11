@@ -11,8 +11,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { GoalPageHeader } from '@/components/goals/GoalPageHeader';
 import { GoalProgressCard } from '@/components/goals/GoalProgressCard';
 import { GoalTabsSection } from '@/components/goals/GoalTabsSection';
+import { SharedGoalsList } from '@/components/goals/SharedGoalsList';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Share2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const GoalsPage = () => {
   const [myGoals, setMyGoals] = useState<Goal[]>([]);
@@ -35,10 +37,8 @@ const GoalsPage = () => {
       // Set my goals (both personal and ones I shared)
       setMyGoals(myGoalsData);
       
-      // For the shared goals tab, we need ALL shared goals:
-      // 1. Goals my partner shared with me (from partnerGoalsData)
-      // 2. Goals I shared with my partner (already in myGoalsData)
-      setSharedGoals([...partnerGoalsData, ...sharedGoalsData]);
+      // Set all shared goals
+      setSharedGoals(sharedGoalsData);
     } catch (error) {
       console.error('Error fetching goals:', error);
       toast.error('There was an error loading your goals. Please try again.');
@@ -153,8 +153,30 @@ const GoalsPage = () => {
         overallProgress={overallProgress} 
       />
       
+      {/* Shared Goals Section */}
+      <Card className="border-l-4 border-l-blue-500">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Share2 className="h-5 w-5 text-blue-500" />
+            Shared Relationship Goals
+          </CardTitle>
+          <CardDescription>
+            Goals that you and your partner are working on together
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SharedGoalsList 
+            goals={sharedGoals} 
+            onEdit={handleEditGoal} 
+            onDelete={handleDeleteGoal}
+            onRefresh={fetchGoals}
+          />
+        </CardContent>
+      </Card>
+      
+      {/* Personal Goals Section */}
       <GoalTabsSection 
-        myGoals={myGoals}
+        myGoals={myGoals.filter(goal => goal.goal_type === 'personal')}
         sharedGoals={sharedGoals}
         isLoading={isLoading}
         onEdit={handleEditGoal}

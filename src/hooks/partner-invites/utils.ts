@@ -21,6 +21,6 @@ export const generateInviteUrl = (token: string): string => {
 
 // Helper function to format token consistently
 export const formatToken = (token: string): string => {
-  // Remove spaces, dashes and ensure uppercase
-  return token.trim().replace(/-/g, '').toUpperCase();
+  // Remove spaces and ensure uppercase
+  return token.trim().toUpperCase();
 };

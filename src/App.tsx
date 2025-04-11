@@ -1,105 +1,78 @@
 
-import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate, useLocation, BrowserRouter } from "react-router-dom";
-import { useAuth } from "./contexts/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-
-// Import existing pages
-import GoalsPage from "./pages/GoalsPage";
-import ConnectPage from "./pages/ConnectPage";
-import DashboardPage from "./pages/DashboardPage"; 
-import DebugPage from "./pages/DebugPage";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import OnboardingRequired from "./components/auth/OnboardingRequired";
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
+import ConnectPage from "./pages/ConnectPage";
+import DashboardPage from "./pages/DashboardPage";
+import MoodsPage from "./pages/MoodsPage";
+import GoalsPage from "./pages/GoalsPage";
+import CheckInsPage from "./pages/CheckInsPage";
+import RecommendationsPage from "./pages/RecommendationsPage";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
-import Index from "./pages/Index";
+import AppLayout from "./components/layout/AppLayout";
+import InvitePage from "./pages/InvitePage";
 
-// Protected route component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
-  const location = useLocation();
-
-  // Show a loading indicator while checking authentication
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <span className="loading loading-spinner text-love-500"></span>
-      </div>
-    );
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false
+    }
   }
+});
 
-  // If not authenticated, redirect to login page
-  if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
-  }
-
-  return <>{children}</>;
-};
-
-function App() {
-  return (
+const App = () => (
+  <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
+        <Toaster />
+        <Sonner />
         <Routes>
-          {/* Public Routes */}
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/invite" element={<InvitePage />} />
           
-          {/* App Routes - Protected */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <ProfileSettingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/connect"
-            element={
-              <ProtectedRoute>
+          {/* Routes that require authentication and completed onboarding */}
+          <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/moods" element={<MoodsPage />} />
+            <Route path="/goals" element={<GoalsPage />} />
+            <Route path="/check-ins" element={<CheckInsPage />} />
+            <Route path="/recommendations" element={<RecommendationsPage />} />
+            <Route path="/profile" element={<Navigate to="/profile/settings" replace />} />
+            <Route path="/profile/settings" element={<ProfileSettingsPage />} />
+          </Route>
+          
+          {/* Routes that require authentication but not completed onboarding */}
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              <OnboardingRequired mustBeIncomplete>
+                <OnboardingPage />
+              </OnboardingRequired>
+            </ProtectedRoute>
+          } />
+          <Route path="/connect" element={
+            <ProtectedRoute>
+              <OnboardingRequired>
                 <ConnectPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/goals"
-            element={
-              <ProtectedRoute>
-                <GoalsPage />
-              </ProtectedRoute>
-            }
-          />
+              </OnboardingRequired>
+            </ProtectedRoute>
+          } />
           
-          {/* Debug Page */}
-          <Route
-            path="/debug"
-            element={
-              <ProtectedRoute>
-                <DebugPage />
-              </ProtectedRoute>
-            }
-          />
-          
-          {/* Not Found Route */}
+          {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        
-        <Toaster />
       </AuthProvider>
     </BrowserRouter>
-  );
-}
+  </QueryClientProvider>
+);
 
 export default App;

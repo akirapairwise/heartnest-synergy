@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { Heart, Loader2, AlertCircle, RefreshCw, EyeOff } from "lucide-react";
+import { Heart, Loader2, AlertCircle, RefreshCw, EyeOff, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,9 +7,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MoodEntry } from '@/types/check-ins';
 import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import MoodTracker from '../moods/MoodTracker';
+import { useDailyMood } from '@/hooks/useDailyMood';
+import { format } from 'date-fns';
 
-const moodLabels = ["Struggling", "Disconnected", "Neutral", "Connected", "Thriving"];
-const moodColors = ["text-red-500", "text-orange-400", "text-yellow-500", "text-green-400", "text-green-600"];
+// Define mood emojis and their mapping
+const moodEmojis = {
+  1: { emoji: "😢", label: "Struggling", color: "text-red-500" },
+  2: { emoji: "😐", label: "Disconnected", color: "text-orange-400" },
+  3: { emoji: "🙂", label: "Neutral", color: "text-yellow-500" },
+  4: { emoji: "😊", label: "Connected", color: "text-green-400" },
+  5: { emoji: "🥰", label: "Thriving", color: "text-green-600" },
+};
 
 interface PartnerMood {
   id: string;
@@ -26,8 +35,10 @@ const MoodDisplay = () => {
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isMoodDialogOpen, setIsMoodDialogOpen] = useState(false);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { dailyMood, fetchDailyMood } = useDailyMood();
   
   useEffect(() => {
     if (user) {
@@ -172,18 +183,41 @@ const MoodDisplay = () => {
     }
   };
   
+  const handleMoodSaved = () => {
+    setIsMoodDialogOpen(false);
+    fetchLatestMoods();
+    fetchDailyMood();
+  };
+  
   // Default display if no data is available
   const defaultUserMood: MoodEntry = userMood || { 
     id: "default-user",
     date: new Date().toISOString(), 
     mood: 3, 
-    note: "No recent check-in" 
+    note: null
   };
 
-  // Check if partner's mood should be visible (respect partner's preference)
+  // Check if partner's mood should be visible
   const isMoodVisible = partnerMood?.is_visible_to_partner !== false;
   const showAvatar = profile?.mood_settings?.showAvatar !== false;
   
+  // Get emoji and label based on mood value
+  const getMoodDisplay = (moodValue: number) => {
+    return moodEmojis[moodValue as keyof typeof moodEmojis] || { emoji: "❓", label: "Unknown", color: "text-gray-500" };
+  };
+  
+  const userMoodDisplay = getMoodDisplay(defaultUserMood.mood);
+  
+  // Format the mood timestamp
+  const formatMoodTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, 'h:mm a');
+    } catch (e) {
+      return '';
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="shadow-sm">
@@ -213,44 +247,56 @@ const MoodDisplay = () => {
   }
   
   return (
-    <Card className="shadow-sm">
-      <CardContent className="p-4">
-        <h3 className="font-medium text-sm mb-3 flex items-center">
-          <Heart className="h-4 w-4 text-love-500 mr-1.5" />
-          Today's Mood
-        </h3>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              {showAvatar && (
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={profile?.avatar_url} />
-                  <AvatarFallback>{profile?.full_name ? profile.full_name.substring(0, 2).toUpperCase() : 'AU'}</AvatarFallback>
-                </Avatar>
+    <>
+      <Card className="shadow-sm overflow-hidden">
+        <CardContent className="p-4">
+          <h3 className="font-medium text-sm mb-4 flex items-center">
+            <Heart className="h-4 w-4 text-love-500 mr-1.5" />
+            Today's Mood
+          </h3>
+          
+          <div className="flex flex-col items-center text-center p-2">
+            <div 
+              className="text-5xl mb-2" 
+              aria-label={`Mood: ${userMoodDisplay.label}`}
+            >
+              {userMoodDisplay.emoji}
+            </div>
+            
+            <h4 className={`font-bold text-lg mb-1 ${userMoodDisplay.color} font-rounded`}>
+              {userMoodDisplay.label}
+            </h4>
+            
+            {defaultUserMood.note && (
+              <p className="text-sm text-muted-foreground mb-2 max-w-[250px] mx-auto">
+                "{defaultUserMood.note}"
+              </p>
+            )}
+            
+            <div className="text-xs text-muted-foreground mb-3">
+              {defaultUserMood.id !== "default-user" ? (
+                <>Logged at {formatMoodTime(defaultUserMood.date)}</>
+              ) : (
+                <>No mood logged today</>
               )}
-              <div>
-                <p className="text-xs text-muted-foreground">You</p>
-                <p className={`text-sm font-medium ${moodColors[defaultUserMood.mood-1]}`}>{moodLabels[defaultUserMood.mood-1]}</p>
-              </div>
             </div>
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Heart
-                  key={star}
-                  className={`h-4 w-4 ${star <= defaultUserMood.mood ? moodColors[defaultUserMood.mood-1] : 'text-gray-200'}`}
-                  fill={star <= defaultUserMood.mood ? 'currentColor' : 'none'}
-                />
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground line-clamp-1">{defaultUserMood.note}</p>
+            
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMoodDialogOpen(true)}
+              className="w-full mt-2"
+            >
+              {defaultUserMood.id !== "default-user" ? "Update Mood" : "Log Your Mood"}
+            </Button>
           </div>
           
-          {profile?.partner_id ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
+          {/* Partner's mood display - we keep this simplified */}
+          {profile?.partner_id && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-center gap-2 mb-2">
                 {showAvatar && (
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-6 w-6">
                     <AvatarImage src={partnerProfile?.avatar_url} />
                     <AvatarFallback>{partnerProfile?.full_name ? partnerProfile.full_name.substring(0, 2).toUpperCase() : 'PA'}</AvatarFallback>
                   </Avatar>
@@ -261,8 +307,8 @@ const MoodDisplay = () => {
                   </p>
                   {partnerMood ? (
                     isMoodVisible ? (
-                      <p className={`text-sm font-medium ${moodColors[partnerMood.mood-1]}`}>
-                        {moodLabels[partnerMood.mood-1]}
+                      <p className={`text-sm font-medium ${moodEmojis[partnerMood.mood]?.color || "text-gray-500"}`}>
+                        {getMoodDisplay(partnerMood.mood).emoji} {getMoodDisplay(partnerMood.mood).label}
                       </p>
                     ) : (
                       <p className="text-xs italic text-muted-foreground flex items-center gap-1">
@@ -275,49 +321,33 @@ const MoodDisplay = () => {
                   )}
                 </div>
               </div>
-              {partnerMood && isMoodVisible ? (
-                <>
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Heart
-                        key={star}
-                        className={`h-4 w-4 ${star <= partnerMood.mood ? moodColors[partnerMood.mood-1] : 'text-gray-200'}`}
-                        fill={star <= partnerMood.mood ? 'currentColor' : 'none'}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground line-clamp-1">{partnerMood.note}</p>
-                </>
-              ) : (
-                <p className="text-xs text-muted-foreground pt-2">
-                  {partnerMood ? 'Your partner has chosen to keep their mood private.' : 'Your partner hasn\'t shared their mood yet.'}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2 flex items-center justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/connect')}
-                className="text-xs"
-              >
-                Connect Partner
-              </Button>
             </div>
           )}
-        </div>
-        
-        <div className="mt-3 text-center">
-          <a 
-            href="/moods"
-            className="inline-flex items-center text-xs text-harmony-600 hover:text-harmony-700"
-          >
-            View mood history
-          </a>
-        </div>
-      </CardContent>
-    </Card>
+          
+          <div className="mt-3 text-center">
+            <a 
+              href="/moods"
+              className="inline-flex items-center text-xs text-harmony-600 hover:text-harmony-700"
+            >
+              View mood history
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Mood update dialog */}
+      <Dialog open={isMoodDialogOpen} onOpenChange={setIsMoodDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>How are you feeling today?</DialogTitle>
+          </DialogHeader>
+          <MoodTracker 
+            onMoodSaved={handleMoodSaved} 
+            dailyMood={dailyMood}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

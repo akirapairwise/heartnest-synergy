@@ -32,7 +32,7 @@ const CheckInCalendar: React.FC<CheckInCalendarProps> = ({
       onSelect={(date) => date && onDateChange(date)}
       className="rounded-md border"
       components={{
-        Day: ({ date, ...props }: React.ComponentProps<typeof Calendar.Day> & { date: Date }) => {
+        Day: ({ date, ...props }: any) => {
           const hasCheckInOnDate = hasCheckIn(date);
           
           return (

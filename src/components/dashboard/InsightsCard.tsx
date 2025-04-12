@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, TrendingUp, TrendingDown } from "lucide-react";
+import WeeklyAISummary from './WeeklyAISummary';
 
 const InsightsCard = () => {
   return (
@@ -17,6 +18,8 @@ const InsightsCard = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          <WeeklyAISummary />
+          
           <div className="bg-gradient-to-br from-harmony-50 to-calm-50 p-4 rounded-lg border border-harmony-100">
             <h3 className="text-sm font-medium text-harmony-700 mb-1">Weekly Relationship Review</h3>
             <p className="text-xs text-muted-foreground">

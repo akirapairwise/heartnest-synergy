@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -22,6 +21,7 @@ import { moodOptions } from '@/components/check-ins/MoodOptions';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useWeeklyAISummary } from '@/hooks/useWeeklyAISummary';
 
 // Define the schema for the form
 const formSchema = z.object({
@@ -43,8 +43,9 @@ interface WeeklyCheckInFormProps {
 }
 
 const WeeklyCheckInForm = ({ open, onOpenChange, onCheckInComplete }: WeeklyCheckInFormProps) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [loading, setLoading] = useState(false);
+  const { fetchWeeklyAISummary } = useWeeklyAISummary();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -86,6 +87,9 @@ const WeeklyCheckInForm = ({ open, onOpenChange, onCheckInComplete }: WeeklyChec
       toast.success("Check-in complete!", {
         description: "Your weekly check-in has been recorded successfully.",
       });
+      
+      // Trigger the AI summary generation
+      fetchWeeklyAISummary();
       
       // Close the modal and reset the form
       onOpenChange(false);

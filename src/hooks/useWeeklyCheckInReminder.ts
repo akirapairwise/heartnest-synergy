@@ -4,12 +4,14 @@ import { startOfWeek, isAfter } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useWeeklyAISummary } from './useWeeklyAISummary';
 
 export const useWeeklyCheckInReminder = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [showReminder, setShowReminder] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { fetchWeeklyAISummary } = useWeeklyAISummary();
   
   // Check if user has completed a check-in this week
   useEffect(() => {
@@ -83,6 +85,9 @@ export const useWeeklyCheckInReminder = () => {
     toast.success("Check-in saved!", {
       description: "Thank you for completing your weekly check-in."
     });
+    
+    // Trigger AI summary generation
+    fetchWeeklyAISummary();
   };
   
   return {

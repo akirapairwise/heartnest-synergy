@@ -4,6 +4,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CheckIn } from '@/types/check-ins';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { DayContent, DayProps } from 'react-day-picker';
 
 export interface CheckInCalendarProps {
   selectedDate: Date;
@@ -32,22 +33,19 @@ const CheckInCalendar: React.FC<CheckInCalendarProps> = ({
       onSelect={(date) => date && onDateChange(date)}
       className="rounded-md border"
       components={{
-        Day: ({ day, ...props }: React.HTMLAttributes<HTMLButtonElement> & { day: Date }) => {
-          const hasCheckInOnDate = hasCheckIn(day);
+        Day: (props: DayProps) => {
+          const hasCheckInOnDate = props.date ? hasCheckIn(props.date) : false;
           
           return (
-            <button
-              {...props}
-              className={cn(
-                props.className,
-                hasCheckInOnDate && 'bg-primary/10 text-primary font-medium relative'
-              )}
-            >
-              {props.children}
+            <div className={cn(
+              "relative",
+              hasCheckInOnDate && 'bg-primary/10'
+            )}>
+              <DayContent {...props} />
               {hasCheckInOnDate && (
                 <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
               )}
-            </button>
+            </div>
           );
         },
       }}

@@ -69,23 +69,20 @@ const CheckInCalendar: React.FC<CheckInCalendarProps> = ({
         }}
         className="rounded-md border"
         components={{
-          DayContent: (props: DayContentProps) => {
-            // Safely extract the date from the props
-            const { date } = props;
-            
+          DayContent: ({ date }: DayContentProps) => {
             // Only proceed with styling if we have a valid date
             if (!date) return null;
             
             const hasCheckInOnDate = hasCheckIn(date);
+            const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
             
             return (
               <div
-                onClick={() => props.onClick && props.onClick(date)}
                 className={cn(
                   "relative flex h-9 w-9 items-center justify-center p-0",
-                  hasCheckInOnDate && !props.selected && "bg-primary/10",
-                  props.selected && "bg-primary text-primary-foreground",
-                  !props.selected && hasCheckInOnDate && "hover:bg-primary/20"
+                  hasCheckInOnDate && !isSelected && "bg-primary/10",
+                  isSelected && "bg-primary text-primary-foreground",
+                  !isSelected && hasCheckInOnDate && "hover:bg-primary/20"
                 )}
               >
                 <time dateTime={format(date, 'yyyy-MM-dd')}>

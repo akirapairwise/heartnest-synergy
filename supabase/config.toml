@@ -26,5 +26,5 @@ enabled = true
 [realtime]
 enabled = true
 
-[functions.generate-conflict-resolution]
+[functions.resolve-conflict]
 verify_jwt = true

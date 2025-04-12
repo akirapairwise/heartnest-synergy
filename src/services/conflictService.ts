@@ -54,12 +54,14 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       throw new Error('Conflict not found or missing statements');
     }
     
-    // Get the service role key
-    const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY') || process.env.SERVICE_ROLE_KEY;
+    // Use the supabase JWT as the authorization token - this approach relies on 
+    // RLS policies on the server to handle permissions correctly
+    const { data: authData } = await supabase.auth.getSession();
+    const authToken = authData?.session?.access_token;
     
-    if (!serviceRoleKey) {
-      console.error('SERVICE_ROLE_KEY is not defined');
-      throw new Error('Service role key is not configured');
+    if (!authToken) {
+      console.error('User not authenticated');
+      throw new Error('User not authenticated');
     }
     
     console.log('Making request to edge function with conflict ID:', conflictId);
@@ -69,7 +71,7 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serviceRoleKey}`
+        'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
         conflict_id: conflict.id,

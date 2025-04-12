@@ -24,16 +24,37 @@ serve(async (req) => {
   if (corsResponse) return corsResponse;
 
   try {
+    console.log('Edge function called with method:', req.method);
+    
     // Get OpenAI API key from environment variables
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
+      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
     // Parse the request body
-    const { initiator_statement, responder_statement, conflict_id } = await req.json();
+    const requestData = await req.text();
+    console.log('Raw request data:', requestData);
+    
+    let parsedData;
+    try {
+      parsedData = JSON.parse(requestData);
+    } catch (e) {
+      console.error('Error parsing JSON:', e);
+      throw new Error('Invalid JSON in request body');
+    }
+    
+    const { initiator_statement, responder_statement, conflict_id } = parsedData;
+
+    console.log('Received data:', { 
+      conflict_id, 
+      initiator_statement_length: initiator_statement?.length, 
+      responder_statement_length: responder_statement?.length 
+    });
 
     if (!initiator_statement || !responder_statement || !conflict_id) {
+      console.error('Missing required parameters');
       throw new Error('Missing required parameters');
     }
 
@@ -57,6 +78,8 @@ Based on these perspectives, provide:
 Format your response using JSON with these keys: "summary", "reflection", and "plan".
 `;
 
+    console.log('Calling OpenAI API...');
+    
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -76,14 +99,16 @@ Format your response using JSON with these keys: "summary", "reflection", and "p
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('OpenAI API error:', errorData, 'Status:', response.status);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response received:', data);
+    
     const aiResponse = data.choices[0].message.content;
     
-    console.log('AI response received, parsing...');
+    console.log('AI response content:', aiResponse);
     
     // Parse the JSON response
     let parsedResponse;
@@ -92,6 +117,8 @@ Format your response using JSON with these keys: "summary", "reflection", and "p
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       const jsonString = jsonMatch ? jsonMatch[0] : aiResponse;
       parsedResponse = JSON.parse(jsonString);
+      
+      console.log('Successfully parsed AI response:', parsedResponse);
     } catch (error) {
       console.error('Error parsing AI response as JSON:', error);
       console.log('Raw AI response:', aiResponse);
@@ -107,8 +134,11 @@ Format your response using JSON with these keys: "summary", "reflection", and "p
                  "1. Have a calm discussion\n2. Listen actively to each other\n3. Work together on a solution";
       
       parsedResponse = { summary, reflection, plan };
+      console.log('Manually extracted response:', parsedResponse);
     }
 
+    console.log('Sending successful response back to client');
+    
     return new Response(
       JSON.stringify({
         success: true,

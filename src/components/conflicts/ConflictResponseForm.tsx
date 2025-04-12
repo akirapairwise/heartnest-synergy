@@ -51,19 +51,25 @@ const ConflictResponseForm = ({ conflict, onSuccess }: ConflictResponseFormProps
 
       if (error) throw error;
       
-      // Generate AI resolution once the response is submitted
-      toast.promise(
-        generateAIResolution(conflict.id),
-        {
-          loading: 'Generating AI resolution...',
-          success: 'AI resolution generated successfully',
-          error: 'Failed to generate AI resolution'
-        }
-      );
+      // Generate AI resolution with improved error handling
+      try {
+        await toast.promise(
+          generateAIResolution(conflict.id),
+          {
+            loading: 'Generating AI resolution...',
+            success: 'AI resolution generated successfully',
+            error: (err) => `Failed to generate AI resolution: ${err.message || 'Unknown error'}`
+          }
+        );
+      } catch (aiError: any) {
+        console.error('AI resolution error:', aiError);
+        // The toast.promise will handle the error display
+      }
       
       form.reset();
       onSuccess();
     } catch (error: any) {
+      console.error('Form submission error:', error);
       toast.error(error.message || "Failed to submit response");
     } finally {
       setIsSubmitting(false);

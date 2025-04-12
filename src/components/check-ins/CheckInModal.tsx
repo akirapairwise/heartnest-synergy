@@ -8,21 +8,21 @@ import { CheckIn } from '@/types/check-ins';
 import CheckInDetails from './CheckInDetails';
 
 interface CheckInModalProps {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  selectedCheckIn: CheckIn | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedCheckIn?: CheckIn | null;
 }
 
 const CheckInModal: React.FC<CheckInModalProps> = ({ 
-  isOpen, 
-  setIsOpen, 
-  selectedCheckIn 
+  open, 
+  onOpenChange, 
+  selectedCheckIn = null
 }) => {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   if (isDesktop) {
     return (
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Check-In Details</DialogTitle>
@@ -32,7 +32,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
           </DialogHeader>
           <CheckInDetails checkIn={selectedCheckIn} />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -40,7 +40,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   }
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader className="text-left">
           <DrawerTitle>Check-In Details</DrawerTitle>

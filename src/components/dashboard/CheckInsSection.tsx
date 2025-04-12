@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react'; 
-import { CheckInsFeed } from '../check-ins/RecentCheckIns';
+import RecentCheckIns from '../check-ins/RecentCheckIns';
 import WeeklyCheckInCard from './WeeklyCheckInCard';
 
 const CheckInsSection = () => {
@@ -21,7 +22,7 @@ const CheckInsSection = () => {
             <CardTitle className="text-base font-medium">Recent Check-ins</CardTitle>
           </CardHeader>
           <CardContent>
-            <CheckInsFeed limit={3} />
+            <RecentCheckIns limit={3} />
             <Button
               variant="outline"
               size="sm"

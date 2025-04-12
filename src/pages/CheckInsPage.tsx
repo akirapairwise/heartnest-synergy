@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckInsByDate } from '@/components/check-ins/CheckInsByDate';
-import { RecentCheckIns } from '@/components/check-ins/RecentCheckIns';
-import { CheckInModal } from '@/components/check-ins/CheckInModal';
+import CheckInsByDate from '@/components/check-ins/CheckInsByDate';
+import RecentCheckIns from '@/components/check-ins/RecentCheckIns';
+import CheckInModal from '@/components/check-ins/CheckInModal';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';

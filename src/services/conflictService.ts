@@ -51,17 +51,16 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
     }
     
     // Call the Edge Function to generate the AI resolution
-    const { data, error } = await supabase.functions.invoke('generate-conflict-resolution', {
+    const { data, error } = await supabase.functions.invoke('resolve-conflict', {
       body: {
-        initiatorStatement: conflict.initiator_statement,
-        responderStatement: conflict.responder_statement,
-        topic: conflict.topic,
-        conflictId: conflictId
+        conflict_id: conflict.id,
+        initiator_statement: conflict.initiator_statement,
+        responder_statement: conflict.responder_statement
       }
     });
     
     if (error) {
-      console.error('Error calling generate-conflict-resolution:', error);
+      console.error('Error calling resolve-conflict:', error);
       throw error;
     }
     

@@ -53,7 +53,7 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
     // Get the service role key from environment
     const serviceRoleKey = process.env.SERVICE_ROLE_KEY;
     
-    // Direct API call to the edge function with proper headers
+    // Direct API call to the resolve-conflict edge function with proper headers
     const response = await fetch('https://itmegnklwvtitwknyvkm.functions.supabase.co/resolve-conflict', {
       method: 'POST',
       headers: {

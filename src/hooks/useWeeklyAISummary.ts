@@ -9,6 +9,18 @@ export const useWeeklyAISummary = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  // Initial load - check for cached insight
+  useEffect(() => {
+    const cachedInsight = localStorage.getItem('weeklyAIInsight');
+    const cachedTimestamp = localStorage.getItem('weeklyAIInsightTimestamp');
+    
+    // Only use cache if it's less than 24 hours old
+    if (cachedInsight && cachedTimestamp && 
+        (Date.now() - Number(cachedTimestamp) < 24 * 60 * 60 * 1000)) {
+      setInsight(cachedInsight);
+    }
+  }, []);
+
   const fetchWeeklyAISummary = async () => {
     if (!user || !session?.access_token) {
       return;
@@ -38,6 +50,10 @@ export const useWeeklyAISummary = () => {
 
       const data = await response.json();
       setInsight(data.insight);
+      
+      // Cache the insight
+      localStorage.setItem('weeklyAIInsight', data.insight);
+      localStorage.setItem('weeklyAIInsightTimestamp', Date.now().toString());
     } catch (err: any) {
       console.error('Error fetching weekly AI summary:', err);
       setError(err instanceof Error ? err : new Error(String(err)));

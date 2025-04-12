@@ -1,62 +1,57 @@
 
 import React from 'react';
-import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarIcon } from "lucide-react";
 import { CheckIn } from '@/types/check-ins';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
-interface CheckInCalendarProps {
+export interface CheckInCalendarProps {
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
   checkIns: CheckIn[];
-  selectedDate: Date | undefined;
-  setSelectedDate: (date: Date | undefined) => void;
 }
 
 const CheckInCalendar: React.FC<CheckInCalendarProps> = ({ 
-  checkIns, 
   selectedDate, 
-  setSelectedDate 
+  onDateChange,
+  checkIns 
 }) => {
-  
-  const getDayWithCheckIns = (day: Date) => {
-    return checkIns.find(checkIn => {
-      const checkInDate = new Date(checkIn.timestamp);
-      return (
-        checkInDate.getDate() === day.getDate() &&
-        checkInDate.getMonth() === day.getMonth() &&
-        checkInDate.getFullYear() === day.getFullYear()
-      );
+  // Function to determine if a date has check-ins
+  const hasCheckIn = (date: Date) => {
+    const dateString = format(date, 'yyyy-MM-dd');
+    return checkIns.some(checkIn => {
+      const checkInDate = format(new Date(checkIn.timestamp), 'yyyy-MM-dd');
+      return checkInDate === dateString;
     });
   };
-
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CalendarIcon className="h-5 w-5" />
-          Calendar View
-        </CardTitle>
-        <CardDescription>Select a date to view check-ins</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Calendar
-          mode="single"
-          selected={selectedDate}
-          onSelect={setSelectedDate}
-          className="rounded-md border"
-          modifiers={{
-            hasCheckIn: (date) => !!getDayWithCheckIns(date),
-          }}
-          modifiersStyles={{
-            hasCheckIn: { 
-              fontWeight: 'bold',
-              backgroundColor: 'hsl(var(--primary) / 0.1)',
-              borderRadius: '50%'
-            }
-          }}
-        />
-      </CardContent>
-    </Card>
+    <Calendar
+      mode="single"
+      selected={selectedDate}
+      onSelect={(date) => date && onDateChange(date)}
+      className="rounded-md border"
+      components={{
+        Day: ({ date, ...props }) => {
+          const hasCheckInOnDate = hasCheckIn(date);
+          
+          return (
+            <button
+              {...props}
+              className={cn(
+                props.className,
+                hasCheckInOnDate && 'bg-primary/10 text-primary font-medium relative'
+              )}
+            >
+              {props.children}
+              {hasCheckInOnDate && (
+                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+              )}
+            </button>
+          );
+        },
+      }}
+    />
   );
 };
 

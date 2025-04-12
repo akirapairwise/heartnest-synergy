@@ -1,138 +1,126 @@
 
 import React, { useState, useEffect } from 'react';
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare } from "lucide-react";
-import { CheckIn } from '@/types/check-ins';
-import { getMoodIcon } from './MoodOptions';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
+import { CheckIn } from '@/types/check-ins';
+import CheckInModal from './CheckInModal';
 import CheckInCalendar from './CheckInCalendar';
 
-const CheckInsByDate: React.FC = () => {
+const CheckInsByDate = () => {
   const { user } = useAuth();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Fetch all check-ins for the user
   useEffect(() => {
     const fetchCheckIns = async () => {
       if (!user) return;
       
       try {
-        setLoading(true);
+        setIsLoading(true);
+        const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
+        
         const { data, error } = await supabase
           .from('check_ins')
           .select('*')
           .eq('user_id', user.id)
+          .gte('timestamp', `${selectedDateString}T00:00:00`)
+          .lt('timestamp', `${selectedDateString}T23:59:59`)
           .order('timestamp', { ascending: false });
           
         if (error) {
           throw error;
         }
         
-        setCheckIns(data as CheckIn[]);
+        setCheckIns(data || []);
       } catch (error) {
-        console.error('Error fetching check-ins:', error);
+        console.error('Error fetching check-ins by date:', error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
     
     fetchCheckIns();
-  }, [user]);
+  }, [user, selectedDate]);
   
-  // Filter check-ins for the selected date
-  const checkInsForSelectedDate = selectedDate 
-    ? checkIns.filter(checkIn => {
-        const checkInDate = new Date(checkIn.timestamp);
-        return (
-          checkInDate.getDate() === selectedDate.getDate() &&
-          checkInDate.getMonth() === selectedDate.getMonth() &&
-          checkInDate.getFullYear() === selectedDate.getFullYear()
-        );
-      })
-    : [];
-
-  const handleViewCheckIn = (checkIn: CheckIn) => {
+  const handleCheckInClick = (checkIn: CheckIn) => {
     setSelectedCheckIn(checkIn);
+    setIsModalOpen(true);
   };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
+  
   return (
     <div className="space-y-6">
-      <CheckInCalendar 
-        checkIns={checkIns}
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-      />
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {selectedDate ? (
-              <>Check-ins for {format(selectedDate, "MMMM d, yyyy")}</>
-            ) : (
-              <>Select a date</>
-            )}
-          </CardTitle>
-          <CardDescription>
-            {checkInsForSelectedDate.length === 0 ? (
-              selectedDate ? 'No check-ins for this date' : 'Select a date to see check-ins'
-            ) : (
-              `${checkInsForSelectedDate.length} check-in(s) found`
-            )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {checkInsForSelectedDate.length > 0 ? (
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="md:w-1/2">
+          <Card>
+            <CardContent className="pt-6">
+              <CheckInCalendar 
+                selectedDate={selectedDate} 
+                onDateChange={setSelectedDate}
+                checkIns={checkIns}
+              />
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="md:w-1/2">
+          <h3 className="text-lg font-medium mb-4">
+            Check-ins for {format(selectedDate, 'MMMM d, yyyy')}
+          </h3>
+          
+          {isLoading ? (
             <div className="space-y-4">
-              {checkInsForSelectedDate.map((checkIn) => (
-                <div 
-                  key={checkIn.id} 
-                  className="border rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleViewCheckIn(checkIn)}
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          ) : checkIns.length > 0 ? (
+            <div className="space-y-4">
+              {checkIns.map((checkIn) => (
+                <Card 
+                  key={checkIn.id}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleCheckInClick(checkIn)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {getMoodIcon(checkIn.mood)}
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center">
                       <div>
-                        <div className="font-medium capitalize">{checkIn.mood}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {format(new Date(checkIn.timestamp), "h:mm a")}
-                        </div>
+                        <p className="font-medium">{checkIn.mood}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(checkIn.timestamp), 'h:mm a')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm">Satisfaction: {checkIn.satisfaction_rating}/10</p>
+                        {checkIn.reflection && (
+                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {checkIn.reflection}
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div className="text-sm font-medium">
-                      {checkIn.satisfaction_rating}/10
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mb-2 opacity-20" />
-              <p>No check-ins found for this date</p>
-              {selectedDate && new Date(selectedDate).toDateString() === new Date().toDateString() && (
-                <Button 
-                  variant="link" 
-                  className="mt-2" 
-                  onClick={() => document.querySelector('form')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  Create your first check-in
-                </Button>
-              )}
+            <div className="bg-muted/30 p-6 rounded-lg text-center">
+              <p>No check-ins recorded for this date</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      
+      <CheckInModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        selectedCheckIn={selectedCheckIn}
+      />
     </div>
   );
 };

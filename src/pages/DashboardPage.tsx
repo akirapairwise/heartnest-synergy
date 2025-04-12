@@ -10,6 +10,7 @@ import MyGoalsSection from '@/components/dashboard/MyGoalsSection';
 import CheckInsSection from '@/components/dashboard/CheckInsSection';
 import ConflictsSection from '@/components/dashboard/ConflictsSection';
 import SuggestionsSection from '@/components/dashboard/SuggestionsSection';
+import WeeklyCheckInReminder from '@/components/dashboard/WeeklyCheckInReminder';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -72,6 +73,9 @@ const DashboardPage = () => {
               </Button>
             )}
           </div>
+          
+          {/* Add Weekly Check-In Reminder */}
+          <WeeklyCheckInReminder />
           
           <Tabs 
             defaultValue="overview" 

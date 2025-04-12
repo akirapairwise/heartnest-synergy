@@ -50,19 +50,30 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       throw new Error('Conflict not found or missing statements');
     }
     
-    // Call the Edge Function to generate the AI resolution
-    const { data, error } = await supabase.functions.invoke('resolve-conflict', {
-      body: {
+    // Get the service role key from environment
+    const serviceRoleKey = process.env.SERVICE_ROLE_KEY;
+    
+    // Direct API call to the edge function with proper headers
+    const response = await fetch('https://itmegnklwvtitwknyvkm.functions.supabase.co/resolve-conflict', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`
+      },
+      body: JSON.stringify({
         conflict_id: conflict.id,
         initiator_statement: conflict.initiator_statement,
         responder_statement: conflict.responder_statement
-      }
+      })
     });
     
-    if (error) {
-      console.error('Error calling resolve-conflict:', error);
-      throw error;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error from resolve-conflict:', errorText);
+      throw new Error(`Failed to generate AI resolution: ${response.status}`);
     }
+    
+    const data = await response.json();
     
     if (!data || !data.success) {
       throw new Error(data?.error || 'Failed to generate AI resolution');

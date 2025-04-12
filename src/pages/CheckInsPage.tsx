@@ -1,92 +1,70 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { CheckIn } from '@/types/check-ins';
-import CheckInForm from '@/components/check-ins/CheckInForm';
-import CheckInCalendar from '@/components/check-ins/CheckInCalendar';
-import CheckInsByDate from '@/components/check-ins/CheckInsByDate';
-import RecentCheckIns from '@/components/check-ins/RecentCheckIns';
-import CheckInModal from '@/components/check-ins/CheckInModal';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckInsByDate } from '@/components/check-ins/CheckInsByDate';
+import { RecentCheckIns } from '@/components/check-ins/RecentCheckIns';
+import { CheckInModal } from '@/components/check-ins/CheckInModal';
+import { Button } from '@/components/ui/button';
+import { Plus, Calendar } from 'lucide-react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import WeeklyCheckInsSection from '@/components/check-ins/WeeklyCheckInsSection';
 
 const CheckInsPage = () => {
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  useDocumentTitle('Check-Ins | HeartNest');
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      fetchCheckIns();
-    }
-  }, [user]);
-
-  const fetchCheckIns = async () => {
-    try {
-      // Use a more generic approach to work around TypeScript limitations
-      const { data, error } = await supabase
-        .from('check_ins')
-        .select('*')
-        .order('timestamp', { ascending: false }) as { data: CheckIn[] | null, error: any };
-
-      if (error) {
-        throw error;
-      }
-
-      setCheckIns(data || []);
-    } catch (error) {
-      console.error('Error fetching check-ins:', error);
-      toast.error('Failed to load check-ins');
-    }
-  };
-
-  const handleViewCheckIn = (checkIn: CheckIn) => {
-    setSelectedCheckIn(checkIn);
-    setIsDetailModalOpen(true);
-  };
-
   return (
-    <div className="animate-fade-in space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Emotional Check-Ins</h1>
-        <p className="text-muted-foreground">Track and reflect on your emotional well-being</p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
-          <CheckInForm onCheckInSaved={fetchCheckIns} />
-        </div>
-        
-        <div className="md:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <CheckInCalendar 
-              checkIns={checkIns}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-            />
-            
-            <CheckInsByDate 
-              selectedDate={selectedDate}
-              checkIns={checkIns}
-              onViewCheckIn={handleViewCheckIn}
-            />
+    <div className="container mx-auto max-w-4xl py-8 px-4">
+      <Tabs defaultValue="daily" className="w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold">Check-Ins</h1>
+            <p className="text-muted-foreground">Track your relationship's daily and weekly progress</p>
           </div>
           
-          <RecentCheckIns 
-            checkIns={checkIns}
-            onViewCheckIn={handleViewCheckIn}
-          />
+          <div className="flex gap-2">
+            <TabsList>
+              <TabsTrigger value="daily">Daily</TabsTrigger>
+              <TabsTrigger value="weekly">Weekly</TabsTrigger>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            </TabsList>
+          </div>
         </div>
-      </div>
-      
-      <CheckInModal 
-        isOpen={isDetailModalOpen}
-        setIsOpen={setIsDetailModalOpen}
-        selectedCheckIn={selectedCheckIn}
-      />
+        
+        <TabsContent value="daily" className="mt-4 space-y-8">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Daily Check-ins</h2>
+            <Button 
+              onClick={() => setIsCheckInModalOpen(true)}
+              className="bg-gradient-to-r from-love-500 to-harmony-500 text-white"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New Check-in
+            </Button>
+          </div>
+          
+          <RecentCheckIns />
+          
+          <CheckInModal 
+            open={isCheckInModalOpen} 
+            onOpenChange={setIsCheckInModalOpen} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="weekly" className="mt-4">
+          <WeeklyCheckInsSection />
+        </TabsContent>
+        
+        <TabsContent value="calendar" className="mt-4">
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-6">
+              <Calendar className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-bold">Check-In Calendar</h2>
+            </div>
+            <CheckInsByDate />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

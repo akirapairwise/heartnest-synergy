@@ -348,6 +348,42 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_check_ins: {
+        Row: {
+          checkin_date: string | null
+          communication_rating: number | null
+          connection_level: number | null
+          created_at: string | null
+          id: string
+          is_visible_to_partner: boolean | null
+          mood: string | null
+          reflection_note: string | null
+          user_id: string | null
+        }
+        Insert: {
+          checkin_date?: string | null
+          communication_rating?: number | null
+          connection_level?: number | null
+          created_at?: string | null
+          id?: string
+          is_visible_to_partner?: boolean | null
+          mood?: string | null
+          reflection_note?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          checkin_date?: string | null
+          communication_rating?: number | null
+          connection_level?: number | null
+          created_at?: string | null
+          id?: string
+          is_visible_to_partner?: boolean | null
+          mood?: string | null
+          reflection_note?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       partner_links: {

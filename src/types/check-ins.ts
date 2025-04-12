@@ -24,3 +24,15 @@ export type MoodEntry = {
   is_visible_to_partner?: boolean;
   timestamp?: string; // Added to track time of update
 };
+
+// Add weekly check-in type
+export type WeeklyCheckIn = {
+  id: string;
+  user_id: string;
+  mood: string;
+  connection_level: number;
+  communication_rating: number;
+  reflection_note: string | null;
+  is_visible_to_partner: boolean;
+  checkin_date: string;
+};

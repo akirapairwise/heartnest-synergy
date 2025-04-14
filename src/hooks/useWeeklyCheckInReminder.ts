@@ -3,15 +3,11 @@ import { useState, useEffect } from 'react';
 import { startOfWeek, isAfter } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
-import { useWeeklyAISummary } from './useWeeklyAISummary';
 
 export const useWeeklyCheckInReminder = () => {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [showReminder, setShowReminder] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { fetchWeeklyAISummary } = useWeeklyAISummary();
   
   // Check if user has completed a check-in this week
   useEffect(() => {
@@ -64,14 +60,6 @@ export const useWeeklyCheckInReminder = () => {
     checkForWeeklyCheckIn();
   }, [user]);
   
-  // Function to open the check-in form
-  const openCheckInForm = () => {
-    setIsFormOpen(true);
-    // Save the current timestamp to localStorage to prevent showing again this week
-    localStorage.setItem('lastCheckInReminderShown', new Date().toISOString());
-    setShowReminder(false);
-  };
-  
   // Function to dismiss the reminder
   const dismissReminder = () => {
     setShowReminder(false);
@@ -79,25 +67,9 @@ export const useWeeklyCheckInReminder = () => {
     localStorage.setItem('lastCheckInReminderShown', new Date().toISOString());
   };
   
-  // Function to handle successful check-in
-  const handleCheckInComplete = () => {
-    setIsFormOpen(false);
-    toast({
-      title: "Check-in saved!",
-      description: "Thank you for completing your weekly check-in."
-    });
-    
-    // Trigger AI summary generation
-    fetchWeeklyAISummary();
-  };
-  
   return {
     showReminder,
-    isFormOpen,
     isLoading,
-    openCheckInForm,
-    dismissReminder,
-    setIsFormOpen,
-    handleCheckInComplete
+    dismissReminder
   };
 };

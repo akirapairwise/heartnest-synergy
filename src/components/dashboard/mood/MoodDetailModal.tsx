@@ -1,10 +1,9 @@
 
 import React from 'react';
-import { X } from "lucide-react";
-import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { format, isToday, formatDistanceToNow } from 'date-fns';
 
-interface MoodModalProps {
+interface MoodDetailModalProps {
   open: boolean;
   onClose: () => void;
   name: string;
@@ -17,36 +16,53 @@ interface MoodModalProps {
   timestamp: string;
 }
 
-const MoodDetailModal: React.FC<MoodModalProps> = ({ open, onClose, name, mood, note, timestamp }) => {
+const MoodDetailModal: React.FC<MoodDetailModalProps> = ({
+  open,
+  onClose,
+  name,
+  mood,
+  note,
+  timestamp
+}) => {
+  const formatTimestamp = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      
+      if (isToday(date)) {
+        return `Today at ${format(date, 'h:mm a')}`;
+      } else {
+        return `${format(date, 'MMM d, yyyy')} at ${format(date, 'h:mm a')} (${formatDistanceToNow(date, { addSuffix: true })})`;
+      }
+    } catch (e) {
+      return 'Unknown time';
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[425px] rounded-xl bg-gradient-to-b from-white to-gray-50">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px] rounded-xl p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">{name}'s Mood for Today</DialogTitle>
-          <DialogClose className="absolute right-4 top-4">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
+          <DialogTitle className="text-xl">{name}'s Mood</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col items-center p-6">
-          <div className="text-6xl mb-4 animate-pulse-soft" aria-label={`Mood: ${mood.label}`}>
+        
+        <div className="flex flex-col items-center text-center mb-4 pt-4">
+          <div className="text-6xl mb-2">
             {mood.emoji}
           </div>
-          <h3 className={`text-xl font-bold ${mood.color} mb-2`}>{mood.label}</h3>
-          
-          {note && (
-            <div className="mt-4 text-center w-full">
-              <div className="p-4 rounded-lg bg-white/80 shadow-sm border border-gray-100">
-                <p className="text-sm text-muted-foreground mb-1 font-medium">Note:</p>
-                <p className="text-base italic">"{note}"</p>
-              </div>
-            </div>
-          )}
-          
-          <p className="text-xs text-muted-foreground mt-6">
-            Logged at {format(new Date(timestamp), 'h:mm a')}
+          <h3 className={`text-xl font-semibold ${mood.color}`}>
+            {mood.label}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            {formatTimestamp(timestamp)}
           </p>
         </div>
+        
+        {note && (
+          <div className="mt-4 bg-muted/50 p-4 rounded-lg">
+            <h4 className="text-sm font-medium mb-2">Thoughts:</h4>
+            <p className="text-sm italic">"{note}"</p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

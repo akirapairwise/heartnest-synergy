@@ -22,7 +22,7 @@ export type MoodEntry = {
   mood: number;
   note?: string | null;
   is_visible_to_partner?: boolean;
-  timestamp?: string; // Added to track time of update
+  timestamp?: string; // Added timestamp field for tracking time of update
 };
 
 // Add weekly check-in type

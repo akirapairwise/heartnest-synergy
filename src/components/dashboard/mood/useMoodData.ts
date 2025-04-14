@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { MoodEntry } from '@/types/check-ins';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +10,7 @@ interface PartnerMood {
   mood: number;
   note: string | null;
   is_visible_to_partner: boolean;
+  timestamp?: string; // Added timestamp field for tracking when mood was last updated
 }
 
 interface MoodDataReturn {
@@ -64,7 +65,7 @@ export const useMoodData = (): MoodDataReturn => {
     }
   };
   
-  const fetchLatestMoods = async () => {
+  const fetchLatestMoods = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -74,7 +75,7 @@ export const useMoodData = (): MoodDataReturn => {
       // Fetch user's latest mood from daily_moods
       const { data: userDailyMood, error: userDailyMoodError } = await supabase
         .from('daily_moods')
-        .select('id, mood_date, mood_value, note')
+        .select('id, mood_date, mood_value, note, created_at')
         .eq('user_id', user?.id)
         .eq('mood_date', today)
         .maybeSingle();
@@ -89,7 +90,8 @@ export const useMoodData = (): MoodDataReturn => {
           id: userDailyMood.id,
           date: userDailyMood.mood_date,
           mood: userDailyMood.mood_value,
-          note: userDailyMood.note
+          note: userDailyMood.note,
+          timestamp: userDailyMood.created_at // Include the timestamp
         });
       } else {
         // Fallback to check_ins
@@ -111,7 +113,8 @@ export const useMoodData = (): MoodDataReturn => {
             id: userData[0].id,
             date: userData[0].timestamp,
             mood: parseInt(userData[0].mood.charAt(0)),
-            note: userData[0].reflection
+            note: userData[0].reflection,
+            timestamp: userData[0].timestamp // Use the timestamp field
           });
         }
       }
@@ -121,7 +124,7 @@ export const useMoodData = (): MoodDataReturn => {
         // First try daily_moods with visibility check
         const { data: partnerDailyMood, error: partnerDailyMoodError } = await supabase
           .from('daily_moods')
-          .select('id, mood_date, mood_value, note, is_visible_to_partner')
+          .select('id, mood_date, mood_value, note, is_visible_to_partner, created_at')
           .eq('user_id', profile.partner_id)
           .eq('mood_date', today)
           .maybeSingle();
@@ -136,7 +139,8 @@ export const useMoodData = (): MoodDataReturn => {
             date: partnerDailyMood.mood_date,
             mood: partnerDailyMood.mood_value,
             note: partnerDailyMood.note,
-            is_visible_to_partner: partnerDailyMood.is_visible_to_partner !== false
+            is_visible_to_partner: partnerDailyMood.is_visible_to_partner !== false,
+            timestamp: partnerDailyMood.created_at // Include the timestamp
           });
         } else {
           // Fallback to check_ins (assuming all check_ins are visible)
@@ -157,7 +161,8 @@ export const useMoodData = (): MoodDataReturn => {
               date: partnerData[0].timestamp,
               mood: parseInt(partnerData[0].mood.charAt(0)),
               note: partnerData[0].reflection,
-              is_visible_to_partner: true // Legacy entries assumed to be visible
+              is_visible_to_partner: true, // Legacy entries assumed to be visible
+              timestamp: partnerData[0].timestamp // Use the timestamp field
             });
           }
         }
@@ -171,7 +176,7 @@ export const useMoodData = (): MoodDataReturn => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, profile]);
 
   return {
     userMood,

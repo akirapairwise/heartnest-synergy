@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Heart, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -157,8 +156,8 @@ const MoodDisplay = () => {
             ? (partnerMood?.note || null) 
             : (defaultUserMood.note || null)}
           timestamp={viewingMoodDetails.isPartner 
-            ? (partnerMood?.date || new Date().toISOString()) 
-            : (defaultUserMood.date || new Date().toISOString())}
+            ? (partnerMood?.timestamp || partnerMood?.date || new Date().toISOString()) 
+            : (defaultUserMood.timestamp || defaultUserMood.date || new Date().toISOString())}
         />
       )}
     </>

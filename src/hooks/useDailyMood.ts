@@ -10,7 +10,7 @@ export type DailyMood = {
   mood_value: number;
   note: string | null;
   is_visible_to_partner?: boolean;
-  created_at?: string; // Added to track the time
+  created_at?: string;
 };
 
 export const useDailyMood = () => {
@@ -70,7 +70,7 @@ export const useDailyMood = () => {
         mood_value: moodValue,
         note: note || null,
         is_visible_to_partner: isVisibleToPartner,
-        created_at: now // Add current timestamp
+        created_at: now // Track when mood was last updated
       };
       
       console.log('Saving mood data:', moodData, 'Existing mood:', dailyMood);

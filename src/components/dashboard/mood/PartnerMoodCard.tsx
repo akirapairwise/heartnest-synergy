@@ -3,7 +3,7 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EyeOff, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { format } from 'date-fns';
+import { format, isToday, formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 interface PartnerMoodCardProps {
@@ -31,7 +31,18 @@ const PartnerMoodCard: React.FC<PartnerMoodCardProps> = ({
   const formatMoodTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return format(date, 'h:mm a');
+      
+      // Use the timestamp if available, otherwise use the date
+      const timeString = partnerMood.timestamp || dateString;
+      const timeDate = new Date(timeString);
+      
+      if (isToday(timeDate)) {
+        // If it's today, show "today at X:XX PM"
+        return `Today at ${format(timeDate, 'h:mm a')}`;
+      } else {
+        // If it's not today, show relative time like "2 days ago"
+        return formatDistanceToNow(timeDate, { addSuffix: true });
+      }
     } catch (e) {
       return '';
     }

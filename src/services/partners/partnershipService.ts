@@ -93,79 +93,78 @@ async function handlePartnerConnection(
   code?: string
 ): Promise<OperationResult> {
   try {
-    // Step 1: Fetch current user's profile
-    const { data: currentUserProfile, error: currentUserError } = await supabase
+    // Step 1: Check if either user already has a partner
+    const { data: profiles, error: profilesError } = await supabase
       .from('user_profiles')
       .select('id, partner_id')
-      .eq('id', currentUserId)
-      .maybeSingle();
+      .in('id', [currentUserId, partnerId]);
       
-    if (currentUserError) {
-      console.error('Error fetching current user profile:', currentUserError);
-      
-      // Create profile if it doesn't exist
-      if (currentUserError.code === 'PGRST116') { // No results found error
-        console.log('Creating profile for current user before proceeding');
-        const { error: createError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: currentUserId,
-            is_onboarding_complete: false, 
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-          
-        if (createError && createError.code !== '23505') {
-          console.error('Error creating current user profile:', createError);
-          return { error: new Error('Could not create your profile. Please try again.') };
-        }
-      } else {
-        return { error: new Error('Error verifying your profile. Please refresh and try again.') };
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+      return { error: new Error('Error verifying profiles. Please try again.') };
+    }
+    
+    // Find current user and partner profiles
+    const currentUserProfile = profiles?.find(p => p.id === currentUserId);
+    const partnerProfile = profiles?.find(p => p.id === partnerId);
+    
+    // Create profiles if they don't exist
+    if (!currentUserProfile) {
+      console.log('Creating profile for current user');
+      const { error: createError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: currentUserId,
+          is_onboarding_complete: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+      if (createError && createError.code !== '23505') { // Ignore duplicate key error
+        console.error('Error creating current user profile:', createError);
+        return { error: new Error('Could not create your profile. Please try again.') };
       }
-    } else if (currentUserProfile?.partner_id) {
-      // Check if the current user already has a partner
-      console.error('Current user already has a partner:', currentUserProfile.partner_id);
+    } else if (currentUserProfile.partner_id) {
+      // Check if already connected to this specific partner (idempotent operation)
+      if (currentUserProfile.partner_id === partnerId) {
+        console.log('Users are already connected to each other');
+        return { error: null }; // This is not an error, they're already connected
+      }
+      
+      console.error('Current user already has a different partner:', currentUserProfile.partner_id);
       return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }
     
-    // Step 2: Fetch inviter's profile
-    const { data: inviterProfile, error: inviterError } = await supabase
-      .from('user_profiles')
-      .select('id, partner_id')
-      .eq('id', partnerId)
-      .maybeSingle();
-      
-    if (inviterError) {
-      console.error('Error fetching inviter profile:', inviterError);
-      
-      // Create inviter profile if it doesn't exist
-      if (inviterError.code === 'PGRST116') { // No results found error
-        console.log('Creating profile for inviter before proceeding');
-        const { error: createError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: partnerId,
-            is_onboarding_complete: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-          
-        if (createError && createError.code !== '23505') {
-          console.error('Error creating inviter profile:', createError);
-          return { error: new Error('Could not create inviter profile. Please try again.') };
-        }
-      } else {
-        return { error: new Error('Error verifying inviter profile. Please try again.') };
+    if (!partnerProfile) {
+      console.log('Creating profile for partner');
+      const { error: createError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: partnerId,
+          is_onboarding_complete: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+      if (createError && createError.code !== '23505') { // Ignore duplicate key error
+        console.error('Error creating partner profile:', createError);
+        return { error: new Error('Could not create partner profile. Please try again.') };
       }
-    } else if (inviterProfile?.partner_id) {
-      // Check if the inviter already has a partner
-      console.error('Inviter already has a partner:', inviterProfile.partner_id);
+    } else if (partnerProfile.partner_id) {
+      // Check if already connected to this specific user (idempotent operation)
+      if (partnerProfile.partner_id === currentUserId) {
+        console.log('Users are already connected to each other');
+        return { error: null }; // This is not an error, they're already connected
+      }
+      
+      console.error('Partner already has a different partner:', partnerProfile.partner_id);
       return { error: new Error('The inviter already has a partner.') };
     }
     
     console.log('Starting partner linking process...');
     
-    // Step 3: Link the inviter to the current user (critical: only update inviter's own record)
+    // Step 2: Create a transaction to link both users
+    // First, link the inviter to the current user
     const { error: updateInviterError } = await supabase
       .from('user_profiles')
       .update({ partner_id: currentUserId })
@@ -173,12 +172,12 @@ async function handlePartnerConnection(
       
     if (updateInviterError) {
       console.error('Error linking inviter to current user:', updateInviterError);
-      throw updateInviterError;
+      return { error: new Error('Failed to update inviter\'s profile. Please try again.') };
     }
     
     console.log('Linked inviter to current user');
     
-    // Step 4: Link the current user to the inviter (critical: only update current user's own record)
+    // Then, link the current user to the inviter
     const { error: updateCurrentUserError } = await supabase
       .from('user_profiles')
       .update({ partner_id: partnerId })
@@ -186,7 +185,18 @@ async function handlePartnerConnection(
       
     if (updateCurrentUserError) {
       console.error('Error linking current user to inviter:', updateCurrentUserError);
-      throw updateCurrentUserError;
+      
+      // If we failed to link the current user, we need to rollback the inviter update
+      const { error: rollbackError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: null })
+        .eq('id', partnerId);
+        
+      if (rollbackError) {
+        console.error('Error rolling back inviter update:', rollbackError);
+      }
+      
+      return { error: new Error('Failed to update your profile. Please try again.') };
     }
     
     console.log('Linked current user to inviter. Connection complete!');
@@ -204,10 +214,45 @@ async function handlePartnerConnection(
       }
     }
     
+    // Clear any unaccepted invitations from both users to prevent confusion
+    await cleanupUnacceptedInvitations(currentUserId);
+    await cleanupUnacceptedInvitations(partnerId);
+    
     return { error: null };
   } catch (error) {
     console.error('Error in handlePartnerConnection:', error);
     return { error };
+  }
+}
+
+/**
+ * Clean up unaccepted invitations for a user
+ */
+async function cleanupUnacceptedInvitations(userId: string): Promise<void> {
+  try {
+    // Clear partner_invites
+    const { error: inviteError } = await supabase
+      .from('partner_invites')
+      .delete()
+      .eq('inviter_id', userId)
+      .eq('is_accepted', false);
+      
+    if (inviteError) {
+      console.error('Error cleaning up invitations for user:', inviteError);
+    }
+    
+    // Clear partner_codes
+    const { error: codeError } = await supabase
+      .from('partner_codes')
+      .delete()
+      .eq('inviter_id', userId)
+      .eq('is_used', false);
+      
+    if (codeError) {
+      console.error('Error cleaning up partner codes for user:', codeError);
+    }
+  } catch (error) {
+    console.error('Error cleaning up unaccepted invitations:', error);
   }
 }
 

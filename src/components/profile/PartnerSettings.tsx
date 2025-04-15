@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -31,9 +30,6 @@ const PartnerSettings = () => {
   React.useEffect(() => {
     if (profile?.partner_id) {
       fetchPartnerProfile(profile.partner_id);
-    } else {
-      // Clear partner profile if no longer connected
-      setPartnerProfile(null);
     }
   }, [profile?.partner_id]);
   
@@ -63,35 +59,6 @@ const PartnerSettings = () => {
       
       if (!data) {
         setFetchError("Partner profile not found.");
-        return;
-      }
-      
-      // Check partner connection status to ensure synchronization
-      if (data.partner_id !== user?.id) {
-        console.log("Partner connection is out of sync. Partner doesn't have you set as their partner.");
-        setFetchError("Partner connection is out of sync. Please reconnect or contact support.");
-        
-        // Optional: Attempt to fix the synchronization issue
-        if (user?.id && profile?.partner_id) {
-          try {
-            // Attempt to automatically fix the connection
-            const { error: updateError } = await supabase
-              .from('user_profiles')
-              .update({ partner_id: user.id })
-              .eq('id', profile.partner_id);
-              
-            if (!updateError) {
-              console.log("Successfully synchronized partner connection");
-              // Refetch to confirm the update
-              fetchPartnerProfile(profile.partner_id);
-              return;
-            } else {
-              console.error("Error fixing partner connection:", updateError);
-            }
-          } catch (syncError) {
-            console.error("Error during connection sync attempt:", syncError);
-          }
-        }
         return;
       }
       

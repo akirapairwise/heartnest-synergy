@@ -1,13 +1,13 @@
-
 import React, { useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, ArrowRight, Loader2, UserIcon } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2, Link, User } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { acceptInvitation } from '@/services/partners/partnershipService';
+import { getInvitationByToken } from '@/services/partnerInviteService';
 import { formatToken } from '@/hooks/partner-invites/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,16 +21,7 @@ const CodeInputForm = () => {
   const [isValidating, setIsValidating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { user, fetchUserProfile, profile } = useAuth();
-  
-  // Check if user already has a partner
-  React.useEffect(() => {
-    if (profile?.partner_id) {
-      setError("You are already connected with a partner. Please disconnect first.");
-    } else {
-      setError(null);
-    }
-  }, [profile?.partner_id]);
+  const { user, fetchUserProfile } = useAuth();
   
   const validateCode = async (inputCode: string) => {
     // Clean the code (remove spaces, uppercase)
@@ -54,25 +45,6 @@ const CodeInputForm = () => {
       
       if (partnerCodeData) {
         console.log('Found valid partner code:', partnerCodeData);
-        
-        // Check if user is trying to connect to themselves
-        if (partnerCodeData.inviter_id === user?.id) {
-          return { valid: false, error: 'You cannot connect with yourself' };
-        }
-        
-        // Check if the inviter already has a partner
-        const { data: inviterProfile, error: inviterProfileError } = await supabase
-          .from('user_profiles')
-          .select('partner_id')
-          .eq('id', partnerCodeData.inviter_id)
-          .single();
-          
-        if (inviterProfileError) {
-          console.error('Error checking inviter profile:', inviterProfileError);
-        } else if (inviterProfile?.partner_id && inviterProfile.partner_id !== user?.id) {
-          return { valid: false, error: 'The inviter is already connected with another partner' };
-        }
-        
         return { valid: true, error: null };
       }
       
@@ -89,25 +61,6 @@ const CodeInputForm = () => {
       
       if (inviteData) {
         console.log('Found valid partner invite:', inviteData);
-        
-        // Check if user is trying to connect to themselves
-        if (inviteData.inviter_id === user?.id) {
-          return { valid: false, error: 'You cannot connect with yourself' };
-        }
-        
-        // Check if the inviter already has a partner
-        const { data: inviterProfile, error: inviterProfileError } = await supabase
-          .from('user_profiles')
-          .select('partner_id')
-          .eq('id', inviteData.inviter_id)
-          .single();
-          
-        if (inviterProfileError) {
-          console.error('Error checking inviter profile:', inviterProfileError);
-        } else if (inviterProfile?.partner_id && inviterProfile.partner_id !== user?.id) {
-          return { valid: false, error: 'The inviter is already connected with another partner' };
-        }
-        
         return { valid: true, error: null };
       }
       
@@ -132,12 +85,6 @@ const CodeInputForm = () => {
     
     if (!code) {
       setError('Please enter an invitation code');
-      return;
-    }
-    
-    // Check if user already has a partner
-    if (profile?.partner_id) {
-      setError('You already have a partner connected. Please disconnect first.');
       return;
     }
     
@@ -195,7 +142,7 @@ const CodeInputForm = () => {
       <CardHeader className="px-0 pt-0">
         <div className="flex justify-center mb-4">
           <div className="bg-love-100 text-love-600 p-4 rounded-full">
-            <UserIcon className="h-6 w-6" />
+            <User className="h-6 w-6" />
           </div>
         </div>
         <CardTitle>Enter Partner Code</CardTitle>
@@ -218,12 +165,12 @@ const CodeInputForm = () => {
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="Enter invitation code"
                 className="flex-1"
-                disabled={isSubmitting || isValidating || !!profile?.partner_id}
+                disabled={isSubmitting || isValidating}
                 autoComplete="off"
               />
               <Button 
                 type="submit" 
-                disabled={isSubmitting || isValidating || !code || !!profile?.partner_id}
+                disabled={isSubmitting || isValidating || !code}
                 className="gap-1"
               >
                 {isSubmitting || isValidating ? (

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
 import { formatToken } from "@/hooks/partner-invites/utils";
@@ -108,6 +107,58 @@ async function handlePartnerConnection(
     const currentUserProfile = profiles?.find(p => p.id === currentUserId);
     const partnerProfile = profiles?.find(p => p.id === partnerId);
     
+    // Check for existing connections
+    if (currentUserProfile?.partner_id && partnerProfile?.partner_id) {
+      // If both users already have partners
+      
+      // Check if they're already connected to each other (idempotent operation)
+      if (currentUserProfile.partner_id === partnerId && partnerProfile.partner_id === currentUserId) {
+        console.log('Users are already properly connected to each other');
+        return { error: null }; // This is not an error, they're already connected
+      }
+      
+      // Otherwise, they're connected to different partners
+      console.error('Both users already have different partners');
+      return { error: new Error('Both you and the inviter already have other partners.') };
+    }
+    
+    // Handle case where one user has a partner but it's not properly synced
+    if (currentUserProfile?.partner_id === partnerId && partnerProfile?.partner_id !== currentUserId) {
+      // Current user thinks they're connected to partner, but partner doesn't reciprocate
+      console.log('Connection is out of sync: Current user connected to partner, but not vice versa. Fixing...');
+      
+      const { error: updatePartnerError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: currentUserId })
+        .eq('id', partnerId);
+        
+      if (updatePartnerError) {
+        console.error('Error fixing partner sync:', updatePartnerError);
+        return { error: new Error('Could not synchronize connection with partner') };
+      }
+      
+      console.log('Successfully synchronized connection!');
+      return { error: null };
+    }
+    
+    if (partnerProfile?.partner_id === currentUserId && currentUserProfile?.partner_id !== partnerId) {
+      // Partner thinks they're connected to current user, but current user doesn't reciprocate
+      console.log('Connection is out of sync: Partner connected to current user, but not vice versa. Fixing...');
+      
+      const { error: updateUserError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: partnerId })
+        .eq('id', currentUserId);
+        
+      if (updateUserError) {
+        console.error('Error fixing user sync:', updateUserError);
+        return { error: new Error('Could not synchronize connection with partner') };
+      }
+      
+      console.log('Successfully synchronized connection!');
+      return { error: null };
+    }
+    
     // Create profiles if they don't exist
     if (!currentUserProfile) {
       console.log('Creating profile for current user');
@@ -124,13 +175,7 @@ async function handlePartnerConnection(
         console.error('Error creating current user profile:', createError);
         return { error: new Error('Could not create your profile. Please try again.') };
       }
-    } else if (currentUserProfile.partner_id) {
-      // Check if already connected to this specific partner (idempotent operation)
-      if (currentUserProfile.partner_id === partnerId) {
-        console.log('Users are already connected to each other');
-        return { error: null }; // This is not an error, they're already connected
-      }
-      
+    } else if (currentUserProfile.partner_id && currentUserProfile.partner_id !== partnerId) {
       console.error('Current user already has a different partner:', currentUserProfile.partner_id);
       return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }
@@ -150,53 +195,59 @@ async function handlePartnerConnection(
         console.error('Error creating partner profile:', createError);
         return { error: new Error('Could not create partner profile. Please try again.') };
       }
-    } else if (partnerProfile.partner_id) {
-      // Check if already connected to this specific user (idempotent operation)
-      if (partnerProfile.partner_id === currentUserId) {
-        console.log('Users are already connected to each other');
-        return { error: null }; // This is not an error, they're already connected
-      }
-      
+    } else if (partnerProfile.partner_id && partnerProfile.partner_id !== currentUserId) {
       console.error('Partner already has a different partner:', partnerProfile.partner_id);
       return { error: new Error('The inviter already has a partner.') };
     }
     
     console.log('Starting partner linking process...');
     
-    // Step 2: Create a transaction to link both users
-    // First, link the inviter to the current user
-    const { error: updateInviterError } = await supabase
-      .from('user_profiles')
-      .update({ partner_id: currentUserId })
-      .eq('id', partnerId);
-      
-    if (updateInviterError) {
-      console.error('Error linking inviter to current user:', updateInviterError);
-      return { error: new Error('Failed to update inviter\'s profile. Please try again.') };
-    }
+    // Atomically link both users as partners in a transaction
+    const { error: transactionError } = await supabase.rpc('link_partners', {
+      user_id_1: currentUserId,
+      user_id_2: partnerId
+    });
     
-    console.log('Linked inviter to current user');
-    
-    // Then, link the current user to the inviter
-    const { error: updateCurrentUserError } = await supabase
-      .from('user_profiles')
-      .update({ partner_id: partnerId })
-      .eq('id', currentUserId);
+    if (transactionError) {
+      console.error('Error in link_partners transaction:', transactionError);
       
-    if (updateCurrentUserError) {
-      console.error('Error linking current user to inviter:', updateCurrentUserError);
-      
-      // If we failed to link the current user, we need to rollback the inviter update
-      const { error: rollbackError } = await supabase
+      // Fall back to individual updates if the transaction RPC isn't available
+      // First, link the inviter to the current user
+      const { error: updateInviterError } = await supabase
         .from('user_profiles')
-        .update({ partner_id: null })
+        .update({ partner_id: currentUserId })
         .eq('id', partnerId);
         
-      if (rollbackError) {
-        console.error('Error rolling back inviter update:', rollbackError);
+      if (updateInviterError) {
+        console.error('Error linking inviter to current user:', updateInviterError);
+        return { error: new Error('Failed to update inviter\'s profile. Please try again.') };
       }
       
-      return { error: new Error('Failed to update your profile. Please try again.') };
+      console.log('Linked inviter to current user');
+      
+      // Then, link the current user to the inviter
+      const { error: updateCurrentUserError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: partnerId })
+        .eq('id', currentUserId);
+        
+      if (updateCurrentUserError) {
+        console.error('Error linking current user to inviter:', updateCurrentUserError);
+        
+        // If we failed to link the current user, we need to rollback the inviter update
+        const { error: rollbackError } = await supabase
+          .from('user_profiles')
+          .update({ partner_id: null })
+          .eq('id', partnerId);
+          
+        if (rollbackError) {
+          console.error('Error rolling back inviter update:', rollbackError);
+        }
+        
+        return { error: new Error('Failed to update your profile. Please try again.') };
+      }
+    } else {
+      console.log('Successfully linked partners using transaction!');
     }
     
     console.log('Linked current user to inviter. Connection complete!');
@@ -218,10 +269,80 @@ async function handlePartnerConnection(
     await cleanupUnacceptedInvitations(currentUserId);
     await cleanupUnacceptedInvitations(partnerId);
     
+    // Verify that both users are properly connected after the operation
+    await verifyPartnerConnection(currentUserId, partnerId);
+    
     return { error: null };
   } catch (error) {
     console.error('Error in handlePartnerConnection:', error);
     return { error };
+  }
+}
+
+/**
+ * Verify that partners are properly connected to each other
+ */
+async function verifyPartnerConnection(userId1: string, userId2: string): Promise<boolean> {
+  try {
+    const { data: profiles, error } = await supabase
+      .from('user_profiles')
+      .select('id, partner_id')
+      .in('id', [userId1, userId2]);
+      
+    if (error) {
+      console.error('Error verifying partner connection:', error);
+      return false;
+    }
+    
+    const user1Profile = profiles?.find(p => p.id === userId1);
+    const user2Profile = profiles?.find(p => p.id === userId2);
+    
+    if (!user1Profile || !user2Profile) {
+      console.error('Could not find one or both profiles');
+      return false;
+    }
+    
+    // Check if connection is properly established both ways
+    const isUser1ConnectedToUser2 = user1Profile.partner_id === userId2;
+    const isUser2ConnectedToUser1 = user2Profile.partner_id === userId1;
+    
+    if (!isUser1ConnectedToUser2 || !isUser2ConnectedToUser1) {
+      console.error('Partner connection is not properly synced after operation', {
+        user1: { id: userId1, connectedTo: user1Profile.partner_id },
+        user2: { id: userId2, connectedTo: user2Profile.partner_id }
+      });
+      
+      // Attempt to fix the connection if it's not synced
+      if (!isUser1ConnectedToUser2) {
+        const { error: updateUser1Error } = await supabase
+          .from('user_profiles')
+          .update({ partner_id: userId2 })
+          .eq('id', userId1);
+          
+        if (updateUser1Error) {
+          console.error('Error fixing user1 connection:', updateUser1Error);
+        }
+      }
+      
+      if (!isUser2ConnectedToUser1) {
+        const { error: updateUser2Error } = await supabase
+          .from('user_profiles')
+          .update({ partner_id: userId1 })
+          .eq('id', userId2);
+          
+        if (updateUser2Error) {
+          console.error('Error fixing user2 connection:', updateUser2Error);
+        }
+      }
+      
+      return false;
+    }
+    
+    console.log('Partner connection verified successfully!');
+    return true;
+  } catch (error) {
+    console.error('Error in verifyPartnerConnection:', error);
+    return false;
   }
 }
 
@@ -358,27 +479,44 @@ export const unlinkPartner = async (userId: string, partnerId: string | null): P
       return { error: null }; // Partner already disconnected
     }
     
-    // 3. Unlink the current user - critical: only update current user's own record
-    const { error: unlinkUserError } = await supabase
-      .from('user_profiles')
-      .update({ partner_id: null })
-      .eq('id', userId);
+    // Try to use an atomic transaction to unlink both users
+    const { error: transactionError } = await supabase.rpc('unlink_partners', {
+      user_id_1: userId,
+      user_id_2: partnerId
+    });
+    
+    if (transactionError) {
+      console.error('Error in unlink_partners transaction:', transactionError);
       
-    if (unlinkUserError) {
-      console.error('Error unlinking user:', unlinkUserError);
-      throw unlinkUserError;
+      // Fall back to individual updates if the transaction RPC isn't available
+      // 3. Unlink the current user - critical: only update current user's own record
+      const { error: unlinkUserError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: null })
+        .eq('id', userId);
+        
+      if (unlinkUserError) {
+        console.error('Error unlinking user:', unlinkUserError);
+        throw unlinkUserError;
+      }
+      
+      // 4. Unlink the partner - critical: only update partner's own record
+      const { error: unlinkPartnerError } = await supabase
+        .from('user_profiles')
+        .update({ partner_id: null })
+        .eq('id', partnerId);
+        
+      if (unlinkPartnerError) {
+        console.error('Error unlinking partner:', unlinkPartnerError);
+        throw unlinkPartnerError;
+      }
+    } else {
+      console.log('Successfully unlinked partners using transaction!');
     }
     
-    // 4. Unlink the partner - critical: only update partner's own record
-    const { error: unlinkPartnerError } = await supabase
-      .from('user_profiles')
-      .update({ partner_id: null })
-      .eq('id', partnerId);
-      
-    if (unlinkPartnerError) {
-      console.error('Error unlinking partner:', unlinkPartnerError);
-      throw unlinkPartnerError;
-    }
+    // Clean up any unused codes or invitations
+    await cleanupUnacceptedInvitations(userId);
+    await cleanupUnacceptedInvitations(partnerId);
     
     console.log('Partner connection successfully broken');
     

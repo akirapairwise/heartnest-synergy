@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, ArrowRight, Loader2, User } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2, UserIcon } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { acceptInvitation } from '@/services/partners/partnershipService';
@@ -194,7 +195,7 @@ const CodeInputForm = () => {
       <CardHeader className="px-0 pt-0">
         <div className="flex justify-center mb-4">
           <div className="bg-love-100 text-love-600 p-4 rounded-full">
-            <User className="h-6 w-6" />
+            <UserIcon className="h-6 w-6" />
           </div>
         </div>
         <CardTitle>Enter Partner Code</CardTitle>

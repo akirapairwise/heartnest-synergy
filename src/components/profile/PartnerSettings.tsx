@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -6,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { unlinkPartner } from '@/services/partners/partnershipService';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -81,31 +81,14 @@ const PartnerSettings = () => {
     setIsUnlinking(true);
     try {
       console.log("Starting partner unlinking process...");
-      // Update both user profiles to remove partner connection
+      
+      // Use the improved unlinkPartner function from partnershipService
       const partnerId = profile.partner_id;
+      const { error } = await unlinkPartner(user.id, partnerId);
       
-      // Update current user profile
-      console.log("Updating current user profile...");
-      const { error: updateUserError } = await supabase
-        .from('user_profiles')
-        .update({ partner_id: null })
-        .eq('id', user.id);
-        
-      if (updateUserError) {
-        console.error("Error updating current user profile:", updateUserError);
-        throw updateUserError;
-      }
-      
-      // Update partner profile
-      console.log("Updating partner profile...");
-      const { error: updatePartnerError } = await supabase
-        .from('user_profiles')
-        .update({ partner_id: null })
-        .eq('id', partnerId);
-        
-      if (updatePartnerError) {
-        console.error("Error updating partner profile:", updatePartnerError);
-        throw updatePartnerError;
+      if (error) {
+        console.error("Error unlinking partner:", error);
+        throw error;
       }
       
       // Close dialog and show success message

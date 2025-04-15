@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, CalendarHeart, Gift, UserX, Loader2, UserPlus, AlertCircle } from "lucide-react";
+import { MessageSquare, CalendarHeart, Gift, UserX, Loader2, UserPlus, AlertCircle, RefreshCw } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { unlinkPartner } from '@/services/partners/partnershipService';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,31 +84,14 @@ const PartnerCard = () => {
     setIsUnlinking(true);
     try {
       console.log("Starting partner unlinking process...");
-      // Update both user profiles to remove partner connection
+      
+      // Use the improved unlinkPartner function from partnershipService
       const partnerId = profile.partner_id;
+      const { error } = await unlinkPartner(user.id, partnerId);
       
-      // Update current user profile
-      console.log("Updating current user profile...");
-      const { error: updateUserError } = await supabase
-        .from('user_profiles')
-        .update({ partner_id: null })
-        .eq('id', user.id);
-        
-      if (updateUserError) {
-        console.error("Error updating current user profile:", updateUserError);
-        throw updateUserError;
-      }
-      
-      // Update partner profile
-      console.log("Updating partner profile...");
-      const { error: updatePartnerError } = await supabase
-        .from('user_profiles')
-        .update({ partner_id: null })
-        .eq('id', partnerId);
-        
-      if (updatePartnerError) {
-        console.error("Error updating partner profile:", updatePartnerError);
-        throw updatePartnerError;
+      if (error) {
+        console.error("Error unlinking partner:", error);
+        throw error;
       }
       
       // Close dialog and show success message

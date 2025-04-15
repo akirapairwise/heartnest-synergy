@@ -202,52 +202,40 @@ async function handlePartnerConnection(
     
     console.log('Starting partner linking process...');
     
-    // Atomically link both users as partners in a transaction
-    const { error: transactionError } = await supabase.rpc('link_partners', {
-      user_id_1: currentUserId,
-      user_id_2: partnerId
-    });
-    
-    if (transactionError) {
-      console.error('Error in link_partners transaction:', transactionError);
+    // Instead of using the RPC function, we'll perform the updates manually in a transaction-like approach
+    // First, link the inviter to the current user
+    const { error: updateInviterError } = await supabase
+      .from('user_profiles')
+      .update({ partner_id: currentUserId })
+      .eq('id', partnerId);
       
-      // Fall back to individual updates if the transaction RPC isn't available
-      // First, link the inviter to the current user
-      const { error: updateInviterError } = await supabase
+    if (updateInviterError) {
+      console.error('Error linking inviter to current user:', updateInviterError);
+      return { error: new Error('Failed to update inviter\'s profile. Please try again.') };
+    }
+    
+    console.log('Linked inviter to current user');
+    
+    // Then, link the current user to the inviter
+    const { error: updateCurrentUserError } = await supabase
+      .from('user_profiles')
+      .update({ partner_id: partnerId })
+      .eq('id', currentUserId);
+      
+    if (updateCurrentUserError) {
+      console.error('Error linking current user to inviter:', updateCurrentUserError);
+      
+      // If we failed to link the current user, we need to rollback the inviter update
+      const { error: rollbackError } = await supabase
         .from('user_profiles')
-        .update({ partner_id: currentUserId })
+        .update({ partner_id: null })
         .eq('id', partnerId);
         
-      if (updateInviterError) {
-        console.error('Error linking inviter to current user:', updateInviterError);
-        return { error: new Error('Failed to update inviter\'s profile. Please try again.') };
+      if (rollbackError) {
+        console.error('Error rolling back inviter update:', rollbackError);
       }
       
-      console.log('Linked inviter to current user');
-      
-      // Then, link the current user to the inviter
-      const { error: updateCurrentUserError } = await supabase
-        .from('user_profiles')
-        .update({ partner_id: partnerId })
-        .eq('id', currentUserId);
-        
-      if (updateCurrentUserError) {
-        console.error('Error linking current user to inviter:', updateCurrentUserError);
-        
-        // If we failed to link the current user, we need to rollback the inviter update
-        const { error: rollbackError } = await supabase
-          .from('user_profiles')
-          .update({ partner_id: null })
-          .eq('id', partnerId);
-          
-        if (rollbackError) {
-          console.error('Error rolling back inviter update:', rollbackError);
-        }
-        
-        return { error: new Error('Failed to update your profile. Please try again.') };
-      }
-    } else {
-      console.log('Successfully linked partners using transaction!');
+      return { error: new Error('Failed to update your profile. Please try again.') };
     }
     
     console.log('Linked current user to inviter. Connection complete!');
@@ -479,39 +467,27 @@ export const unlinkPartner = async (userId: string, partnerId: string | null): P
       return { error: null }; // Partner already disconnected
     }
     
-    // Try to use an atomic transaction to unlink both users
-    const { error: transactionError } = await supabase.rpc('unlink_partners', {
-      user_id_1: userId,
-      user_id_2: partnerId
-    });
+    // Instead of using the RPC function, unlink both partners manually
+    // 3. Unlink the current user
+    const { error: unlinkUserError } = await supabase
+      .from('user_profiles')
+      .update({ partner_id: null })
+      .eq('id', userId);
+      
+    if (unlinkUserError) {
+      console.error('Error unlinking user:', unlinkUserError);
+      throw unlinkUserError;
+    }
     
-    if (transactionError) {
-      console.error('Error in unlink_partners transaction:', transactionError);
+    // 4. Unlink the partner
+    const { error: unlinkPartnerError } = await supabase
+      .from('user_profiles')
+      .update({ partner_id: null })
+      .eq('id', partnerId);
       
-      // Fall back to individual updates if the transaction RPC isn't available
-      // 3. Unlink the current user - critical: only update current user's own record
-      const { error: unlinkUserError } = await supabase
-        .from('user_profiles')
-        .update({ partner_id: null })
-        .eq('id', userId);
-        
-      if (unlinkUserError) {
-        console.error('Error unlinking user:', unlinkUserError);
-        throw unlinkUserError;
-      }
-      
-      // 4. Unlink the partner - critical: only update partner's own record
-      const { error: unlinkPartnerError } = await supabase
-        .from('user_profiles')
-        .update({ partner_id: null })
-        .eq('id', partnerId);
-        
-      if (unlinkPartnerError) {
-        console.error('Error unlinking partner:', unlinkPartnerError);
-        throw unlinkPartnerError;
-      }
-    } else {
-      console.log('Successfully unlinked partners using transaction!');
+    if (unlinkPartnerError) {
+      console.error('Error unlinking partner:', unlinkPartnerError);
+      throw unlinkPartnerError;
     }
     
     // Clean up any unused codes or invitations

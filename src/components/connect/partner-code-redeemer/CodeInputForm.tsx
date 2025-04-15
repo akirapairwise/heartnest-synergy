@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -41,8 +40,7 @@ const CodeInputForm = () => {
         .select('*')
         .eq('code', formattedCode)
         .eq('is_used', false)
-        .filter('expires_at', 'is', null)
-        .or('expires_at.gt.now()')
+        .or('expires_at.is.null,expires_at.gt.now()')
         .maybeSingle();
       
       if (partnerCodeData) {
@@ -50,18 +48,27 @@ const CodeInputForm = () => {
         return { valid: true, error: null };
       }
       
-      // If not found in partner_codes, try the partner_invites table
-      const { data, error } = await getInvitationByToken(formattedCode);
+      console.log('No partner code found, checking partner_invites table...');
       
-      if (error || !data) {
-        console.error('Error validating code:', error);
-        return { 
-          valid: false, 
-          error: error?.message || 'Invalid invitation code. It may be expired or already used.' 
-        };
+      // If not found in partner_codes, try the partner_invites table
+      const { data: inviteData, error: inviteError } = await supabase
+        .from('partner_invites')
+        .select('*')
+        .eq('token', formattedCode)
+        .eq('is_accepted', false)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+      
+      if (inviteData) {
+        console.log('Found valid partner invite:', inviteData);
+        return { valid: true, error: null };
       }
       
-      return { valid: true, error: null };
+      console.log('No valid partner code or invite found');
+      return { 
+        valid: false, 
+        error: 'Invalid invitation code. It may be expired or already used.' 
+      };
     } catch (err) {
       console.error('Error validating invite code:', err);
       return { valid: false, error: 'Failed to validate code. Please try again.' };
@@ -129,7 +136,7 @@ const CodeInputForm = () => {
   const handleSkip = () => {
     navigate('/dashboard');
   };
-  
+
   return (
     <Card className="w-full border-0 bg-transparent shadow-none">
       <CardHeader className="px-0 pt-0">

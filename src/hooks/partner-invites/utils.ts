@@ -1,26 +1,30 @@
 
-// Helper function to generate a token
-export const generateToken = (): string => {
-  // Generate a 6-character token (letters and numbers)
-  return Array.from(
-    { length: 6 }, 
-    () => {
-      // Only use easy-to-read characters (no 0/O, 1/I confusion)
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      return chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-  ).join('');
-};
-
-// Helper function to generate the invite URL
-export const generateInviteUrl = (token: string): string => {
-  // Always ensure uppercase token in URL
-  const formattedToken = formatToken(token);
-  return `${window.location.origin}/invite?token=${formattedToken}`;
-};
-
-// Helper function to format token consistently
+/**
+ * Formats a token to be uppercase and remove any spaces
+ */
 export const formatToken = (token: string): string => {
-  // Remove spaces and ensure uppercase
-  return token.trim().toUpperCase();
+  if (!token) return '';
+  // Remove spaces, hyphens and convert to uppercase
+  return token.replace(/[\s-]/g, '').toUpperCase();
+};
+
+/**
+ * Generates a random token
+ */
+export const generateToken = (): string => {
+  // Generate a cryptographically secure random token
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
+/**
+ * Generate an invite URL with the token
+ */
+export const generateInviteUrl = (token: string): string => {
+  const baseUrl = window.location.origin;
+  return `${baseUrl}/invite?token=${token}`;
 };

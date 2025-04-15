@@ -87,6 +87,11 @@ export const generatePartnerCode = async (): Promise<CodeResult> => {
       throw new Error('Could not create or retrieve user profile');
     }
     
+    // Check if user has a partner
+    if (profile.partner_id) {
+      throw new Error('You already have a partner connected');
+    }
+    
     // Delete existing unused codes
     await supabase
       .from('partner_codes')
@@ -100,15 +105,24 @@ export const generatePartnerCode = async (): Promise<CodeResult> => {
       
     if (rpcError) throw rpcError;
     
+    // Calculate expiration date (48 hours from now)
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 48);
+    
     // Insert the new code
     const { error: insertError } = await supabase
       .from('partner_codes')
       .insert({
         code: generatedCode as string,
-        inviter_id: userId
-      } as unknown as PartnerCode);
+        inviter_id: userId,
+        is_used: false,
+        created_at: new Date().toISOString(),
+        expires_at: expiresAt.toISOString()
+      });
       
     if (insertError) throw insertError;
+    
+    console.log('Successfully generated partner code:', generatedCode);
     
     return { code: generatedCode as string, error: null };
     
@@ -150,11 +164,13 @@ export const getActivePartnerCode = async (): Promise<CodeResult> => {
       throw error;
     }
     
-    const partnerCode = data as unknown as PartnerCode;
+    console.log('Found active partner code:', data);
+    
+    // Return the code if found
     return { 
-      code: partnerCode?.code || null, 
+      code: data?.code || null, 
       error: null,
-      inviterId: partnerCode?.inviter_id || null 
+      inviterId: data?.inviter_id || null 
     };
     
   } catch (error) {

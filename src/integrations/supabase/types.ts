@@ -457,6 +457,14 @@ export type Database = {
           updated_at: string
         }[]
       }
+      link_partners: {
+        Args: { user_id_1: string; user_id_2: string }
+        Returns: undefined
+      }
+      unlink_partners: {
+        Args: { user_id_1: string; user_id_2: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

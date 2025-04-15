@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "./types";
 import { formatToken } from "@/hooks/partner-invites/utils";
@@ -202,7 +203,7 @@ async function handlePartnerConnection(
     
     console.log('Starting partner linking process...');
     
-    // Instead of using the RPC function, we'll perform the updates manually in a transaction-like approach
+    // Instead of using the RPC function, we'll perform the updates directly using the database functions
     // First, link the inviter to the current user
     const { error: updateInviterError } = await supabase
       .from('user_profiles')
@@ -467,7 +468,7 @@ export const unlinkPartner = async (userId: string, partnerId: string | null): P
       return { error: null }; // Partner already disconnected
     }
     
-    // Instead of using the RPC function, unlink both partners manually
+    // Instead of using the RPC function, unlink both partners directly
     // 3. Unlink the current user
     const { error: unlinkUserError } = await supabase
       .from('user_profiles')

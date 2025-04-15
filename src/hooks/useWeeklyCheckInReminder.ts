@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { startOfWeek, isAfter } from 'date-fns';
+import { startOfWeek, isAfter, nextSunday, isSameWeek, addDays } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,8 +20,8 @@ export const useWeeklyCheckInReminder = () => {
       try {
         setIsLoading(true);
         
-        // Get the start of the current week (Monday)
-        const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+        // Get the start of the current week (Sunday)
+        const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
         
         // Check if a weekly check-in exists for the current week
         const { data, error } = await supabase
@@ -38,18 +38,29 @@ export const useWeeklyCheckInReminder = () => {
         }
         
         // If no data or empty array, user hasn't checked in this week
-        setShowReminder(data.length === 0);
+        const hasCheckedInThisWeek = data.length > 0;
         
         // Get the last reminder shown timestamp from localStorage
         const lastReminderShown = localStorage.getItem('lastCheckInReminderShown');
         
+        // By default, show the reminder if they haven't checked in this week
+        let shouldShowReminder = !hasCheckedInThisWeek;
+        
         // If we have shown a reminder this week already, don't show again
-        if (lastReminderShown) {
+        if (shouldShowReminder && lastReminderShown) {
           const lastReminderDate = new Date(lastReminderShown);
-          if (isAfter(lastReminderDate, currentWeekStart)) {
-            setShowReminder(false);
+          
+          // Check if the last reminder was shown in this week
+          // If it was shown this week, don't show again
+          if (isSameWeek(lastReminderDate, new Date(), { weekStartsOn: 0 })) {
+            shouldShowReminder = false;
           }
         }
+        
+        // If they checked in in a previous week (not this one),
+        // and the last reminder is from a previous week,
+        // then we should show the reminder
+        setShowReminder(shouldShowReminder);
       } catch (error) {
         console.error('Error in check-in reminder:', error);
       } finally {

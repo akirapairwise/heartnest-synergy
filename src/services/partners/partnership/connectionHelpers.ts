@@ -11,9 +11,22 @@ export async function handlePartnerConnection(
   code?: string
 ): Promise<OperationResult> {
   try {
-    // Step 1: Ensure profiles exist for both users
-    await ensureProfileExists(currentUserId);
-    await ensureProfileExists(partnerId);
+    console.log(`Starting partner connection between user ${currentUserId} and partner ${partnerId}`);
+    
+    // Step 1: Ensure profiles exist for both users with better error handling
+    const currentUserProfileExists = await ensureProfileExists(currentUserId);
+    if (!currentUserProfileExists) {
+      console.error(`Failed to ensure profile exists for current user: ${currentUserId}`);
+      return { error: new Error('Could not create or verify your profile. Please try again.') };
+    }
+    
+    const partnerProfileExists = await ensureProfileExists(partnerId);
+    if (!partnerProfileExists) {
+      console.error(`Failed to ensure profile exists for partner: ${partnerId}`);
+      return { error: new Error('Could not create partner profile. Please try again.') };
+    }
+    
+    console.log('Successfully ensured both profiles exist');
 
     // Step 2: Check if either user already has a partner
     const { data: profiles, error: profilesError } = await supabase
@@ -29,6 +42,17 @@ export async function handlePartnerConnection(
     // Find current user and partner profiles
     const currentUserProfile = profiles?.find(p => p.id === currentUserId);
     const partnerProfile = profiles?.find(p => p.id === partnerId);
+    
+    // Double-check profiles are found
+    if (!currentUserProfile) {
+      console.error('Current user profile not found in query results');
+      return { error: new Error('Your profile could not be verified. Please try again.') };
+    }
+    
+    if (!partnerProfile) {
+      console.error('Partner profile not found in query results');
+      return { error: new Error('Partner profile could not be verified. Please try again.') };
+    }
     
     // Check for existing partners
     if (currentUserProfile?.partner_id) {
@@ -119,6 +143,7 @@ export async function handlePartnerConnection(
 
 /**
  * Ensures a user profile exists, creating one if it doesn't
+ * Enhanced with better error handling and retries
  */
 export async function ensureProfileExists(userId: string): Promise<boolean> {
   try {
@@ -133,37 +158,57 @@ export async function ensureProfileExists(userId: string): Promise<boolean> {
       
     if (!profileError && profile) {
       // Profile exists
+      console.log(`Profile already exists for user: ${userId}`);
       return true;
     }
     
     // If profile doesn't exist, create one
-    if (profileError && profileError.code === 'PGRST116') {
-      console.log(`Creating profile for user ${userId}...`);
-      const { error: createError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: userId,
-          is_onboarding_complete: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        
-      if (createError) {
-        // Check for duplicate key error (which means profile was created concurrently)
-        if (createError.code === '23505') {
-          console.log('Profile already exists (concurrent creation)');
-          return true;
-        }
-        
-        console.error('Error creating profile:', createError);
-        return false;
+    console.log(`Creating profile for user ${userId}...`);
+    const { error: createError } = await supabase
+      .from('user_profiles')
+      .insert({
+        id: userId,
+        is_onboarding_complete: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      
+    if (createError) {
+      // Check for duplicate key error (which means profile was created concurrently)
+      if (createError.code === '23505') {
+        console.log('Profile already exists (concurrent creation)');
+        return true;
       }
       
-      return true;
+      console.error('Error creating profile:', createError);
+      
+      // Try one more time with upsert approach
+      try {
+        console.log(`Retrying profile creation for user ${userId} with upsert...`);
+        const { error: upsertError } = await supabase
+          .from('user_profiles')
+          .upsert({
+            id: userId,
+            is_onboarding_complete: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'id' });
+          
+        if (upsertError) {
+          console.error('Error in profile upsert retry:', upsertError);
+          return false;
+        }
+        
+        console.log(`Profile created successfully on retry for user: ${userId}`);
+        return true;
+      } catch (retryError) {
+        console.error('Error in profile creation retry:', retryError);
+        return false;
+      }
     }
     
-    console.error('Unexpected error checking profile:', profileError);
-    return false;
+    console.log(`Profile created successfully for user: ${userId}`);
+    return true;
   } catch (error) {
     console.error('Error in ensureProfileExists:', error);
     return false;

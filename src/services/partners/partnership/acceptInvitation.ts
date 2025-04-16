@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "../types";
 import { formatToken } from "@/hooks/partner-invites/utils";
-import { handlePartnerConnection } from "./connectionHelpers";
+import { handlePartnerConnection, ensureProfileExists } from "./connectionHelpers";
 
 /**
  * Accepts a partner invitation and connects both users
@@ -12,6 +12,13 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
     console.log('Starting invitation acceptance process...');
     console.log('Current user ID:', currentUserId);
     console.log('Token:', formatToken(token));
+    
+    // First ensure the current user's profile exists
+    const currentUserProfileExists = await ensureProfileExists(currentUserId);
+    if (!currentUserProfileExists) {
+      console.error('Failed to ensure current user profile exists');
+      return { error: new Error('Could not create or verify your profile. Please try again.') };
+    }
     
     // Format token to be consistent
     const formattedToken = formatToken(token);
@@ -25,6 +32,11 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       .or('expires_at.is.null,expires_at.gt.now()')
       .maybeSingle();
       
+    if (partnerCodeError) {
+      console.error('Error fetching partner code:', partnerCodeError);
+      // Continue to check invites, don't return an error yet
+    }
+      
     if (partnerCode) {
       console.log('Found valid partner code:', partnerCode);
       
@@ -32,6 +44,13 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       if (partnerCode.inviter_id === currentUserId) {
         console.error('User tried to accept their own invitation');
         return { error: new Error('You cannot accept your own invitation') };
+      }
+      
+      // Ensure inviter profile exists before proceeding
+      const inviterProfileExists = await ensureProfileExists(partnerCode.inviter_id);
+      if (!inviterProfileExists) {
+        console.error('Failed to ensure inviter profile exists');
+        return { error: new Error('Could not create or verify partner profile. Please try again.') };
       }
       
       // Process the partner code connection
@@ -59,6 +78,13 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       if (invite.inviter_id === currentUserId) {
         console.error('User tried to accept their own invitation');
         return { error: new Error('You cannot accept your own invitation') };
+      }
+      
+      // Ensure inviter profile exists before proceeding
+      const inviterProfileExists = await ensureProfileExists(invite.inviter_id);
+      if (!inviterProfileExists) {
+        console.error('Failed to ensure inviter profile exists');
+        return { error: new Error('Could not create or verify partner profile. Please try again.') };
       }
       
       // Update invitation status

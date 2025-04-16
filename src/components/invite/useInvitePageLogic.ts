@@ -84,14 +84,31 @@ export const useInvitePageLogic = (token: string | null) => {
         console.log('Invitation accepted successfully');
         
         // Refresh user profile to get updated partner information
+        // Make multiple attempts if needed
         if (user && fetchUserProfile) {
-          try {
-            console.log('Refreshing user profile after connection...');
-            await fetchUserProfile(user.id);
-            console.log('Profile refreshed successfully');
-          } catch (profileError) {
-            console.error('Error refreshing user profile:', profileError);
-            // Non-critical, continue with flow
+          let profileRefreshed = false;
+          let attempts = 0;
+          const maxAttempts = 3;
+          
+          while (!profileRefreshed && attempts < maxAttempts) {
+            attempts++;
+            try {
+              console.log(`Refreshing user profile after connection (attempt ${attempts})...`);
+              await fetchUserProfile(user.id);
+              console.log('Profile refreshed successfully');
+              profileRefreshed = true;
+            } catch (profileError) {
+              console.error(`Error refreshing user profile (attempt ${attempts}):`, profileError);
+              
+              if (attempts < maxAttempts) {
+                // Wait a moment before retrying
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+            }
+          }
+          
+          if (!profileRefreshed) {
+            console.warn('Could not refresh user profile after multiple attempts');
           }
         }
         

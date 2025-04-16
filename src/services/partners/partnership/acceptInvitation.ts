@@ -80,13 +80,6 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
         return { error: new Error('The inviter already has a partner.') };
       }
       
-      // Ensure inviter profile exists before proceeding
-      const inviterProfileExists = await ensureProfileExists(partnerCode.inviter_id);
-      if (!inviterProfileExists) {
-        console.error('Failed to ensure inviter profile exists');
-        return { error: new Error('Could not create or verify partner profile. Please try again.') };
-      }
-      
       // Process the partner code connection
       console.log('Processing partner code connection...');
       return await handlePartnerConnection(currentUserId, partnerCode.inviter_id, partnerCode.code);
@@ -147,13 +140,6 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       if (inviter?.partner_id) {
         console.error('Inviter already has a partner:', inviter.partner_id);
         return { error: new Error('The inviter already has a partner.') };
-      }
-      
-      // Ensure inviter profile exists before proceeding
-      const inviterProfileExists = await ensureProfileExists(invite.inviter_id);
-      if (!inviterProfileExists) {
-        console.error('Failed to ensure inviter profile exists');
-        return { error: new Error('Could not create or verify partner profile. Please try again.') };
       }
       
       // Update invitation status

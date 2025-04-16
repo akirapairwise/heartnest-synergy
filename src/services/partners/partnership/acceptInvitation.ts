@@ -46,6 +46,40 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
         return { error: new Error('You cannot accept your own invitation') };
       }
       
+      // Check if current user already has a partner
+      const { data: currentUser, error: currentUserError } = await supabase
+        .from('user_profiles')
+        .select('partner_id')
+        .eq('id', currentUserId)
+        .maybeSingle();
+        
+      if (currentUserError) {
+        console.error('Error fetching current user:', currentUserError);
+        return { error: new Error('Error verifying your profile. Please try again.') };
+      }
+      
+      if (currentUser?.partner_id) {
+        console.error('Current user already has a partner:', currentUser.partner_id);
+        return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
+      }
+      
+      // Check if inviter already has a partner
+      const { data: inviter, error: inviterError } = await supabase
+        .from('user_profiles')
+        .select('partner_id')
+        .eq('id', partnerCode.inviter_id)
+        .maybeSingle();
+        
+      if (inviterError) {
+        console.error('Error fetching inviter:', inviterError);
+        return { error: new Error('Error verifying inviter profile. Please try again.') };
+      }
+      
+      if (inviter?.partner_id) {
+        console.error('Inviter already has a partner:', inviter.partner_id);
+        return { error: new Error('The inviter already has a partner.') };
+      }
+      
       // Ensure inviter profile exists before proceeding
       const inviterProfileExists = await ensureProfileExists(partnerCode.inviter_id);
       if (!inviterProfileExists) {
@@ -54,6 +88,7 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       }
       
       // Process the partner code connection
+      console.log('Processing partner code connection...');
       return await handlePartnerConnection(currentUserId, partnerCode.inviter_id, partnerCode.code);
     }
     
@@ -68,7 +103,7 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       
     if (inviteError) {
       console.error('Failed to query partner_invites:', inviteError);
-      // Continue to check invites, don't return an error yet
+      return { error: new Error('Failed to validate invitation. Please try again.') };
     }
     
     if (invite) {
@@ -78,6 +113,40 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
       if (invite.inviter_id === currentUserId) {
         console.error('User tried to accept their own invitation');
         return { error: new Error('You cannot accept your own invitation') };
+      }
+      
+      // Check if current user already has a partner
+      const { data: currentUser, error: currentUserError } = await supabase
+        .from('user_profiles')
+        .select('partner_id')
+        .eq('id', currentUserId)
+        .maybeSingle();
+        
+      if (currentUserError) {
+        console.error('Error fetching current user:', currentUserError);
+        return { error: new Error('Error verifying your profile. Please try again.') };
+      }
+      
+      if (currentUser?.partner_id) {
+        console.error('Current user already has a partner:', currentUser.partner_id);
+        return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
+      }
+      
+      // Check if inviter already has a partner
+      const { data: inviter, error: inviterError } = await supabase
+        .from('user_profiles')
+        .select('partner_id')
+        .eq('id', invite.inviter_id)
+        .maybeSingle();
+        
+      if (inviterError) {
+        console.error('Error fetching inviter:', inviterError);
+        return { error: new Error('Error verifying inviter profile. Please try again.') };
+      }
+      
+      if (inviter?.partner_id) {
+        console.error('Inviter already has a partner:', inviter.partner_id);
+        return { error: new Error('The inviter already has a partner.') };
       }
       
       // Ensure inviter profile exists before proceeding
@@ -98,6 +167,7 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
         return { error: new Error('Failed to update invitation status') };
       }
       
+      console.log('Processing partner invite connection...');
       return await handlePartnerConnection(currentUserId, invite.inviter_id);
     }
     

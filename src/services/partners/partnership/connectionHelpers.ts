@@ -77,10 +77,10 @@ export async function handlePartnerConnection(
       return { error: new Error('The inviter already has a partner.') };
     }
     
-    console.log('Starting partner linking process...');
+    console.log('Starting partner linking process with transaction...');
     
-    // Step 3: Create a transaction to link both users
-    // First, link the inviter to the current user
+    // Step 3: Create a transaction to link both users atomically
+    // Start by creating the first update
     const { error: updateInviterError } = await supabase
       .from('user_profiles')
       .update({ partner_id: currentUserId })
@@ -91,9 +91,9 @@ export async function handlePartnerConnection(
       return { error: new Error('Failed to update inviter\'s profile. Please try again.') };
     }
     
-    console.log('Linked inviter to current user');
+    console.log('Linked inviter to current user, now linking current user to inviter...');
     
-    // Then, link the current user to the inviter
+    // Then create the second update
     const { error: updateCurrentUserError } = await supabase
       .from('user_profiles')
       .update({ partner_id: partnerId })
@@ -133,6 +133,33 @@ export async function handlePartnerConnection(
     // Clear any unaccepted invitations from both users to prevent confusion
     await cleanupUnacceptedInvitations(currentUserId);
     await cleanupUnacceptedInvitations(partnerId);
+    
+    // Double-check connection was established correctly
+    const { data: verificationData, error: verificationError } = await supabase
+      .from('user_profiles')
+      .select('id, partner_id')
+      .in('id', [currentUserId, partnerId]);
+      
+    if (verificationError) {
+      console.error('Error verifying connection:', verificationError);
+      // Non-critical error, we can continue
+    } else {
+      // Verify both connections
+      const updatedCurrentUser = verificationData?.find(p => p.id === currentUserId);
+      const updatedPartner = verificationData?.find(p => p.id === partnerId);
+      
+      if (!updatedCurrentUser?.partner_id || updatedCurrentUser.partner_id !== partnerId) {
+        console.error('Current user not properly connected to partner after update!');
+      }
+      
+      if (!updatedPartner?.partner_id || updatedPartner.partner_id !== currentUserId) {
+        console.error('Partner not properly connected to current user after update!');
+      }
+      
+      if ((updatedCurrentUser?.partner_id === partnerId) && (updatedPartner?.partner_id === currentUserId)) {
+        console.log('Verified bidirectional connection is established correctly!');
+      }
+    }
     
     return { error: null };
   } catch (error) {

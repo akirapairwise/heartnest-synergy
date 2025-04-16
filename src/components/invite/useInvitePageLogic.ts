@@ -7,7 +7,7 @@ import { getInvitationByToken } from '@/services/partnerInviteService';
 import { toast } from 'sonner';
 
 export const useInvitePageLogic = (token: string | null) => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, fetchUserProfile } = useAuth();
   const { acceptInvitation } = usePartnerInvite();
   const [status, setStatus] = useState<'loading' | 'valid' | 'invalid' | 'accepted' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
@@ -82,8 +82,26 @@ export const useInvitePageLogic = (token: string | null) => {
         toast.error(error.message || 'Failed to accept invitation');
       } else {
         console.log('Invitation accepted successfully');
+        
+        // Refresh user profile to get updated partner information
+        if (user && fetchUserProfile) {
+          try {
+            console.log('Refreshing user profile after connection...');
+            await fetchUserProfile(user.id);
+            console.log('Profile refreshed successfully');
+          } catch (profileError) {
+            console.error('Error refreshing user profile:', profileError);
+            // Non-critical, continue with flow
+          }
+        }
+        
         setStatus('accepted');
         toast.success('Partner connection successful!');
+        
+        // Redirect to dashboard after short delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
       }
     } catch (error: any) {
       console.error('Error accepting invitation:', error);

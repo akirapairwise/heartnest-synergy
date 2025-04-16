@@ -85,31 +85,36 @@ export const useInvitePageLogic = (token: string | null) => {
         
         // Refresh user profile to get updated partner information
         // Make multiple attempts if needed
-        if (user && fetchUserProfile) {
-          let profileRefreshed = false;
-          let attempts = 0;
-          const maxAttempts = 3;
-          
-          while (!profileRefreshed && attempts < maxAttempts) {
-            attempts++;
-            try {
-              console.log(`Refreshing user profile after connection (attempt ${attempts})...`);
+        let profileRefreshed = false;
+        let attempts = 0;
+        const maxAttempts = 5;  // Increased from 3 to 5
+        
+        while (!profileRefreshed && attempts < maxAttempts) {
+          attempts++;
+          try {
+            console.log(`Refreshing user profile after connection (attempt ${attempts})...`);
+            // Add a small delay before refreshing to allow database updates to propagate
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            if (user && fetchUserProfile) {
               await fetchUserProfile(user.id);
               console.log('Profile refreshed successfully');
               profileRefreshed = true;
-            } catch (profileError) {
-              console.error(`Error refreshing user profile (attempt ${attempts}):`, profileError);
-              
-              if (attempts < maxAttempts) {
-                // Wait a moment before retrying
-                await new Promise(resolve => setTimeout(resolve, 1000));
-              }
+            }
+          } catch (profileError) {
+            console.error(`Error refreshing user profile (attempt ${attempts}):`, profileError);
+            
+            if (attempts < maxAttempts) {
+              // Increase wait time between retries with exponential backoff
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
             }
           }
-          
-          if (!profileRefreshed) {
-            console.warn('Could not refresh user profile after multiple attempts');
-          }
+        }
+        
+        if (!profileRefreshed) {
+          console.warn('Could not refresh user profile after multiple attempts');
+          // Even if the profile refresh failed, the connection might still be successful
+          // We'll proceed anyway, the user can refresh the page if needed
         }
         
         setStatus('accepted');

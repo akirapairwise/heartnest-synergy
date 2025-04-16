@@ -8,16 +8,32 @@ import { handlePartnerConnection, ensureProfileExists } from "./connectionHelper
  * Accepts a partner invitation and connects both users
  */
 export const acceptInvitation = async (token: string, currentUserId: string): Promise<OperationResult> => {
+  if (!currentUserId) {
+    console.error('No current user ID provided');
+    return { error: new Error('You must be logged in to accept an invitation') };
+  }
+
+  if (!token) {
+    console.error('No token provided');
+    return { error: new Error('Invalid invitation token') };
+  }
+
   try {
     console.log('Starting invitation acceptance process...');
     console.log('Current user ID:', currentUserId);
     console.log('Token:', formatToken(token));
     
     // First ensure the current user's profile exists
-    const currentUserProfileExists = await ensureProfileExists(currentUserId);
-    if (!currentUserProfileExists) {
+    const currentUserProfile = await ensureProfileExists(currentUserId);
+    if (!currentUserProfile) {
       console.error('Failed to ensure current user profile exists');
       return { error: new Error('Could not create or verify your profile. Please try again.') };
+    }
+    
+    // Check if current user already has a partner
+    if (currentUserProfile.partner_id) {
+      console.error('Current user already has a partner:', currentUserProfile.partner_id);
+      return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }
     
     // Format token to be consistent
@@ -46,37 +62,15 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
         return { error: new Error('You cannot accept your own invitation') };
       }
       
-      // Check if current user already has a partner
-      const { data: currentUser, error: currentUserError } = await supabase
-        .from('user_profiles')
-        .select('partner_id')
-        .eq('id', currentUserId)
-        .maybeSingle();
-        
-      if (currentUserError) {
-        console.error('Error fetching current user:', currentUserError);
-        return { error: new Error('Error verifying your profile. Please try again.') };
-      }
-      
-      if (currentUser?.partner_id) {
-        console.error('Current user already has a partner:', currentUser.partner_id);
-        return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
-      }
-      
       // Check if inviter already has a partner
-      const { data: inviter, error: inviterError } = await supabase
-        .from('user_profiles')
-        .select('partner_id')
-        .eq('id', partnerCode.inviter_id)
-        .maybeSingle();
-        
-      if (inviterError) {
-        console.error('Error fetching inviter:', inviterError);
-        return { error: new Error('Error verifying inviter profile. Please try again.') };
+      const inviterProfile = await ensureProfileExists(partnerCode.inviter_id);
+      if (!inviterProfile) {
+        console.error('Failed to ensure inviter profile exists');
+        return { error: new Error('Could not verify inviter profile. Please try again.') };
       }
       
-      if (inviter?.partner_id) {
-        console.error('Inviter already has a partner:', inviter.partner_id);
+      if (inviterProfile.partner_id) {
+        console.error('Inviter already has a partner:', inviterProfile.partner_id);
         return { error: new Error('The inviter already has a partner.') };
       }
       
@@ -108,37 +102,15 @@ export const acceptInvitation = async (token: string, currentUserId: string): Pr
         return { error: new Error('You cannot accept your own invitation') };
       }
       
-      // Check if current user already has a partner
-      const { data: currentUser, error: currentUserError } = await supabase
-        .from('user_profiles')
-        .select('partner_id')
-        .eq('id', currentUserId)
-        .maybeSingle();
-        
-      if (currentUserError) {
-        console.error('Error fetching current user:', currentUserError);
-        return { error: new Error('Error verifying your profile. Please try again.') };
-      }
-      
-      if (currentUser?.partner_id) {
-        console.error('Current user already has a partner:', currentUser.partner_id);
-        return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
-      }
-      
       // Check if inviter already has a partner
-      const { data: inviter, error: inviterError } = await supabase
-        .from('user_profiles')
-        .select('partner_id')
-        .eq('id', invite.inviter_id)
-        .maybeSingle();
-        
-      if (inviterError) {
-        console.error('Error fetching inviter:', inviterError);
-        return { error: new Error('Error verifying inviter profile. Please try again.') };
+      const inviterProfile = await ensureProfileExists(invite.inviter_id);
+      if (!inviterProfile) {
+        console.error('Failed to ensure inviter profile exists');
+        return { error: new Error('Could not verify inviter profile. Please try again.') };
       }
       
-      if (inviter?.partner_id) {
-        console.error('Inviter already has a partner:', inviter.partner_id);
+      if (inviterProfile.partner_id) {
+        console.error('Inviter already has a partner:', inviterProfile.partner_id);
         return { error: new Error('The inviter already has a partner.') };
       }
       

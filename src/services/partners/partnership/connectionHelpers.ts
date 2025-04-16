@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "../types";
 
@@ -14,48 +13,25 @@ export async function handlePartnerConnection(
     console.log(`Starting partner connection between user ${currentUserId} and partner ${partnerId}`);
     
     // Step 1: Ensure profiles exist for both users with better error handling
-    const currentUserProfileExists = await ensureProfileExists(currentUserId);
-    if (!currentUserProfileExists) {
+    const currentUserProfile = await ensureProfileExists(currentUserId);
+    if (!currentUserProfile) {
       console.error(`Failed to ensure profile exists for current user: ${currentUserId}`);
       return { error: new Error('Could not create or verify your profile. Please try again.') };
     }
     
-    const partnerProfileExists = await ensureProfileExists(partnerId);
-    if (!partnerProfileExists) {
+    const partnerProfile = await ensureProfileExists(partnerId);
+    if (!partnerProfile) {
       console.error(`Failed to ensure profile exists for partner: ${partnerId}`);
-      return { error: new Error('Could not create partner profile. Please try again.') };
+      return { error: new Error('Could not create or verify partner profile. Please try again.') };
     }
     
-    console.log('Successfully ensured both profiles exist');
+    console.log('Successfully ensured both profiles exist:', { 
+      currentUserProfile: currentUserProfile.id,
+      partnerProfile: partnerProfile.id
+    });
 
     // Step 2: Check if either user already has a partner
-    const { data: profiles, error: profilesError } = await supabase
-      .from('user_profiles')
-      .select('id, partner_id')
-      .in('id', [currentUserId, partnerId]);
-      
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      return { error: new Error('Error verifying profiles. Please try again.') };
-    }
-    
-    // Find current user and partner profiles
-    const currentUserProfile = profiles?.find(p => p.id === currentUserId);
-    const partnerProfile = profiles?.find(p => p.id === partnerId);
-    
-    // Double-check profiles are found
-    if (!currentUserProfile) {
-      console.error('Current user profile not found in query results');
-      return { error: new Error('Your profile could not be verified. Please try again.') };
-    }
-    
-    if (!partnerProfile) {
-      console.error('Partner profile not found in query results');
-      return { error: new Error('Partner profile could not be verified. Please try again.') };
-    }
-    
-    // Check for existing partners
-    if (currentUserProfile?.partner_id) {
+    if (currentUserProfile.partner_id) {
       // Check if already connected to this specific partner (idempotent operation)
       if (currentUserProfile.partner_id === partnerId) {
         console.log('Users are already connected to each other');
@@ -66,7 +42,7 @@ export async function handlePartnerConnection(
       return { error: new Error('You already have a partner. Unlink your current partner before accepting a new invitation.') };
     }
     
-    if (partnerProfile?.partner_id) {
+    if (partnerProfile.partner_id) {
       // Check if already connected to this specific user (idempotent operation)
       if (partnerProfile.partner_id === currentUserId) {
         console.log('Users are already connected to each other');
@@ -77,50 +53,21 @@ export async function handlePartnerConnection(
       return { error: new Error('The inviter already has a partner.') };
     }
     
-    console.log('Starting partner linking process with transaction...');
+    console.log('Starting partner linking process with atomic transaction...');
     
     // Step 3: Use transaction pattern to update both profiles atomically
-    try {
-      // First update - set partner's profile to point to current user
-      const { error: updateInviterError } = await supabase
-        .from('user_profiles')
-        .update({ partner_id: currentUserId })
-        .eq('id', partnerId);
-        
-      if (updateInviterError) {
-        console.error('Error linking inviter to current user:', updateInviterError);
-        return { error: new Error('Failed to update inviter\'s profile. Please try again.') };
-      }
-      
-      console.log('Linked inviter to current user, now linking current user to inviter...');
-      
-      // Second update - set current user's profile to point to partner
-      const { error: updateCurrentUserError } = await supabase
-        .from('user_profiles')
-        .update({ partner_id: partnerId })
-        .eq('id', currentUserId);
-        
-      if (updateCurrentUserError) {
-        console.error('Error linking current user to inviter:', updateCurrentUserError);
-        
-        // If we failed to link the current user, we need to rollback the inviter update
-        const { error: rollbackError } = await supabase
-          .from('user_profiles')
-          .update({ partner_id: null })
-          .eq('id', partnerId);
-          
-        if (rollbackError) {
-          console.error('Error rolling back inviter update:', rollbackError);
-        }
-        
-        return { error: new Error('Failed to update your profile. Please try again.') };
-      }
-      
-      console.log('Linked current user to inviter. Connection complete!');
-    } catch (transactionError) {
-      console.error('Transaction error during partner connection:', transactionError);
-      return { error: new Error('An error occurred while connecting partners. Please try again.') };
+    // First update both profiles in a single atomic operation
+    const { error: transactionError } = await supabase.rpc('link_partners', {
+      user_id_1: currentUserId,
+      user_id_2: partnerId
+    });
+    
+    if (transactionError) {
+      console.error('Error in atomic partner linking:', transactionError);
+      return { error: new Error('Failed to link partners. Please try again.') };
     }
+    
+    console.log('Successfully linked partners using atomic operation');
     
     // If this was a partner code, mark it as used
     if (code) {
@@ -177,7 +124,12 @@ export async function handlePartnerConnection(
  * Ensures a user profile exists, creating one if it doesn't
  * Enhanced with better race condition handling and retry logic
  */
-export async function ensureProfileExists(userId: string): Promise<boolean> {
+export async function ensureProfileExists(userId: string): Promise<any> {
+  if (!userId) {
+    console.error('Cannot ensure profile exists: user ID is null or undefined');
+    return null;
+  }
+
   try {
     console.log(`Ensuring profile exists for user: ${userId}`);
     
@@ -192,7 +144,7 @@ export async function ensureProfileExists(userId: string): Promise<boolean> {
       // Check if profile exists first
       const { data: existingProfile, error: checkError } = await supabase
         .from('user_profiles')
-        .select('id')
+        .select('*')
         .eq('id', userId)
         .maybeSingle();
       
@@ -202,98 +154,117 @@ export async function ensureProfileExists(userId: string): Promise<boolean> {
         // If permission error, fail fast as retrying won't help
         if (checkError.code === '42501') {
           console.error('Permission denied when checking profile');
-          return false;
-        }
-        
-        // For other errors, we'll retry if we have attempts left
-        if (attempt < MAX_RETRIES) {
-          await new Promise(resolve => setTimeout(resolve, 500 * attempt)); // Exponential backoff
+          await new Promise(resolve => setTimeout(resolve, 500));
           continue;
-        } else {
-          console.error('Max retries reached when checking profile');
-          return false;
         }
       }
       
-      // If profile exists, return success
+      // If profile exists, return it
       if (existingProfile) {
-        console.log(`Profile already exists for user: ${userId}`);
-        return true;
+        console.log(`Profile already exists for user: ${userId}`, existingProfile);
+        return existingProfile;
       }
       
       // Profile doesn't exist, try to create it
       console.log(`Creating profile for user ${userId}...`);
       
       try {
-        const { error: insertError } = await supabase
+        const { data: newProfile, error: insertError } = await supabase
           .from('user_profiles')
           .insert({
             id: userId,
             is_onboarding_complete: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          });
+          })
+          .select()
+          .single();
         
-        if (!insertError) {
-          console.log(`Successfully created profile for user: ${userId}`);
-          return true;
+        if (!insertError && newProfile) {
+          console.log(`Successfully created profile for user: ${userId}`, newProfile);
+          return newProfile;
         }
         
         // Handle duplicate key violation (concurrent creation)
-        if (insertError.code === '23505') {
-          console.log(`Profile was created concurrently for user: ${userId}`);
-          return true;
-        }
-        
-        console.error(`Error creating profile (attempt ${attempt}):`, insertError);
-        
-        // For permission errors, fail fast
-        if (insertError.code === '42501') {
-          console.error('Permission denied when creating profile');
-          return false;
-        }
-        
-        // For other errors, try upsert as a fallback on last attempt
-        if (attempt === MAX_RETRIES) {
-          console.log(`Final attempt: trying upsert for user ${userId}`);
+        if (insertError && insertError.code === '23505') {
+          console.log(`Profile was created concurrently for user: ${userId}, fetching it now`);
           
-          const { error: upsertError } = await supabase
+          // Wait a moment before fetching again
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // Fetch the profile that was created concurrently
+          const { data: concurrentProfile, error: fetchError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+            
+          if (!fetchError && concurrentProfile) {
+            console.log(`Successfully fetched concurrently created profile for user: ${userId}`, concurrentProfile);
+            return concurrentProfile;
+          }
+          
+          if (fetchError) {
+            console.error(`Error fetching concurrently created profile: ${fetchError.message}`);
+          }
+        } else if (insertError) {
+          console.error(`Error creating profile (attempt ${attempt}):`, insertError);
+        }
+        
+        // Try upsert as a fallback if insertion failed
+        if (attempt === MAX_RETRIES - 1) {
+          console.log(`Trying upsert for user ${userId} as fallback`);
+          
+          const { data: upsertedProfile, error: upsertError } = await supabase
             .from('user_profiles')
             .upsert({
               id: userId,
               is_onboarding_complete: false,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
-            }, { onConflict: 'id' });
+            }, { 
+              onConflict: 'id',
+              ignoreDuplicates: false 
+            })
+            .select()
+            .single();
             
-          if (!upsertError) {
-            console.log(`Successfully upserted profile for user: ${userId}`);
-            return true;
+          if (!upsertError && upsertedProfile) {
+            console.log(`Successfully upserted profile for user: ${userId}`, upsertedProfile);
+            return upsertedProfile;
           }
           
-          console.error('Failed on final upsert attempt:', upsertError);
-          return false;
+          if (upsertError) {
+            console.error('Failed on upsert attempt:', upsertError);
+          }
         }
-        
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
       } catch (createError) {
         console.error(`Unexpected error in profile creation (attempt ${attempt}):`, createError);
-        
-        if (attempt < MAX_RETRIES) {
-          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
-          continue;
-        } else {
-          return false;
-        }
+      }
+      
+      // Wait before retrying with exponential backoff
+      if (attempt < MAX_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
       }
     }
     
+    // One last attempt to fetch the profile directly
+    const { data: finalProfile, error: finalError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (!finalError && finalProfile) {
+      console.log(`Found profile on final check for user: ${userId}`, finalProfile);
+      return finalProfile;
+    }
+    
     console.error(`Failed to ensure profile exists for user: ${userId} after ${MAX_RETRIES} attempts`);
-    return false;
+    return null;
   } catch (error) {
     console.error('Unexpected error in ensureProfileExists:', error);
-    return false;
+    return null;
   }
 }
 

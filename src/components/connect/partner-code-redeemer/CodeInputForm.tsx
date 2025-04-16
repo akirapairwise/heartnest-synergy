@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,29 @@ const CodeInputForm = () => {
           
         if (inviterProfileError) {
           console.error('Error checking inviter profile:', inviterProfileError);
+          
+          // If profile doesn't exist, try to create it
+          if (inviterProfileError.code === 'PGRST116') {
+            console.log('Inviter profile not found, creating one...');
+            const { error: createProfileError } = await supabase
+              .from('user_profiles')
+              .insert({
+                id: partnerCodeData.inviter_id,
+                is_onboarding_complete: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+              
+            if (createProfileError) {
+              console.error('Error creating inviter profile:', createProfileError);
+              return { valid: false, error: 'Error creating partner profile. Please try again.' };
+            }
+            
+            // Continue with validation after creating profile
+            return { valid: true, error: null };
+          }
+          
+          return { valid: false, error: 'Error checking partner status. Please try again.' };
         } else if (inviterProfile?.partner_id && inviterProfile.partner_id !== user?.id) {
           return { valid: false, error: 'The inviter is already connected with another partner' };
         }
@@ -103,6 +127,29 @@ const CodeInputForm = () => {
           
         if (inviterProfileError) {
           console.error('Error checking inviter profile:', inviterProfileError);
+          
+          // If profile doesn't exist, try to create it
+          if (inviterProfileError.code === 'PGRST116') {
+            console.log('Inviter profile not found, creating one...');
+            const { error: createProfileError } = await supabase
+              .from('user_profiles')
+              .insert({
+                id: inviteData.inviter_id,
+                is_onboarding_complete: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+              
+            if (createProfileError) {
+              console.error('Error creating inviter profile:', createProfileError);
+              return { valid: false, error: 'Error creating partner profile. Please try again.' };
+            }
+            
+            // Continue with validation after creating profile
+            return { valid: true, error: null };
+          }
+          
+          return { valid: false, error: 'Error checking partner status. Please try again.' };
         } else if (inviterProfile?.partner_id && inviterProfile.partner_id !== user?.id) {
           return { valid: false, error: 'The inviter is already connected with another partner' };
         }
@@ -147,6 +194,40 @@ const CodeInputForm = () => {
     setError(null);
     
     try {
+      // Ensure current user profile exists
+      const { data: currentUserProfile, error: currentUserProfileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+        
+      if (currentUserProfileError) {
+        console.error('Error checking current user profile:', currentUserProfileError);
+        // Create profile if it doesn't exist
+        if (currentUserProfileError.code === 'PGRST116') {
+          console.log('Current user profile not found, creating one...');
+          const { error: createProfileError } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: user.id,
+              is_onboarding_complete: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            
+          if (createProfileError) {
+            console.error('Error creating current user profile:', createProfileError);
+            setError('Error creating your profile. Please try again.');
+            setIsSubmitting(false);
+            return;
+          }
+        } else {
+          setError('Error checking your profile. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
       // First validate the code
       setIsValidating(true);
       const validationResult = await validateCode(formattedCode);
@@ -164,6 +245,7 @@ const CodeInputForm = () => {
       if (error) {
         setError(error.message);
         console.error('Error accepting invitation:', error);
+        setIsSubmitting(false);
         return;
       }
       
@@ -180,6 +262,7 @@ const CodeInputForm = () => {
     } catch (err: any) {
       console.error('Error submitting code:', err);
       setError(err.message || 'Failed to redeem code. Please try again.');
+      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }

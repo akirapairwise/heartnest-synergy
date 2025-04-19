@@ -29,7 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     // If user is still not authenticated after loading is complete and refresh attempt, redirect to auth
     if (!isLoading && !user) {
       console.log('User not authenticated, redirecting to auth page');
-      navigate('/auth', { state: { from: location }, replace: true });
+      navigate('/auth', { state: { from: location.pathname }, replace: true });
     }
     
     // If user is authenticated but onboarding is not complete, redirect to onboarding
@@ -38,7 +38,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       console.log('User authenticated but onboarding not complete, redirecting to onboarding');
       navigate('/onboarding', { replace: true });
     }
-  }, [user, isLoading, isOnboardingComplete, location, navigate]);
+  }, [user, isLoading, isOnboardingComplete, location.pathname, navigate]);
 
   if (isLoading) {
     return (

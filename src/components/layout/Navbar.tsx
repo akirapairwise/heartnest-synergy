@@ -26,32 +26,43 @@ const Navbar = () => {
     { path: "/recommendations", icon: <Sparkles className="h-4 w-4" />, label: "Recommendations" },
   ];
   
+  const handleNavigation = (path: string) => {
+    // Force a clean navigation to the path
+    navigate(path, { replace: true });
+  };
+  
   return (
     <div className="border-b sticky top-0 z-50 w-full bg-background/80 backdrop-blur-sm">
       <div className="flex h-16 items-center px-4">
         <div className="flex items-center gap-2 mr-4">
-          <Heart className="h-6 w-6 text-love-500" />
-          <span className="text-xl font-heading font-bold gradient-heading hidden sm:inline-block">HeartNest</span>
+          <Heart 
+            className="h-6 w-6 text-love-500 cursor-pointer" 
+            onClick={() => handleNavigation('/dashboard')}
+          />
+          <span 
+            className="text-xl font-heading font-bold gradient-heading hidden sm:inline-block cursor-pointer"
+            onClick={() => handleNavigation('/dashboard')}
+          >
+            HeartNest
+          </span>
         </div>
         
         <div className="flex-1 justify-center hidden md:flex">
           <nav className="flex space-x-4">
             {navItems.map((item) => (
-              <NavLink
+              <button
                 key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-md transition-colors",
-                    isActive
-                      ? "bg-secondary text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  )
-                }
+                onClick={() => handleNavigation(item.path)}
+                className={cn(
+                  "flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-md transition-colors",
+                  location.pathname === item.path
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                )}
               >
                 {item.icon}
                 <span>{item.label}</span>
-              </NavLink>
+              </button>
             ))}
           </nav>
         </div>
@@ -65,7 +76,7 @@ const Navbar = () => {
           <div className="flex items-center gap-2">
             <Avatar 
               className="h-8 w-8 cursor-pointer" 
-              onClick={() => navigate('/profile/settings')}
+              onClick={() => handleNavigation('/profile/settings')}
             >
               <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(initials)}`} />
               <AvatarFallback>{initials}</AvatarFallback>
@@ -82,21 +93,19 @@ const Navbar = () => {
       <div className="md:hidden border-t">
         <nav className="flex justify-between">
           {navItems.map((item) => (
-            <NavLink
+            <button
               key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                cn(
-                  "flex flex-1 flex-col items-center gap-1 py-2 text-xs",
-                  isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground"
-                )
-              }
+              onClick={() => handleNavigation(item.path)}
+              className={cn(
+                "flex flex-1 flex-col items-center gap-1 py-2 text-xs",
+                location.pathname === item.path
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
             >
               {item.icon}
               <span>{item.label}</span>
-            </NavLink>
+            </button>
           ))}
         </nav>
       </div>

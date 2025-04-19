@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CheckInsByDate from '@/components/check-ins/CheckInsByDate';
 import RecentCheckIns from '@/components/check-ins/RecentCheckIns';
-import CheckInModal from '@/components/check-ins/CheckInModal';
+import CheckInForm from '@/components/check-ins/CheckInForm';  {/* New import */}
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -11,7 +11,12 @@ import WeeklyCheckInsSection from '@/components/check-ins/WeeklyCheckInsSection'
 
 const CheckInsPage = () => {
   useDocumentTitle('Check-Ins | HeartNest');
-  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
+  const [isCheckInFormOpen, setIsCheckInFormOpen] = useState(false);  {/* Updated state variable */}
+  
+  const handleCheckInSaved = () => {
+    setIsCheckInFormOpen(false);
+    // Optionally, you can add logic to refresh the check-ins list
+  };
   
   return (
     <div className="container mx-auto max-w-4xl py-8 px-4">
@@ -35,7 +40,7 @@ const CheckInsPage = () => {
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold">Daily Check-ins</h2>
             <Button 
-              onClick={() => setIsCheckInModalOpen(true)}
+              onClick={() => setIsCheckInFormOpen(true)}
               className="bg-gradient-to-r from-love-500 to-harmony-500 text-white"
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -45,10 +50,12 @@ const CheckInsPage = () => {
           
           <RecentCheckIns />
           
-          <CheckInModal 
-            open={isCheckInModalOpen} 
-            onOpenChange={setIsCheckInModalOpen} 
-          />
+          {/* Replace CheckInModal with CheckInForm */}
+          {isCheckInFormOpen && (
+            <CheckInForm 
+              onCheckInSaved={handleCheckInSaved} 
+            />
+          )}
         </TabsContent>
         
         <TabsContent value="weekly" className="mt-4">
@@ -70,3 +77,4 @@ const CheckInsPage = () => {
 };
 
 export default CheckInsPage;
+

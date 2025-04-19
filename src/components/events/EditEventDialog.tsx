@@ -58,10 +58,12 @@ const EditEventDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Edit Event</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[500px] rounded-xl overflow-hidden">
+        <div className="bg-gradient-to-r from-harmony-50 to-calm-50 p-6 -m-6 mb-2">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">Edit Event</DialogTitle>
+          </DialogHeader>
+        </div>
         <EventForm
           onSubmit={handleSubmit}
           onCancel={onClose}

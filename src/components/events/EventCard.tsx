@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, MapPin, Users } from 'lucide-react';
+import { Calendar, MapPin, Users, Heart, Film, Plane, Music, Gift, PartyPopper, Star } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 import { cn } from '@/lib/utils';
 import EventDetailsDialog from './EventDetailsDialog';
@@ -42,22 +42,70 @@ const EventCard = ({
     setIsEditOpen(true);
   };
 
+  // Get appropriate event icon
+  const getEventIcon = () => {
+    // Simple logic to determine icon based on title keywords
+    const titleLower = title.toLowerCase();
+    
+    if (titleLower.includes('anniversary') || titleLower.includes('date') || titleLower.includes('romantic')) {
+      return <Heart className="h-5 w-5 text-love-500" />;
+    } else if (titleLower.includes('movie') || titleLower.includes('cinema') || titleLower.includes('film')) {
+      return <Film className="h-5 w-5 text-calm-500" />;
+    } else if (titleLower.includes('trip') || titleLower.includes('travel') || titleLower.includes('vacation')) {
+      return <Plane className="h-5 w-5 text-harmony-500" />;
+    } else if (titleLower.includes('concert') || titleLower.includes('music')) {
+      return <Music className="h-5 w-5 text-purple-500" />;
+    } else if (titleLower.includes('birthday') || titleLower.includes('gift')) {
+      return <Gift className="h-5 w-5 text-pink-500" />;
+    } else if (titleLower.includes('party') || titleLower.includes('celebration')) {
+      return <PartyPopper className="h-5 w-5 text-amber-500" />;
+    } else {
+      return <Star className="h-5 w-5 text-primary" />;
+    }
+  };
+
+  // Generate card gradient based on event type
+  const getCardStyle = () => {
+    const titleLower = title.toLowerCase();
+    
+    if (titleLower.includes('anniversary') || titleLower.includes('date') || titleLower.includes('romantic')) {
+      return 'bg-gradient-to-br from-white to-love-50/60 border-love-100';
+    } else if (titleLower.includes('movie') || titleLower.includes('cinema')) {
+      return 'bg-gradient-to-br from-white to-calm-50/60 border-calm-100';
+    } else if (titleLower.includes('trip') || titleLower.includes('travel')) {
+      return 'bg-gradient-to-br from-white to-harmony-50/60 border-harmony-100';
+    } else if (titleLower.includes('concert') || titleLower.includes('music')) {
+      return 'bg-gradient-to-br from-white to-purple-50/60 border-purple-100';
+    } else if (titleLower.includes('birthday') || titleLower.includes('gift')) {
+      return 'bg-gradient-to-br from-white to-pink-50/60 border-pink-100';
+    } else if (titleLower.includes('party') || titleLower.includes('celebration')) {
+      return 'bg-gradient-to-br from-white to-amber-50/60 border-amber-100';
+    } else {
+      return 'bg-gradient-to-br from-white to-primary-50/30';
+    }
+  };
+
   return (
     <>
       <Card 
         className={cn(
-          "overflow-hidden transition-all hover:shadow-md cursor-pointer",
-          isUpcoming ? "border-primary/20" : "border-muted opacity-70"
+          "overflow-hidden transition-all hover:shadow-md cursor-pointer rounded-xl animate-fade-in",
+          getCardStyle(),
+          isUpcoming ? "" : "opacity-70"
         )}
         onClick={() => setIsDetailsOpen(true)}
       >
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-1">
+            <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <h3 className="font-medium leading-none">{title}</h3>
+                {getEventIcon()}
+                <h3 className="font-medium leading-none text-lg">{title}</h3>
                 {isShared && (
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                    <Users className="h-3 w-3 mr-1" />
+                    Shared
+                  </span>
                 )}
               </div>
               
@@ -82,9 +130,15 @@ const EventCard = ({
 
             {isUpcoming && (
               <div className="text-right">
-                <div className="text-sm font-medium text-primary">
+                <div className={cn(
+                  "text-sm font-medium px-3 py-1 rounded-full",
+                  daysToEvent === 0 ? "bg-primary/10 text-primary" : 
+                  daysToEvent === 1 ? "bg-primary/15 text-primary" :
+                  daysToEvent <= 3 ? "bg-primary/20 text-primary" :
+                  "bg-muted text-muted-foreground"
+                )}>
                   {daysToEvent === 0 ? (
-                    "Today"
+                    "Today!"
                   ) : daysToEvent === 1 ? (
                     "Tomorrow"
                   ) : (

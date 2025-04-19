@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus } from 'lucide-react';
@@ -9,9 +10,11 @@ import EventCard from './EventCard';
 import EventForm from './EventForm';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { motion } from 'framer-motion';
 
 const UpcomingEventsSection = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+  const fabRef = useRef<HTMLButtonElement>(null);
   const { user } = useAuth();
 
   const { data: events, isLoading, refetch } = useQuery({
@@ -21,12 +24,22 @@ const UpcomingEventsSection = () => {
         .from('partner_events_with_countdown')
         .select('*')
         .order('event_date', { ascending: true })
-        .limit(5);
+        .limit(10);
 
       if (error) throw error;
       return data;
     },
   });
+
+  // Filter for nearest upcoming event
+  const nearestEvent = React.useMemo(() => {
+    if (!events || events.length === 0) return null;
+    
+    const upcomingEvents = events.filter(event => event.days_to_event >= 0)
+      .sort((a, b) => a.days_to_event - b.days_to_event);
+    
+    return upcomingEvents.length > 0 ? upcomingEvents[0] : null;
+  }, [events]);
 
   const handleCreateEvent = async (formData: any) => {
     try {
@@ -70,14 +83,14 @@ const UpcomingEventsSection = () => {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Upcoming Events</h2>
+          <h2 className="text-2xl font-semibold font-heading text-primary">Upcoming Events</h2>
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="p-4">
+            <Card key={i} className="p-4 rounded-xl">
               <div className="space-y-3">
-                <div className="h-4 w-1/4 bg-muted animate-pulse rounded" />
-                <div className="h-4 w-1/2 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-1/4 bg-muted animate-pulse rounded-full" />
+                <div className="h-4 w-1/2 bg-muted animate-pulse rounded-full" />
               </div>
             </Card>
           ))}
@@ -87,24 +100,43 @@ const UpcomingEventsSection = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
+      {nearestEvent && (
+        <div className="bg-gradient-to-r from-love-50 to-harmony-50 rounded-xl p-4 mb-6 shadow-sm border border-love-100 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-love-600">Coming up</span>
+              <span className="inline-block px-2 py-0.5 bg-white rounded-full text-xs font-medium text-primary shadow-sm">
+                {nearestEvent.days_to_event === 0 ? "Today!" : 
+                 nearestEvent.days_to_event === 1 ? "Tomorrow" : 
+                 `In ${nearestEvent.days_to_event} days`}
+              </span>
+            </div>
+          </div>
+          <div className="mt-1 font-medium">{nearestEvent.title}</div>
+          <div className="text-sm text-muted-foreground">{new Date(nearestEvent.event_date).toLocaleDateString()}</div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Upcoming Events</h2>
+        <h2 className="text-2xl font-semibold font-heading text-primary">
+          What are you both looking forward to?
+        </h2>
         <Button 
           onClick={() => setIsCreateDialogOpen(true)}
-          className="gap-2"
+          className="gap-2 rounded-full bg-primary hover:bg-primary/90 transition-transform duration-300 hover:scale-105 shadow-sm"
         >
           <Plus className="h-4 w-4" />
           Add Event
         </Button>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 mt-6">
         {events?.length === 0 ? (
-          <Card className="p-6 text-center">
-            <p className="text-muted-foreground">No upcoming events</p>
+          <Card className="p-6 text-center rounded-xl bg-muted/20">
+            <p className="text-muted-foreground mb-3">No upcoming events</p>
             <Button 
-              variant="link" 
+              variant="gradient" 
               onClick={() => setIsCreateDialogOpen(true)}
               className="mt-2"
             >
@@ -129,11 +161,29 @@ const UpcomingEventsSection = () => {
         )}
       </div>
 
+      {/* Floating Action Button for mobile */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="fixed right-6 bottom-6 z-10 md:hidden"
+      >
+        <Button
+          ref={fabRef}
+          onClick={() => setIsCreateDialogOpen(true)}
+          size="lg"
+          className="rounded-full w-14 h-14 shadow-lg bg-gradient-to-r from-love-500 to-primary hover:shadow-xl transition-all duration-300"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </motion.div>
+
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Create New Event</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[500px] rounded-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-love-50 to-harmony-50 p-6 -m-6 mb-2">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold">Create New Event</DialogTitle>
+            </DialogHeader>
+          </div>
           <EventForm
             onSubmit={handleCreateEvent}
             onCancel={() => setIsCreateDialogOpen(false)}

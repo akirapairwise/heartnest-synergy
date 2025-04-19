@@ -22,7 +22,7 @@ const buttonVariants = cva(
         love: "bg-love-500 text-white hover:bg-love-600 shadow-sm",
         harmony: "bg-harmony-500 text-white hover:bg-harmony-600 shadow-sm",
         calm: "bg-calm-500 text-white hover:bg-calm-600 shadow-sm",
-        gradient: "bg-gradient-to-r from-love-500 to-harmony-500 text-white hover:from-love-600 hover:to-harmony-600 shadow-sm",
+        gradient: "bg-gradient-to-r from-love-500 to-harmony-500 text-white hover:from-love-600 hover:to-harmony-600 shadow-sm transition-all duration-300",
       },
       size: {
         default: "h-10 px-4 py-2",

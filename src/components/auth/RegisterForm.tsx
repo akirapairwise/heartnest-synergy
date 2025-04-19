@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, User, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RegisterFormProps {
@@ -17,7 +17,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -30,11 +29,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
     
     if (!email || !password) {
       setError('Email and password are required');
-      return false;
-    }
-    
-    if (!fullName) {
-      setError('Full name is required');
       return false;
     }
     
@@ -62,7 +56,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
     }
     
     try {
-      const { error: signUpError } = await signUp(email, password, fullName);
+      // Removed fullName parameter from signUp call
+      const { error: signUpError } = await signUp(email, password);
       
       if (signUpError) {
         setError(signUpError.message);
@@ -106,20 +101,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
             {error}
           </div>
         )}
-        <div className="space-y-2">
-          <Label htmlFor="reg-name" className="text-gray-700">Full Name</Label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-            <Input 
-              id="reg-name" 
-              placeholder="Your name" 
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="pl-10 focus:border-harmony-500 focus:ring-harmony-200"
-              required 
-            />
-          </div>
-        </div>
         <div className="space-y-2">
           <Label htmlFor="reg-email" className="text-gray-700">Email</Label>
           <div className="relative">
@@ -208,3 +189,4 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
 };
 
 export default RegisterForm;
+

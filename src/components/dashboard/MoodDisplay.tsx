@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Heart, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -80,85 +81,87 @@ const MoodDisplay = () => {
   }
   
   return (
-    <Card className="shadow-md overflow-hidden rounded-xl border-none bg-gradient-to-br from-white via-gray-50/50 to-white backdrop-blur-sm">
-      <CardContent className="p-6">
-        <h3 className="font-medium text-base mb-5 flex items-center text-harmony-700">
-          <Heart className="h-5 w-5 text-love-500 mr-2 animate-pulse-soft" />
-          Today's Mood
-        </h3>
-        
-        <div className="flex flex-col sm:flex-row gap-5">
-          {/* User's mood card */}
-          <UserMoodCard 
-            userMoodDisplay={userMoodDisplay} 
-            moodData={defaultUserMood}
-            profile={profile}
-            userName={userDisplayName}
-            isDefaultMood={defaultUserMood.id === "default-user"}
-            onViewDetails={() => openMoodDetails(false, userMoodDisplay, userDisplayName)}
-          />
+    <>
+      <Card className="shadow-md overflow-hidden rounded-xl border-none bg-gradient-to-br from-white via-gray-50/50 to-white backdrop-blur-sm">
+        <CardContent className="p-6">
+          <h3 className="font-medium text-base mb-5 flex items-center text-harmony-700">
+            <Heart className="h-5 w-5 text-love-500 mr-2 animate-pulse-soft" />
+            Today's Mood
+          </h3>
           
-          {/* Partner's mood card or invite prompt */}
-          <PartnerMoodCard 
-            hasPartner={Boolean(profile?.partner_id)}
-            partnerProfile={partnerProfile}
-            partnerName={partnerDisplayName}
-            partnerMood={partnerMood}
-            isMoodVisible={isMoodVisible}
-            partnerMoodDisplay={partnerMoodDisplay}
-            onViewDetails={() => openMoodDetails(true, partnerMoodDisplay, partnerDisplayName)}
-          />
-        </div>
-        
-        <div className="mt-6 text-center">
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMoodDialogOpen(true)}
-            className="w-full bg-gradient-to-r from-love-50 to-harmony-50 hover:from-love-100 hover:to-harmony-100 border-gray-200 text-harmony-700"
-          >
-            <Heart className="h-4 w-4 mr-2 text-love-500" />
-            {defaultUserMood.id !== "default-user" ? "Update Your Mood" : "Log Your Mood"}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-5">
+            {/* User's mood card */}
+            <UserMoodCard 
+              userMoodDisplay={userMoodDisplay} 
+              moodData={defaultUserMood}
+              profile={profile}
+              userName={userDisplayName}
+              isDefaultMood={defaultUserMood.id === "default-user"}
+              onViewDetails={() => openMoodDetails(false, userMoodDisplay, userDisplayName)}
+            />
+            
+            {/* Partner's mood card or invite prompt */}
+            <PartnerMoodCard 
+              hasPartner={Boolean(profile?.partner_id)}
+              partnerProfile={partnerProfile}
+              partnerName={partnerDisplayName}
+              partnerMood={partnerMood}
+              isMoodVisible={isMoodVisible}
+              partnerMoodDisplay={partnerMoodDisplay}
+              onViewDetails={() => openMoodDetails(true, partnerMoodDisplay, partnerDisplayName)}
+            />
+          </div>
           
-          <a 
-            href="/moods"
-            className="inline-flex items-center text-xs text-harmony-600 hover:text-harmony-700 mt-3 hover:underline"
-          >
-            View mood history
-          </a>
-        </div>
-      </CardContent>
-    </Card>
-    
-    {/* Mood update dialog */}
-    <Dialog open={isMoodDialogOpen} onOpenChange={setIsMoodDialogOpen}>
-      <DialogContent className="sm:max-w-[500px] rounded-xl bg-gradient-to-b from-white to-gray-50">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">How are you feeling today?</DialogTitle>
-        </DialogHeader>
-        <MoodTracker 
-          onMoodSaved={handleMoodSaved} 
-          dailyMood={dailyMood}
+          <div className="mt-6 text-center">
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMoodDialogOpen(true)}
+              className="w-full bg-gradient-to-r from-love-50 to-harmony-50 hover:from-love-100 hover:to-harmony-100 border-gray-200 text-harmony-700"
+            >
+              <Heart className="h-4 w-4 mr-2 text-love-500" />
+              {defaultUserMood.id !== "default-user" ? "Update Your Mood" : "Log Your Mood"}
+            </Button>
+            
+            <a 
+              href="/moods"
+              className="inline-flex items-center text-xs text-harmony-600 hover:text-harmony-700 mt-3 hover:underline"
+            >
+              View mood history
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Mood update dialog */}
+      <Dialog open={isMoodDialogOpen} onOpenChange={setIsMoodDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-xl bg-gradient-to-b from-white to-gray-50">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">How are you feeling today?</DialogTitle>
+          </DialogHeader>
+          <MoodTracker 
+            onMoodSaved={handleMoodSaved} 
+            dailyMood={dailyMood}
+          />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Mood details dialog */}
+      {viewingMoodDetails.isOpen && viewingMoodDetails.mood && (
+        <MoodDetailModal
+          open={viewingMoodDetails.isOpen}
+          onClose={() => setViewingMoodDetails(prev => ({ ...prev, isOpen: false }))}
+          name={viewingMoodDetails.name}
+          mood={viewingMoodDetails.mood}
+          note={viewingMoodDetails.isPartner 
+            ? (partnerMood?.note || null) 
+            : (defaultUserMood.note || null)}
+          timestamp={viewingMoodDetails.isPartner 
+            ? (partnerMood?.timestamp || partnerMood?.date || new Date().toISOString()) 
+            : (defaultUserMood.timestamp || defaultUserMood.date || new Date().toISOString())}
         />
-      </DialogContent>
-    </Dialog>
-    
-    {/* Mood details dialog */}
-    {viewingMoodDetails.isOpen && viewingMoodDetails.mood && (
-      <MoodDetailModal
-        open={viewingMoodDetails.isOpen}
-        onClose={() => setViewingMoodDetails(prev => ({ ...prev, isOpen: false }))}
-        name={viewingMoodDetails.name}
-        mood={viewingMoodDetails.mood}
-        note={viewingMoodDetails.isPartner 
-          ? (partnerMood?.note || null) 
-          : (defaultUserMood.note || null)}
-        timestamp={viewingMoodDetails.isPartner 
-          ? (partnerMood?.timestamp || partnerMood?.date || new Date().toISOString()) 
-          : (defaultUserMood.timestamp || defaultUserMood.date || new Date().toISOString())}
-      />
-    )}
+      )}
+    </>
   );
 };
 

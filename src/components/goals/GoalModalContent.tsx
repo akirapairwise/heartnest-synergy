@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Goal } from "@/types/goals";
 import GoalForm from './GoalForm';
@@ -12,17 +12,19 @@ interface GoalModalContentProps {
   isSubmitting: boolean;
   onSubmit: (values: GoalFormValues) => Promise<void>;
   onClose: () => void;
+  isDesktop: boolean; // Pass isDesktop from parent instead of using the hook here
 }
 
 export function GoalModalContent({ 
   goal, 
   isSubmitting, 
   onSubmit, 
-  onClose 
+  onClose,
+  isDesktop
 }: GoalModalContentProps) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   
-  // Only render the appropriate content based on screen size
+  // Only return the content, not the wrapping Dialog/Drawer component
+  // The parent component will handle the Dialog/Drawer wrapping
   if (isDesktop) {
     return (
       <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl">

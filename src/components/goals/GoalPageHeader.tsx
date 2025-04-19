@@ -37,23 +37,15 @@ export function GoalPageHeader({
       
       <div className="flex items-center gap-2">
         {isDesktop ? (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button onClick={handleOpenNewGoal} variant="gradient">
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Goal
-              </Button>
-            </DialogTrigger>
-          </Dialog>
+          <Button onClick={handleOpenNewGoal} variant="gradient">
+            <Plus className="mr-2 h-4 w-4" />
+            Add New Goal
+          </Button>
         ) : (
-          <Drawer>
-            <DrawerTrigger asChild>
-              <Button onClick={handleOpenNewGoal} variant="gradient">
-                <Plus className="mr-2 h-4 w-4" />
-                Add New Goal
-              </Button>
-            </DrawerTrigger>
-          </Drawer>
+          <Button onClick={handleOpenNewGoal} variant="gradient">
+            <Plus className="mr-2 h-4 w-4" />
+            Add New Goal
+          </Button>
         )}
         
         <Button variant="outline" size="icon" onClick={fetchGoals} disabled={isLoading} className="border-harmony-200 hover:bg-harmony-100/50">

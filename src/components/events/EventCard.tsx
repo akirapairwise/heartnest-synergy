@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, MapPin, Users } from 'lucide-react';
 import { format, isPast } from 'date-fns';
+import { cn } from '@/lib/utils';  // Add this import
 
 interface EventCardProps {
   title: string;

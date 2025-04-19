@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, TrendingUp, TrendingDown } from "lucide-react";
@@ -6,7 +5,7 @@ import WeeklyAISummary from './WeeklyAISummary';
 
 const InsightsCard = () => {
   return (
-    <Card className="heart-card">
+    <Card className="heart-card bg-gradient-to-br from-white via-calm-50/30 to-love-50/30 border-calm-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

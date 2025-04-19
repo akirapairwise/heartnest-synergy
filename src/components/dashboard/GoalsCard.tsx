@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -28,7 +27,7 @@ const GoalsCard = () => {
     : 0;
   
   return (
-    <Card className="heart-card">
+    <Card className="heart-card bg-gradient-to-br from-white via-harmony-50/30 to-calm-50/30 border-harmony-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

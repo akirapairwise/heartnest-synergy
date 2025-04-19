@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -204,7 +205,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No specific time</SelectItem>
+                        <SelectItem value="no-time">No specific time</SelectItem>
                         {timeOptions.map((time) => (
                           <SelectItem key={time} value={time}>
                             {time}
@@ -314,7 +315,14 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
                         
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                           <CalendarIcon className="h-4 w-4" />
-                          <span>{getDateDisplay(watchedFields.event_date, watchedFields.event_time)}</span>
+                          <span>
+                            {getDateDisplay(
+                              watchedFields.event_date, 
+                              watchedFields.event_time && watchedFields.event_time !== "no-time" 
+                                ? watchedFields.event_time 
+                                : undefined
+                            )}
+                          </span>
                         </div>
 
                         {watchedFields.location && (
@@ -327,7 +335,12 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
 
                       <div className="text-right">
                         <div className="text-sm font-medium px-3 py-1 rounded-full bg-primary/10 text-primary">
-                          {getDateDisplay(watchedFields.event_date, watchedFields.event_time)}
+                          {getDateDisplay(
+                            watchedFields.event_date,
+                            watchedFields.event_time && watchedFields.event_time !== "no-time" 
+                              ? watchedFields.event_time 
+                              : undefined
+                          )}
                         </div>
                       </div>
                     </div>

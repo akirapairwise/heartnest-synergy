@@ -13,6 +13,7 @@ interface EditEventDialogProps {
     title: string;
     description?: string | null;
     event_date: Date;
+    event_time?: string | null;
     location?: string | null;
     shared_with_partner: boolean;
   };
@@ -28,8 +29,9 @@ const EditEventDialog = ({
 }: EditEventDialogProps) => {
   const handleSubmit = async (formData: any) => {
     try {
-      // Include both date and time in the event_date field
+      // Extract event_time before sending to database
       const { event_time, ...restFormData } = formData;
+      
       const finalData = {
         ...restFormData,
         event_date: formData.event_date.toISOString(),

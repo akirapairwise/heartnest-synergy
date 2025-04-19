@@ -4,7 +4,6 @@ import { Dialog } from "@/components/ui/dialog";
 import { Drawer } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Goal } from "@/types/goals";
-import { createGoal } from "@/services/goalService";
 import { useToast } from "@/components/ui/use-toast";
 import { GoalModalContent } from './GoalModalContent';
 import { GoalFormValues } from './GoalFormSchema';
@@ -34,20 +33,22 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
     try {
       setIsSubmitting(true);
       
+      const goalData = {
+        title: formValues.title,
+        description: formValues.description || null,
+        category: formValues.category || null,
+        status: formValues.status,
+        is_shared: formValues.isShared,
+        goal_type: formValues.isShared ? 'shared' : 'personal',
+        milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
+        deadline: formValues.deadline ? formValues.deadline.toISOString() : null
+      };
+
       if (goal) {
-        // Update existing goal with all form values
+        // Update existing goal
         const { error } = await supabase
           .from('goals')
-          .update({
-            title: formValues.title,
-            description: formValues.description || null,
-            category: formValues.category || null,
-            status: formValues.status,
-            is_shared: formValues.isShared,
-            goal_type: formValues.isShared ? 'shared' : 'personal', // Set goal_type based on isShared
-            milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
-            deadline: formValues.deadline ? formValues.deadline.toISOString() : null
-          })
+          .update(goalData)
           .eq('id', goal.id);
           
         if (error) throw error;
@@ -58,20 +59,11 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
         });
       } else {
         // Create new goal
-        const { goal: newGoal, error } = await createGoal({
-          title: formValues.title,
-          description: formValues.description,
-          category: formValues.category || null,
-          is_shared: formValues.isShared,
-          status: formValues.status,
-          goal_type: formValues.isShared ? 'shared' : 'personal', // Set goal_type based on isShared
-          milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
-          deadline: formValues.deadline ? formValues.deadline.toISOString() : null
-        });
+        const { error } = await supabase
+          .from('goals')
+          .insert(goalData);
         
-        if (error) {
-          throw new Error(error);
-        }
+        if (error) throw error;
         
         toast({
           title: "Goal created",
@@ -93,7 +85,6 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
     }
   };
 
-  // We ensure each modal content is properly wrapped with its parent component
   if (isDesktop) {
     return (
       <Dialog open={true} onOpenChange={(open) => !open && onClose()}>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Heart, Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -82,7 +81,7 @@ const MoodDisplay = () => {
   
   return (
     <>
-      <Card className="shadow-md overflow-hidden rounded-xl border-none bg-gradient-to-br from-white via-gray-50/50 to-white backdrop-blur-sm">
+      <Card className="elevated-card soft-gradient-background overflow-hidden">
         <CardContent className="p-6">
           <h3 className="font-medium text-base mb-5 flex items-center text-harmony-700">
             <Heart className="h-5 w-5 text-love-500 mr-2 animate-pulse-soft" />

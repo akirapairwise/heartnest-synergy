@@ -6,7 +6,7 @@ import WeeklyAISummary from './WeeklyAISummary';
 
 const InsightsCard = () => {
   return (
-    <Card className="heart-card">
+    <Card className="elevated-card soft-gradient-background">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

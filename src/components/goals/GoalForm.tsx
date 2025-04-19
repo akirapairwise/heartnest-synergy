@@ -1,6 +1,5 @@
-
 import React, { useRef, useEffect } from 'react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
@@ -19,6 +18,7 @@ import PartnerSharingOption from './PartnerSharingOption';
 import GoalFormActions from './GoalFormActions';
 import useGoalForm from '@/hooks/useGoalForm';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 
 export interface GoalFormProps {
   goal?: Goal;
@@ -142,7 +142,29 @@ export const GoalForm = (props: GoalFormProps) => {
           {hasSharingOption && (
             <>
               <Separator className="my-4" />
-              <PartnerSharingOption form={form} hasSharingOption={hasSharingOption} />
+              <FormField
+                control={form.control}
+                name="isShared"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Share this goal with my partner?</FormLabel>
+                      <FormDescription>
+                        {field.value ? 
+                          "This goal will be shared with your partner" : 
+                          "This goal will be kept private"}
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="data-[state=checked]:bg-primary"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </>
           )}
           

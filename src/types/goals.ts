@@ -1,4 +1,3 @@
-
 export type Goal = {
   id: string;
   title: string;
@@ -13,6 +12,7 @@ export type Goal = {
   updated_at: string;
   // New fields
   milestones: string[] | null;
+  completed_milestones?: string[];  // Track which milestones are completed
   deadline: string | null;
   // Computed properties for UI
   progress?: number;

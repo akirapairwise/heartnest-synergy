@@ -7,18 +7,26 @@ import { GoalCategoryBadge } from './GoalCategoryBadge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { CalendarIcon, ListChecks } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
+import { Progress } from "@/components/ui/progress";
 
 interface GoalDetailsDialogProps {
   goal: Goal | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRefresh: () => void;
 }
 
 export function GoalDetailsDialog({
   goal,
   open,
-  onOpenChange
+  onOpenChange,
+  onRefresh
 }: GoalDetailsDialogProps) {
+  const { toast } = useToast();
+  
   if (!goal) return null;
 
   // Get initials for avatar fallback
@@ -29,6 +37,62 @@ export function GoalDetailsDialog({
       .join('')
       .toUpperCase()
       .substring(0, 2);
+  };
+
+  const handleMilestoneToggle = async (milestone: string, isChecked: boolean) => {
+    try {
+      const { data: currentGoal } = await supabase
+        .from('goals')
+        .select('completed_milestones, milestones')
+        .eq('id', goal.id)
+        .single();
+
+      let completedMilestones = currentGoal?.completed_milestones || [];
+      
+      if (isChecked) {
+        completedMilestones = [...completedMilestones, milestone];
+      } else {
+        completedMilestones = completedMilestones.filter(m => m !== milestone);
+      }
+
+      const totalMilestones = currentGoal?.milestones?.length || 0;
+      const completionPercentage = totalMilestones > 0 
+        ? Math.round((completedMilestones.length / totalMilestones) * 100)
+        : 0;
+
+      const status = completionPercentage === 100 ? 'completed' : 
+                     completionPercentage > 0 ? 'in_progress' : 'pending';
+
+      const { error } = await supabase
+        .from('goals')
+        .update({ 
+          completed_milestones: completedMilestones,
+          status
+        })
+        .eq('id', goal.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Milestone updated",
+        description: isChecked ? "Milestone completed!" : "Milestone unchecked"
+      });
+
+      onRefresh();
+    } catch (error) {
+      console.error('Error updating milestone:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update milestone",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const calculateProgress = () => {
+    if (!goal.milestones?.length) return 0;
+    const completed = goal.completed_milestones?.length || 0;
+    return Math.round((completed / goal.milestones.length) * 100);
   };
 
   return (
@@ -65,13 +129,35 @@ export function GoalDetailsDialog({
             <div className="space-y-2">
               <h4 className="text-sm font-medium flex items-center gap-1">
                 <ListChecks className="h-4 w-4" />
-                Milestones
+                Milestones Progress
               </h4>
-              <ul className="text-sm space-y-1">
+              <div className="mb-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Overall Progress</span>
+                  <span>{calculateProgress()}%</span>
+                </div>
+                <Progress value={calculateProgress()} className="h-2" />
+              </div>
+              <ul className="text-sm space-y-2">
                 {goal.milestones.map((milestone, index) => (
                   <li key={index} className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
-                    {milestone}
+                    <Checkbox 
+                      id={`milestone-${index}`}
+                      checked={goal.completed_milestones?.includes(milestone)}
+                      onCheckedChange={(checked) => 
+                        handleMilestoneToggle(milestone, checked as boolean)
+                      }
+                    />
+                    <label 
+                      htmlFor={`milestone-${index}`}
+                      className={`flex-1 ${
+                        goal.completed_milestones?.includes(milestone) 
+                          ? "line-through text-muted-foreground" 
+                          : ""
+                      }`}
+                    >
+                      {milestone}
+                    </label>
                   </li>
                 ))}
               </ul>

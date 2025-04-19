@@ -183,6 +183,7 @@ export type Database = {
       goals: {
         Row: {
           category: string | null
+          completed_milestones: string[] | null
           created_at: string
           deadline: string | null
           description: string | null
@@ -198,6 +199,7 @@ export type Database = {
         }
         Insert: {
           category?: string | null
+          completed_milestones?: string[] | null
           created_at?: string
           deadline?: string | null
           description?: string | null
@@ -213,6 +215,7 @@ export type Database = {
         }
         Update: {
           category?: string | null
+          completed_milestones?: string[] | null
           created_at?: string
           deadline?: string | null
           description?: string | null

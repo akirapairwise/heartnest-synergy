@@ -22,7 +22,7 @@ interface SharedGoalsListProps {
 export function SharedGoalsList({ 
   goals, 
   onEdit, 
-  onDelete, 
+  onDelete,
   onRefresh
 }: SharedGoalsListProps) {
   const { toast } = useToast();
@@ -194,6 +194,7 @@ export function SharedGoalsList({
           goal={selectedGoal}
           open={detailsOpen}
           onOpenChange={setDetailsOpen}
+          onRefresh={onRefresh}
         />
       </>
     </TooltipProvider>

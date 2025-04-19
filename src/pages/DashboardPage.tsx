@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/contexts/AuthContext';
@@ -59,14 +58,17 @@ const DashboardPage = () => {
         <>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">Welcome, {userName}</h1>
-              <p className="text-muted-foreground">Here's an overview of your relationship</p>
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-love-600 via-harmony-600 to-calm-600 bg-clip-text text-transparent">
+                Welcome, {userName}
+              </h1>
+              <p className="text-sm text-muted-foreground">Here's an overview of your relationship</p>
             </div>
             
             {!hasPartner && !activeInvite && (
               <Button 
                 onClick={() => navigate('/connect')}
                 className="hidden sm:flex items-center gap-2"
+                variant="gradient"
                 size="sm"
               >
                 <UserPlus className="h-4 w-4" />
@@ -84,7 +86,7 @@ const DashboardPage = () => {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="w-full mb-6 flex justify-start overflow-x-auto">
+            <TabsList className="w-full mb-6 flex justify-start overflow-x-auto bg-gradient-to-r from-harmony-50 to-calm-50 p-1 rounded-lg">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="my-goals">My Goals</TabsTrigger>
               <TabsTrigger value="check-ins">Check-Ins</TabsTrigger>

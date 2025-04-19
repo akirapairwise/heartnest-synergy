@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -12,6 +11,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { OnboardingFormData } from '@/hooks/useOnboardingForm';
+import { pronounOptions } from '@/utils/pronounOptions';
 
 interface NameStepProps {
   formData: OnboardingFormData;
@@ -19,14 +19,6 @@ interface NameStepProps {
 }
 
 const NameStep: React.FC<NameStepProps> = ({ formData, handleChange }) => {
-  const pronounOptions = [
-    { value: 'he/him', label: 'He/Him' },
-    { value: 'she/her', label: 'She/Her' },
-    { value: 'they/them', label: 'They/Them' },
-    { value: 'ze/zir', label: 'Ze/Zir' },
-    { value: 'other', label: 'Other/Prefer not to say' }
-  ];
-
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}

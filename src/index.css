@@ -1,4 +1,8 @@
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @layer components {
   .elevated-card {
     @apply bg-white shadow-[0_4px_16px_-2px_rgba(0,0,0,0.05)] rounded-2xl border border-gray-100 transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08)];

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Goal } from '@/types/goals';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -195,9 +194,6 @@ export function SharedGoalsList({
           goal={selectedGoal}
           open={detailsOpen}
           onOpenChange={setDetailsOpen}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onRefresh={onRefresh}
         />
       </>
     </TooltipProvider>

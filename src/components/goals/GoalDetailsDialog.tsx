@@ -1,35 +1,24 @@
 
 import React from 'react';
 import { Goal } from '@/types/goals';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { GoalCategoryBadge } from './GoalCategoryBadge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { CalendarIcon, ListChecks, Edit, Trash2 } from 'lucide-react';
+import { CalendarIcon, ListChecks } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { updateGoalStatus } from '@/services/goalService';
-import { useToast } from '@/components/ui/use-toast';
 
 interface GoalDetailsDialogProps {
   goal: Goal | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (goal: Goal) => void;
-  onDelete: (goalId: string) => void;
-  onRefresh: () => void;
 }
 
 export function GoalDetailsDialog({
   goal,
   open,
-  onOpenChange,
-  onEdit,
-  onDelete,
-  onRefresh
+  onOpenChange
 }: GoalDetailsDialogProps) {
-  const { toast } = useToast();
-
   if (!goal) return null;
 
   // Get initials for avatar fallback
@@ -40,26 +29,6 @@ export function GoalDetailsDialog({
       .join('')
       .toUpperCase()
       .substring(0, 2);
-  };
-
-  const handleStatusToggle = async () => {
-    try {
-      const newStatus = goal.status === 'completed' ? 'in_progress' : 'completed';
-      await updateGoalStatus(goal.id, newStatus);
-      toast({
-        title: `Goal ${newStatus === 'completed' ? 'completed' : 'reopened'}`,
-        description: `The goal has been marked as ${newStatus === 'completed' ? 'completed' : 'in progress'}.`
-      });
-      onRefresh();
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error updating goal status:', error);
-      toast({
-        title: 'Error',
-        description: 'There was an error updating the goal status.',
-        variant: 'destructive'
-      });
-    }
   };
 
   return (
@@ -130,42 +99,6 @@ export function GoalDetailsDialog({
             Created: {new Date(goal.created_at).toLocaleDateString()}
           </div>
         </div>
-        
-        <DialogFooter className="flex justify-between sm:justify-between">
-          <div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleStatusToggle}
-            >
-              {goal.status === 'completed' ? 'Reopen' : 'Complete'}
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => {
-                onEdit(goal);
-                onOpenChange(false);
-              }}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            {goal.is_self_owned && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => {
-                  onDelete(goal.id);
-                  onOpenChange(false);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

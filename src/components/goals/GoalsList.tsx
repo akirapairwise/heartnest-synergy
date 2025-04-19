@@ -18,6 +18,7 @@ interface GoalsListProps {
   isSharedView?: boolean;
   isPartnerView?: boolean;
   partnerId?: string | null;
+  isLoading?: boolean; // Added isLoading prop
 }
 
 export function GoalsList({ 
@@ -27,7 +28,8 @@ export function GoalsList({
   onRefresh, 
   isSharedView = false,
   isPartnerView = false,
-  partnerId
+  partnerId,
+  isLoading = false // Added with default value
 }: GoalsListProps) {
   const { toast } = useToast();
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -89,6 +91,21 @@ export function GoalsList({
       .toUpperCase()
       .substring(0, 2) || 'PA';
   };
+  
+  // Show loading state or empty state if applicable
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="animate-pulse">
+            <div className="h-4 bg-muted rounded w-1/3 mb-2"></div>
+            <div className="h-3 bg-muted rounded w-full mb-4"></div>
+            <div className="h-2 bg-muted rounded w-full"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   
   if (goals.length === 0) {
     return <GoalsEmptyState isSharedView={isSharedView} isPartnerView={isPartnerView} />;

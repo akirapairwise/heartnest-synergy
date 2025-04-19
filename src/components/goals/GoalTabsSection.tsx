@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Goal } from '@/types/goals';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +17,7 @@ import { usePartnerInvite } from '@/hooks/usePartnerInvite';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import UpcomingEventsSection from '@/components/events/UpcomingEventsSection';
 
 const DashboardPage = () => {
   const { profile, isLoading } = useAuth();
@@ -89,6 +89,7 @@ const DashboardPage = () => {
               <TabsTrigger value="check-ins">Check-Ins</TabsTrigger>
               <TabsTrigger value="conflicts">Conflicts</TabsTrigger>
               <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
+              <TabsTrigger value="events">Events</TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="space-y-6">
@@ -108,6 +109,8 @@ const DashboardPage = () => {
                 </div>
               </div>
               
+              <UpcomingEventsSection />
+              
               {!hasPartner && !activeInvite && (
                 <div className="sm:hidden">
                   <Button 
@@ -119,6 +122,12 @@ const DashboardPage = () => {
                   </Button>
                 </div>
               )}
+            </TabsContent>
+            
+            <TabsContent value="events">
+              <div className="max-w-4xl mx-auto">
+                <UpcomingEventsSection />
+              </div>
             </TabsContent>
             
             <TabsContent value="my-goals" className="mt-6">

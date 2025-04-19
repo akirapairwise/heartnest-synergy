@@ -138,6 +138,48 @@ export type Database = {
         }
         Relationships: []
       }
+      event_notifications: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          is_sent: boolean
+          notification_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          is_sent?: boolean
+          notification_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_sent?: boolean
+          notification_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "partner_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "partner_events_with_countdown"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
           category: string | null
@@ -207,6 +249,42 @@ export type Database = {
           expires_at?: string
           inviter_id?: string
           is_used?: boolean
+        }
+        Relationships: []
+      }
+      partner_events: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string | null
+          event_date: string
+          id: string
+          location: string | null
+          shared_with_partner: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          event_date: string
+          id?: string
+          location?: string | null
+          shared_with_partner?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          event_date?: string
+          id?: string
+          location?: string | null
+          shared_with_partner?: boolean
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -386,6 +464,45 @@ export type Database = {
       }
     }
     Views: {
+      partner_events_with_countdown: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          days_to_event: number | null
+          description: string | null
+          event_date: string | null
+          id: string | null
+          location: string | null
+          shared_with_partner: boolean | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id?: string | null
+          days_to_event?: never
+          description?: string | null
+          event_date?: string | null
+          id?: string | null
+          location?: string | null
+          shared_with_partner?: boolean | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string | null
+          days_to_event?: never
+          description?: string | null
+          event_date?: string | null
+          id?: string | null
+          location?: string | null
+          shared_with_partner?: boolean | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       partner_links: {
         Row: {
           partner_id: string | null

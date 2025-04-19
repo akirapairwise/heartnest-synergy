@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { CalendarIcon, ListChecks } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from "@/components/ui/progress";
 
@@ -41,11 +41,21 @@ export function GoalDetailsDialog({
 
   const handleMilestoneToggle = async (milestone: string, isChecked: boolean) => {
     try {
-      const { data: currentGoal } = await supabase
+      const { data: currentGoal, error: fetchError } = await supabase
         .from('goals')
         .select('completed_milestones, milestones')
         .eq('id', goal.id)
         .single();
+
+      if (fetchError) {
+        console.error('Error fetching goal:', fetchError);
+        toast({
+          title: "Error",
+          description: "Failed to load goal data",
+          variant: "destructive"
+        });
+        return;
+      }
 
       let completedMilestones = currentGoal?.completed_milestones || [];
       
@@ -63,7 +73,7 @@ export function GoalDetailsDialog({
       const status = completionPercentage === 100 ? 'completed' : 
                      completionPercentage > 0 ? 'in_progress' : 'pending';
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('goals')
         .update({ 
           completed_milestones: completedMilestones,
@@ -71,7 +81,15 @@ export function GoalDetailsDialog({
         })
         .eq('id', goal.id);
 
-      if (error) throw error;
+      if (updateError) {
+        console.error('Error updating goal:', updateError);
+        toast({
+          title: "Error",
+          description: "Failed to update milestone",
+          variant: "destructive"
+        });
+        return;
+      }
 
       toast({
         title: "Milestone updated",

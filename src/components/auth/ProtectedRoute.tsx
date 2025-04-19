@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -12,33 +12,63 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, isLoading, isOnboardingComplete, refreshSession } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [hasAttemptedRefresh, setHasAttemptedRefresh] = useState(false);
+  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
 
+  // Try to refresh session once if no user is found
   useEffect(() => {
-    // If session appears to be expired, try refreshing it
     const checkAndRefreshSession = async () => {
-      if (!user && !isLoading) {
+      if (!user && !isLoading && !hasAttemptedRefresh) {
         console.log('No user detected in protected route, attempting to refresh session');
+        setHasAttemptedRefresh(true);
         await refreshSession();
       }
     };
     
     checkAndRefreshSession();
-  }, [refreshSession, user, isLoading]);
+  }, [refreshSession, user, isLoading, hasAttemptedRefresh]);
 
+  // Handle redirects with a safety timeout
   useEffect(() => {
-    // If user is still not authenticated after loading is complete and refresh attempt, redirect to auth
-    if (!isLoading && !user) {
+    // Clear any existing timeout
+    if (redirectTimeout) {
+      clearTimeout(redirectTimeout);
+    }
+
+    // If still loading after 5 seconds, force redirect to auth page
+    // This prevents infinite loading if something goes wrong
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('Loading timeout reached, redirecting to auth page');
+        navigate('/auth', { state: { from: location.pathname }, replace: true });
+      }
+    }, 5000);
+
+    setRedirectTimeout(timeout);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [isLoading, navigate, location.pathname]);
+
+  // Handle redirects based on auth state
+  useEffect(() => {
+    // Skip if still loading or refreshing
+    if (isLoading) return;
+    
+    // If user is not authenticated after loading is complete and refresh attempt, redirect to auth
+    if (!user) {
       console.log('User not authenticated, redirecting to auth page');
       navigate('/auth', { state: { from: location.pathname }, replace: true });
+      return;
     }
     
     // If user is authenticated but onboarding is not complete, redirect to onboarding
-    // Only redirect if not already on the onboarding page
-    if (!isLoading && user && isOnboardingComplete === false && !location.pathname.includes('/onboarding')) {
+    if (user && isOnboardingComplete === false && !location.pathname.includes('/onboarding')) {
       console.log('User authenticated but onboarding not complete, redirecting to onboarding');
       navigate('/onboarding', { replace: true });
     }
-  }, [user, isLoading, isOnboardingComplete, location.pathname, navigate]);
+  }, [user, isLoading, isOnboardingComplete, location.pathname, navigate, hasAttemptedRefresh]);
 
   if (isLoading) {
     return (

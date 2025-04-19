@@ -12,13 +12,36 @@ const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isPageReady, setIsPageReady] = useState(false);
+  const [hasAttemptedRefresh, setHasAttemptedRefresh] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
+  
+  // Set up a maximum loading time of 5 seconds
+  useEffect(() => {
+    if (isLoading && !loadingTimeout) {
+      const timeout = setTimeout(() => {
+        setIsPageReady(true);
+        console.log('Loading timeout reached in AppLayout');
+      }, 5000);
+      
+      setLoadingTimeout(timeout);
+      return () => {
+        if (timeout) clearTimeout(timeout);
+      };
+    }
+    
+    if (!isLoading && loadingTimeout) {
+      clearTimeout(loadingTimeout);
+      setLoadingTimeout(null);
+    }
+  }, [isLoading, loadingTimeout]);
   
   // Check authentication status and refresh if needed
   useEffect(() => {
     const checkAuth = async () => {
       if (!isLoading) {
-        if (!user) {
+        if (!user && !hasAttemptedRefresh) {
           console.log('No user in AppLayout, attempting to refresh session');
+          setHasAttemptedRefresh(true);
           await refreshSession();
           
           // If still no user after refresh, redirect to auth
@@ -55,10 +78,10 @@ const AppLayout = () => {
     };
     
     checkAuth();
-  }, [user, isLoading, navigate, location.pathname, refreshSession]);
+  }, [user, isLoading, navigate, location.pathname, refreshSession, hasAttemptedRefresh]);
 
-  // Show loading when authenticating
-  if (isLoading || !isPageReady) {
+  // Show loading when authenticating, but not indefinitely
+  if (isLoading && !isPageReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

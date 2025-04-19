@@ -11,6 +11,7 @@ import {
   updateOnboardingStatus, 
   updateProfile 
 } from '@/services/authService';
+import { toast } from 'sonner';
 
 export type AuthContextType = {
   session: Session | null;
@@ -24,7 +25,7 @@ export type AuthContextType = {
   updateOnboardingStatus: (isComplete: boolean) => Promise<{ error: any | null } | undefined>;
   updateProfile: (data: Partial<Profile>) => Promise<{ error: any | null } | undefined>;
   fetchUserProfile: (userId: string) => Promise<void>;
-  refreshSession: () => Promise<void>; // Added this function type
+  refreshSession: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,91 +36,127 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  // Add refreshSession function
+  // Improved refreshSession function with error handling and timeout
   const refreshSession = async () => {
-    setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Refreshing session...');
+      const { data, error } = await supabase.auth.getSession();
       
-      setSession(session);
-      setUser(session?.user || null);
-      
-      if (session?.user) {
-        await fetchUserProfile(session.user.id);
+      if (error) {
+        console.error('Error refreshing session:', error);
+        setSession(null);
+        setUser(null);
+        setAuthChecked(true);
+        return;
       }
+      
+      setSession(data.session);
+      setUser(data.session?.user || null);
+      
+      if (data.session?.user) {
+        const profileResult = await fetchUserProfile(data.session.user.id);
+        setProfile(profileResult.profile);
+        setIsOnboardingComplete(profileResult.isOnboardingComplete);
+      }
+      
+      setAuthChecked(true);
     } catch (error) {
-      console.error("Error refreshing session:", error);
+      console.error("Error in refreshSession:", error);
+      setSession(null);
+      setUser(null);
+      setAuthChecked(true);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Initialize authentication state
   useEffect(() => {
-    const loadSession = async () => {
-      setIsLoading(true);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        setSession(session);
-        setUser(session?.user || null);
-
-        if (session?.user) {
-          await fetchUserProfile(session.user.id);
+    // First, set up auth state listener before checking session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      console.log('Auth state changed:', event);
+      
+      // Use setTimeout to avoid deadlocks in Supabase auth
+      setTimeout(() => {
+        setSession(currentSession);
+        setUser(currentSession?.user || null);
+        
+        // Don't make additional Supabase calls here to prevent loops
+        if (currentSession?.user) {
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            // Only fetch profile if we have a session
+            fetchUserProfile(currentSession.user.id).then(({ profile, isOnboardingComplete }) => {
+              setProfile(profile);
+              setIsOnboardingComplete(isOnboardingComplete);
+            });
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setProfile(null);
+          setIsOnboardingComplete(null);
         }
-      } catch (error) {
-        console.error("Error loading session:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSession();
-
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      setUser(session?.user || null);
-
-      if (session?.user) {
-        await fetchUserProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setIsOnboardingComplete(null);
-      }
+      }, 0);
     });
+
+    // Then check initial session
+    refreshSession();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  useEffect(() => {
-    const getProfile = async () => {
-      if (user) {
-        const { profile: userProfile, isOnboardingComplete: onboardingStatus } = await fetchUserProfile(user.id);
-        setProfile(userProfile);
-        setIsOnboardingComplete(onboardingStatus);
-      } else {
-        setProfile(null);
-        setIsOnboardingComplete(null);
-      }
-    };
-
-    getProfile();
-  }, [user]);
+  const fetchUserProfileContext = async (userId: string) => {
+    try {
+      const result = await fetchUserProfile(userId);
+      setProfile(result.profile);
+      setIsOnboardingComplete(result.isOnboardingComplete);
+      return result;
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return { profile: null, isOnboardingComplete: null, error };
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
-    const result = await apiSignIn(email, password);
-    return result;
+    setIsLoading(true);
+    try {
+      const result = await apiSignIn(email, password);
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const signUp = async (email: string, password: string) => {
-    const result = await apiSignUp(email, password);
-    return result;
+    setIsLoading(true);
+    try {
+      const result = await apiSignUp(email, password);
+      
+      // If signup was successful but we don't have a session yet (due to email confirmation)
+      if (!result.error) {
+        // Try to get session after successful signup
+        await refreshSession();
+      }
+      
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const signOut = async () => {
-    await apiSignOut();
-    setSession(null);
-    setUser(null);
-    setProfile(null);
-    setIsOnboardingComplete(null);
+    setIsLoading(true);
+    try {
+      await apiSignOut();
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setIsOnboardingComplete(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateOnboardingStatusContext = async (isComplete: boolean) => {
@@ -154,27 +191,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const fetchUserProfileContext = async (userId: string) => {
-    const { profile: userProfile, isOnboardingComplete: onboardingStatus } = await fetchUserProfile(userId);
-    setProfile(userProfile);
-    setIsOnboardingComplete(onboardingStatus);
+  const contextValue = {
+    session,
+    user,
+    profile,
+    isLoading,
+    isOnboardingComplete,
+    signIn,
+    signUp,
+    signOut,
+    updateOnboardingStatus: updateOnboardingStatusContext,
+    updateProfile: updateProfileContext,
+    fetchUserProfile: fetchUserProfileContext,
+    refreshSession
   };
 
   return (
-    <AuthContext.Provider value={{
-      session,
-      user,
-      profile,
-      isLoading,
-      isOnboardingComplete,
-      signIn,
-      signUp,
-      signOut,
-      updateOnboardingStatus: updateOnboardingStatusContext,
-      updateProfile: updateProfileContext,
-      fetchUserProfile: fetchUserProfileContext,
-      refreshSession // Add the refreshSession function here
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

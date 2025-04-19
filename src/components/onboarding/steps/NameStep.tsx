@@ -4,6 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { OnboardingFormData } from '@/hooks/useOnboardingForm';
 
 interface NameStepProps {
@@ -12,6 +19,14 @@ interface NameStepProps {
 }
 
 const NameStep: React.FC<NameStepProps> = ({ formData, handleChange }) => {
+  const pronounOptions = [
+    { value: 'he/him', label: 'He/Him' },
+    { value: 'she/her', label: 'She/Her' },
+    { value: 'they/them', label: 'They/Them' },
+    { value: 'ze/zir', label: 'Ze/Zir' },
+    { value: 'other', label: 'Other/Prefer not to say' }
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -49,14 +64,22 @@ const NameStep: React.FC<NameStepProps> = ({ formData, handleChange }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <Label htmlFor="pronouns">Your preferred pronouns? (optional)</Label>
-                <Input
-                  id="pronouns"
+                <Label htmlFor="pronouns">Your preferred pronouns</Label>
+                <Select
                   value={formData.pronouns || ''}
-                  onChange={(e) => handleChange('pronouns', e.target.value)}
-                  placeholder="e.g., she/her, he/him, they/them"
-                  className="mt-1"
-                />
+                  onValueChange={(value) => handleChange('pronouns', value)}
+                >
+                  <SelectTrigger className="mt-1 w-full">
+                    <SelectValue placeholder="Select your pronouns" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pronounOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </motion.div>
             </div>
           </div>

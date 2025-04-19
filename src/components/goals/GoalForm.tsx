@@ -1,24 +1,18 @@
-
 import React, { useRef, useEffect } from 'react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Goal } from '@/types/goals';
 import { GoalFormValues, goalCategories } from './GoalFormSchema';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { InfoIcon } from 'lucide-react';
 import MilestoneInput from './MilestoneInput';
 import DeadlinePicker from './DeadlinePicker';
 import GoalFormActions from './GoalFormActions';
 import useGoalForm from '@/hooks/useGoalForm';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
 
 export interface GoalFormProps {
   goal?: Goal;
@@ -141,10 +135,23 @@ export const GoalForm = (props: GoalFormProps) => {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm hover:shadow-md transition-all duration-200">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base">Goal Type</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormLabel className="text-base">Goal Type</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Shared goals appear on your partner's dashboard too.</p>
+                            <p>Personal goals are just for you.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormDescription>
                       {field.value ? 
-                        "Shared with your partner" : 
+                        "This goal will be shared with your partner" : 
                         "Only visible to you"}
                     </FormDescription>
                   </div>

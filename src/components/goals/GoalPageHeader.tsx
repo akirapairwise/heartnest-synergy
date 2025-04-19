@@ -37,7 +37,7 @@ export function GoalPageHeader({
       
       <div className="flex items-center gap-2">
         {isDesktop ? (
-          <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
+          <>
             <DialogTrigger asChild>
               <Button onClick={handleOpenNewGoal} variant="gradient">
                 <Plus className="mr-2 h-4 w-4" />
@@ -50,9 +50,9 @@ export function GoalPageHeader({
                 onSuccess={onSuccess}
               />
             )}
-          </Dialog>
+          </>
         ) : (
-          <Drawer open={goalModalOpen} onOpenChange={setGoalModalOpen}>
+          <>
             <DrawerTrigger asChild>
               <Button onClick={handleOpenNewGoal} variant="gradient">
                 <Plus className="mr-2 h-4 w-4" />
@@ -65,7 +65,7 @@ export function GoalPageHeader({
                 onSuccess={onSuccess}
               />
             )}
-          </Drawer>
+          </>
         )}
         
         <Button variant="outline" size="icon" onClick={fetchGoals} disabled={isLoading} className="border-harmony-200 hover:bg-harmony-100/50">

@@ -93,12 +93,27 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
     }
   };
 
+  if (isDesktop) {
+    return (
+      <Dialog open={true} onOpenChange={onClose}>
+        <GoalModalContent
+          goal={goal}
+          isSubmitting={isSubmitting}
+          onSubmit={handleSubmit}
+          onClose={onClose}
+        />
+      </Dialog>
+    );
+  }
+
   return (
-    <GoalModalContent
-      goal={goal}
-      isSubmitting={isSubmitting}
-      onSubmit={handleSubmit}
-      onClose={onClose}
-    />
+    <Drawer open={true} onOpenChange={onClose}>
+      <GoalModalContent
+        goal={goal}
+        isSubmitting={isSubmitting}
+        onSubmit={handleSubmit}
+        onClose={onClose}
+      />
+    </Drawer>
   );
 }

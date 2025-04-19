@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Goal } from "@/types/goals";
 import GoalForm from './GoalForm';
@@ -22,29 +22,49 @@ export function GoalModalContent({
 }: GoalModalContentProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   
-  // Determine which components to use based on screen size
-  const Content = isDesktop ? DialogContent : DrawerContent;
-  const Header = isDesktop ? DialogHeader : DrawerHeader;
-  const Title = isDesktop ? DialogTitle : DrawerTitle;
-  const Description = isDesktop ? DialogDescription : DrawerDescription;
-
+  // Only render the appropriate content based on screen size
+  if (isDesktop) {
+    return (
+      <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-xl font-semibold">{goal ? 'Edit Goal' : 'Create New Goal'}</DialogTitle>
+          <DialogDescription className="text-sm md:text-base text-muted-foreground">
+            {goal 
+              ? 'Update your relationship goal details' 
+              : 'Add a new goal to strengthen your relationship'}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <GoalForm 
+          goal={goal}
+          onSubmit={onSubmit}
+          onCancel={onClose}
+          isSubmitting={isSubmitting}
+        />
+      </DialogContent>
+    );
+  }
+  
+  // Mobile drawer version
   return (
-    <Content className={`sm:max-w-md md:max-w-lg lg:max-w-xl ${!isDesktop ? 'h-[85vh]' : ''}`}>
-      <Header className="pb-4">
-        <Title className="text-xl font-semibold">{goal ? 'Edit Goal' : 'Create New Goal'}</Title>
-        <Description className="text-sm md:text-base text-muted-foreground">
+    <DrawerContent className="h-[85vh]">
+      <DrawerHeader className="pb-4">
+        <DrawerTitle className="text-xl font-semibold">{goal ? 'Edit Goal' : 'Create New Goal'}</DrawerTitle>
+        <DrawerDescription className="text-sm md:text-base text-muted-foreground">
           {goal 
             ? 'Update your relationship goal details' 
             : 'Add a new goal to strengthen your relationship'}
-        </Description>
-      </Header>
+        </DrawerDescription>
+      </DrawerHeader>
       
-      <GoalForm 
-        goal={goal}
-        onSubmit={onSubmit}
-        onCancel={onClose}
-        isSubmitting={isSubmitting}
-      />
-    </Content>
+      <div className="px-4">
+        <GoalForm 
+          goal={goal}
+          onSubmit={onSubmit}
+          onCancel={onClose}
+          isSubmitting={isSubmitting}
+        />
+      </div>
+    </DrawerContent>
   );
 }

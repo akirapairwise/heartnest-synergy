@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -23,6 +24,7 @@ export type AuthContextType = {
   updateOnboardingStatus: (isComplete: boolean) => Promise<{ error: any | null } | undefined>;
   updateProfile: (data: Partial<Profile>) => Promise<{ error: any | null } | undefined>;
   fetchUserProfile: (userId: string) => Promise<void>;
+  refreshSession: () => Promise<void>; // Added this function type
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +35,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isOnboardingComplete, setIsOnboardingComplete] = useState<boolean | null>(null);
+
+  // Add refreshSession function
+  const refreshSession = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      setSession(session);
+      setUser(session?.user || null);
+      
+      if (session?.user) {
+        await fetchUserProfile(session.user.id);
+      }
+    } catch (error) {
+      console.error("Error refreshing session:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadSession = async () => {
@@ -151,7 +172,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signOut,
       updateOnboardingStatus: updateOnboardingStatusContext,
       updateProfile: updateProfileContext,
-      fetchUserProfile: fetchUserProfileContext
+      fetchUserProfile: fetchUserProfileContext,
+      refreshSession // Add the refreshSession function here
     }}>
       {children}
     </AuthContext.Provider>

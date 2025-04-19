@@ -193,8 +193,8 @@ export const useOnboardingForm = (totalSteps: number) => {
         love_language_preference: formData.love_language_preference || null,
         conflict_resolution_style: formData.conflict_resolution_style || null,
         shared_goals: formData.shared_goals || null,
-        // Mark complete stage
-        profile_complete_stage: 'complete',
+        // Mark complete stage - fix the type here
+        profile_complete_stage: 'complete' as 'complete',
         // Explicitly set the onboarding flag to true
         is_onboarding_complete: true
       };
@@ -297,8 +297,8 @@ export const useOnboardingForm = (totalSteps: number) => {
         interaction_frequency: formData.interaction_frequency || null,
         preferred_communication: formData.preferred_communication || null,
         areas_to_improve: formData.areas_to_improve || null,
-        // Mark complete stage
-        profile_complete_stage: 'basic',
+        // Mark complete stage - fix the type here
+        profile_complete_stage: 'basic' as 'basic',
         // Explicitly set the onboarding flag to true
         is_onboarding_complete: true
       };

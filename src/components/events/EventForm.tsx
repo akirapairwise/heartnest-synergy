@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -10,17 +9,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Users, Info } from 'lucide-react';
+import { CalendarIcon, Users, Info, Clock } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formSchema = z.object({
   title: z.string().min(2, { message: 'Title must be at least 2 characters' }),
   description: z.string().optional(),
   event_date: z.date(),
+  event_time: z.string().optional(),
   location: z.string().optional(),
   shared_with_partner: z.boolean().default(false),
 });
@@ -34,10 +35,24 @@ interface EventFormProps {
     title: string;
     description?: string | null;
     event_date: Date;
+    event_time?: string | null;
     location?: string | null;
     shared_with_partner: boolean;
   };
 }
+
+// Helper function to generate time options
+const generateTimeOptions = () => {
+  const options = [];
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const hourStr = hour.toString().padStart(2, '0');
+      const minuteStr = minute.toString().padStart(2, '0');
+      options.push(`${hourStr}:${minuteStr}`);
+    }
+  }
+  return options;
+};
 
 const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
   const form = useForm<FormData>({
@@ -46,6 +61,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
       title: defaultValues?.title ?? '',
       description: defaultValues?.description ?? '',
       event_date: defaultValues?.event_date ?? new Date(),
+      event_time: defaultValues?.event_time ?? undefined,
       location: defaultValues?.location ?? '',
       shared_with_partner: defaultValues?.shared_with_partner ?? false,
     },
@@ -55,19 +71,30 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
   const watchedFields = form.watch();
 
   const handleSubmit = (data: FormData) => {
+    // Combine date and time if time is provided
+    if (data.event_time) {
+      const [hours, minutes] = data.event_time.split(':').map(Number);
+      const dateWithTime = new Date(data.event_date);
+      dateWithTime.setHours(hours, minutes);
+      data.event_date = dateWithTime;
+    }
     onSubmit(data);
   };
 
   // Format date for display in preview
-  const getDateDisplay = (date: Date) => {
+  const getDateDisplay = (date: Date, time?: string) => {
     const now = new Date();
     const timeDiff = Math.ceil((date.getTime() - now.getTime()) / (1000 * 3600 * 24));
     
-    if (timeDiff === 0) return "Today!";
-    if (timeDiff === 1) return "Tomorrow";
-    if (timeDiff > 0) return `In ${timeDiff} days`;
-    return format(date, 'PPP');
+    const dateText = timeDiff === 0 ? "Today" : 
+                    timeDiff === 1 ? "Tomorrow" : 
+                    timeDiff > 0 ? `In ${timeDiff} days` : 
+                    format(date, 'PPP');
+                    
+    return time ? `${dateText} at ${time}` : dateText;
   };
+
+  const timeOptions = generateTimeOptions();
 
   return (
     <div className="space-y-6">
@@ -154,23 +181,64 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
 
               <FormField
                 control={form.control}
-                name="location"
+                name="event_time"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Location (Optional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter location" 
-                        {...field} 
-                        value={field.value || ''} 
-                        className="rounded-lg focus:ring-primary focus:border-primary transition-all"
-                      />
-                    </FormControl>
+                    <FormLabel className="text-base">Time (Optional)</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="rounded-lg">
+                          <SelectValue placeholder="Select a time">
+                            {field.value ? (
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                {field.value}
+                              </div>
+                            ) : (
+                              "Select a time"
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No specific time</SelectItem>
+                        {timeOptions.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Optional: Set a specific time for your event
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base">Location (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Enter location" 
+                      {...field} 
+                      value={field.value || ''} 
+                      className="rounded-lg focus:ring-primary focus:border-primary transition-all"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -246,7 +314,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
                         
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                           <CalendarIcon className="h-4 w-4" />
-                          <span>{format(watchedFields.event_date, 'PPP')}</span>
+                          <span>{getDateDisplay(watchedFields.event_date, watchedFields.event_time)}</span>
                         </div>
 
                         {watchedFields.location && (
@@ -259,7 +327,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
 
                       <div className="text-right">
                         <div className="text-sm font-medium px-3 py-1 rounded-full bg-primary/10 text-primary">
-                          {getDateDisplay(watchedFields.event_date)}
+                          {getDateDisplay(watchedFields.event_date, watchedFields.event_time)}
                         </div>
                       </div>
                     </div>

@@ -28,13 +28,17 @@ const EditEventDialog = ({
 }: EditEventDialogProps) => {
   const handleSubmit = async (formData: any) => {
     try {
+      // Include both date and time in the event_date field
+      const { event_time, ...restFormData } = formData;
+      const finalData = {
+        ...restFormData,
+        event_date: formData.event_date.toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
       const { error } = await supabase
         .from('partner_events')
-        .update({
-          ...formData,
-          event_date: formData.event_date.toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        .update(finalData)
         .eq('id', eventId);
 
       if (error) throw error;

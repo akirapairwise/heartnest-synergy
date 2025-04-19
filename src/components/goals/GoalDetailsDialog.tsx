@@ -50,7 +50,7 @@ export function GoalDetailsDialog({
                 </AvatarFallback>
               </Avatar>
             )}
-            <span className={goal.completed ? "line-through text-muted-foreground" : ""}>
+            <span className={goal.status === 'completed' ? "line-through text-muted-foreground" : ""}>
               {goal.title}
             </span>
           </DialogTitle>

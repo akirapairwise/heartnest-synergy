@@ -1,9 +1,9 @@
 
 import React from 'react';
+import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Milestone } from 'lucide-react';
 import { Goal } from '@/types/goals';
-import { Progress } from "@/components/ui/progress";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ListChecks } from 'lucide-react';
 
 interface GoalMilestonesProps {
   goal: Goal;
@@ -12,44 +12,47 @@ interface GoalMilestonesProps {
 }
 
 export function GoalMilestones({ goal, progress, onMilestoneToggle }: GoalMilestonesProps) {
-  if (!goal.milestones || goal.milestones.length === 0) return null;
+  if (!goal.milestones || goal.milestones.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="space-y-2">
-      <h4 className="text-sm font-medium flex items-center gap-1">
-        <ListChecks className="h-4 w-4" />
-        Milestones Progress
-      </h4>
-      <div className="mb-4">
-        <div className="flex justify-between text-sm mb-1">
-          <span>Overall Progress</span>
-          <span>{progress}%</span>
+    <div className="space-y-3">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-sm font-medium">Progress</h4>
+          <span className="text-sm font-medium">{progress}%</span>
         </div>
         <Progress value={progress} className="h-2" />
       </div>
-      <ul className="text-sm space-y-2">
-        {goal.milestones.map((milestone, index) => (
-          <li key={index} className="flex items-center gap-2">
-            <Checkbox 
-              id={`milestone-${index}`}
-              checked={goal.completed_milestones?.includes(milestone)}
-              onCheckedChange={(checked) => 
-                onMilestoneToggle(milestone, checked as boolean)
-              }
-            />
-            <label 
-              htmlFor={`milestone-${index}`}
-              className={`flex-1 ${
-                goal.completed_milestones?.includes(milestone) 
-                  ? "line-through text-muted-foreground" 
-                  : ""
-              }`}
-            >
-              {milestone}
-            </label>
-          </li>
-        ))}
-      </ul>
+      
+      <div>
+        <h4 className="text-sm font-medium mb-2">Milestones</h4>
+        <ul className="space-y-2">
+          {goal.milestones.map((milestone, index) => {
+            const isCompleted = goal.completed_milestones?.includes(milestone) || false;
+            
+            return (
+              <li key={`${milestone}-${index}`} className="flex items-start gap-2">
+                <Checkbox 
+                  id={`milestone-${index}`}
+                  checked={isCompleted}
+                  onCheckedChange={(checked) => {
+                    onMilestoneToggle(milestone, checked === true);
+                  }}
+                  className="mt-0.5"
+                />
+                <label 
+                  htmlFor={`milestone-${index}`}
+                  className={`text-sm flex-1 cursor-pointer ${isCompleted ? 'line-through text-muted-foreground' : ''}`}
+                >
+                  {milestone}
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   );
 }

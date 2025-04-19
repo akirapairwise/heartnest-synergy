@@ -5,12 +5,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { GoalCategoryBadge } from './GoalCategoryBadge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { CalendarIcon, ListChecks } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from '@/integrations/supabase/client';
-import { Progress } from "@/components/ui/progress";
+import { GoalMetadata } from './dialog/GoalMetadata';
+import { GoalMilestones } from './dialog/GoalMilestones';
+import { useMilestoneManagement } from '@/hooks/goals/useMilestoneManagement';
 
 interface GoalDetailsDialogProps {
   goal: Goal | null;
@@ -25,7 +22,7 @@ export function GoalDetailsDialog({
   onOpenChange,
   onRefresh
 }: GoalDetailsDialogProps) {
-  const { toast } = useToast();
+  const { handleMilestoneToggle, calculateProgress } = useMilestoneManagement(onRefresh);
   
   if (!goal) return null;
 
@@ -39,79 +36,7 @@ export function GoalDetailsDialog({
       .substring(0, 2);
   };
 
-  const handleMilestoneToggle = async (milestone: string, isChecked: boolean) => {
-    try {
-      const { data: currentGoal, error: fetchError } = await supabase
-        .from('goals')
-        .select('completed_milestones, milestones')
-        .eq('id', goal.id)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching goal:', fetchError);
-        toast({
-          title: "Error",
-          description: "Failed to load goal data",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      let completedMilestones = currentGoal?.completed_milestones || [];
-      
-      if (isChecked) {
-        completedMilestones = [...completedMilestones, milestone];
-      } else {
-        completedMilestones = completedMilestones.filter(m => m !== milestone);
-      }
-
-      const totalMilestones = currentGoal?.milestones?.length || 0;
-      const completionPercentage = totalMilestones > 0 
-        ? Math.round((completedMilestones.length / totalMilestones) * 100)
-        : 0;
-
-      const status = completionPercentage === 100 ? 'completed' : 
-                     completionPercentage > 0 ? 'in_progress' : 'pending';
-
-      const { error: updateError } = await supabase
-        .from('goals')
-        .update({ 
-          completed_milestones: completedMilestones,
-          status
-        })
-        .eq('id', goal.id);
-
-      if (updateError) {
-        console.error('Error updating goal:', updateError);
-        toast({
-          title: "Error",
-          description: "Failed to update milestone",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      toast({
-        title: "Milestone updated",
-        description: isChecked ? "Milestone completed!" : "Milestone unchecked"
-      });
-
-      onRefresh();
-    } catch (error) {
-      console.error('Error updating milestone:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update milestone",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const calculateProgress = () => {
-    if (!goal.milestones?.length) return 0;
-    const completed = goal.completed_milestones?.length || 0;
-    return Math.round((completed / goal.milestones.length) * 100);
-  };
+  const progress = calculateProgress(goal);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -143,65 +68,15 @@ export function GoalDetailsDialog({
             </div>
           )}
           
-          {goal.milestones && goal.milestones.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium flex items-center gap-1">
-                <ListChecks className="h-4 w-4" />
-                Milestones Progress
-              </h4>
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Overall Progress</span>
-                  <span>{calculateProgress()}%</span>
-                </div>
-                <Progress value={calculateProgress()} className="h-2" />
-              </div>
-              <ul className="text-sm space-y-2">
-                {goal.milestones.map((milestone, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <Checkbox 
-                      id={`milestone-${index}`}
-                      checked={goal.completed_milestones?.includes(milestone)}
-                      onCheckedChange={(checked) => 
-                        handleMilestoneToggle(milestone, checked as boolean)
-                      }
-                    />
-                    <label 
-                      htmlFor={`milestone-${index}`}
-                      className={`flex-1 ${
-                        goal.completed_milestones?.includes(milestone) 
-                          ? "line-through text-muted-foreground" 
-                          : ""
-                      }`}
-                    >
-                      {milestone}
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <GoalMilestones 
+            goal={goal}
+            progress={progress}
+            onMilestoneToggle={(milestone, checked) => 
+              handleMilestoneToggle(goal.id, milestone, checked)
+            }
+          />
           
-          {goal.deadline && (
-            <div className="flex items-center gap-2 text-sm">
-              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-              <span>
-                Deadline: {new Date(goal.deadline).toLocaleDateString()}
-              </span>
-            </div>
-          )}
-          
-          {goal.is_shared && (
-            <div className="pt-2">
-              <Badge variant="outline" className="flex items-center gap-1">
-                {goal.is_self_owned ? "Created by you" : `Shared by ${goal.owner_name || 'Partner'}`}
-              </Badge>
-            </div>
-          )}
-          
-          <div className="text-xs text-muted-foreground">
-            Created: {new Date(goal.created_at).toLocaleDateString()}
-          </div>
+          <GoalMetadata goal={goal} />
         </div>
       </DialogContent>
     </Dialog>

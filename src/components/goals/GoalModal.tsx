@@ -33,6 +33,12 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
     try {
       setIsSubmitting(true);
       
+      // Get the current user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      
       const goalData = {
         title: formValues.title,
         description: formValues.description || null,
@@ -41,7 +47,8 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
         is_shared: formValues.isShared,
         goal_type: formValues.isShared ? 'shared' : 'personal',
         milestones: formValues.milestones.length > 0 ? formValues.milestones : null,
-        deadline: formValues.deadline ? formValues.deadline.toISOString() : null
+        deadline: formValues.deadline ? formValues.deadline.toISOString() : null,
+        owner_id: user.id // Add the required owner_id property
       };
 
       if (goal) {

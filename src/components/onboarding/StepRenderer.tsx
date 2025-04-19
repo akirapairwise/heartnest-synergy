@@ -12,7 +12,7 @@ interface StepRendererProps {
   handleNestedChange: (parentField: string, field: string, value: any) => void;
   nextStep: () => void;
   completeBasic: () => void;
-  skipToComplete: () => void;
+  skipToComplete: (e: React.FormEvent) => Promise<void>;
 }
 
 const StepRenderer: React.FC<StepRendererProps> = ({

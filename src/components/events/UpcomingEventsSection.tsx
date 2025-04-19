@@ -8,10 +8,12 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import EventCard from './EventCard';
 import EventForm from './EventForm';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const UpcomingEventsSection = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+  const { user } = useAuth();
 
   const { data: events, isLoading, refetch } = useQuery({
     queryKey: ['upcoming-events'],
@@ -29,21 +31,44 @@ const UpcomingEventsSection = () => {
 
   const handleCreateEvent = async (formData: any) => {
     try {
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create events",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log("Creating event with data:", formData);
+      
       const { error } = await supabase
         .from('partner_events')
         .insert([{
           ...formData,
+          creator_id: user.id,
           event_date: formData.event_date.toISOString(),
         }]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating event:', error);
+        throw error;
+      }
 
-      toast.success('Event created successfully');
+      toast({
+        title: "Success",
+        description: "Event created successfully"
+      });
+      
       setIsCreateDialogOpen(false);
       refetch();
     } catch (error) {
       console.error('Error creating event:', error);
-      toast.error('Failed to create event');
+      toast({
+        title: "Error",
+        description: "Failed to create event",
+        variant: "destructive"
+      });
     }
   };
 

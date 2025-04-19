@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,7 @@ import { motion } from 'framer-motion';
 
 const UpcomingEventsSection = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+  const fabRef = useRef<HTMLButtonElement>(null);
   const { user } = useAuth();
 
   const { data: events, isLoading, refetch } = useQuery({
@@ -100,11 +102,11 @@ const UpcomingEventsSection = () => {
   return (
     <div className="space-y-4 animate-fade-in">
       {nearestEvent && (
-        <div className="bg-gradient-to-r from-love-50 to-harmony-50 rounded-xl p-4 mb-6 shadow-sm border border-love-100/50">
+        <div className="bg-gradient-to-r from-love-50 to-harmony-50 rounded-xl p-4 mb-6 shadow-sm border border-love-100 animate-fade-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-love-600">Coming up</span>
-              <span className="inline-block px-2 py-0.5 bg-white/80 backdrop-blur-sm rounded-full text-xs font-medium text-primary shadow-sm">
+              <span className="inline-block px-2 py-0.5 bg-white rounded-full text-xs font-medium text-primary shadow-sm">
                 {nearestEvent.days_to_event === 0 ? "Today!" : 
                  nearestEvent.days_to_event === 1 ? "Tomorrow" : 
                  `In ${nearestEvent.days_to_event} days`}
@@ -117,12 +119,12 @@ const UpcomingEventsSection = () => {
       )}
 
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold font-heading bg-gradient-to-r from-love-600 via-harmony-600 to-calm-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-semibold font-heading text-primary">
           What are you both looking forward to?
         </h2>
         <Button 
           onClick={() => setIsCreateDialogOpen(true)}
-          className="gap-2 rounded-full bg-gradient-to-r from-love-500 to-harmony-500 hover:from-love-600 hover:to-harmony-600 text-white transition-all duration-300 shadow-sm"
+          className="gap-2 rounded-full bg-primary hover:bg-primary/90 transition-transform duration-300 hover:scale-105 shadow-sm"
         >
           <Plus className="h-4 w-4" />
           Add Event
@@ -158,6 +160,22 @@ const UpcomingEventsSection = () => {
           ))
         )}
       </div>
+
+      {/* Floating Action Button for mobile */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="fixed right-6 bottom-6 z-10 md:hidden"
+      >
+        <Button
+          ref={fabRef}
+          onClick={() => setIsCreateDialogOpen(true)}
+          size="lg"
+          className="rounded-full w-14 h-14 shadow-lg bg-gradient-to-r from-love-500 to-primary hover:shadow-xl transition-all duration-300"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </motion.div>
 
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[500px] rounded-xl overflow-hidden">

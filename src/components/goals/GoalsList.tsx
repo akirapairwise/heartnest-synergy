@@ -2,14 +2,13 @@
 import React from 'react';
 import { Goal } from '@/types/goals';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateGoalStatus } from '@/services/goalService';
 import { GoalsTable } from './GoalsTable';
 import { GoalsCardList } from './GoalsCardList';
 import { GoalsEmptyState } from './GoalsEmptyState';
 import { DeleteGoalDialog } from './DeleteGoalDialog';
-import { GoalDetailsDialog } from './GoalDetailsDialog';
 
 interface GoalsListProps {
   goals: Goal[];
@@ -19,7 +18,7 @@ interface GoalsListProps {
   isSharedView?: boolean;
   isPartnerView?: boolean;
   partnerId?: string | null;
-  isLoading?: boolean;
+  isLoading?: boolean; // Added isLoading prop
 }
 
 export function GoalsList({ 
@@ -30,24 +29,30 @@ export function GoalsList({
   isSharedView = false,
   isPartnerView = false,
   partnerId,
-  isLoading = false
+  isLoading = false // Added with default value
 }: GoalsListProps) {
+  const { toast } = useToast();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [goalToDelete, setGoalToDelete] = React.useState<string | null>(null);
-  const [selectedGoal, setSelectedGoal] = React.useState<Goal | null>(null);
-  const [detailsOpen, setDetailsOpen] = React.useState(false);
   const { user, profile } = useAuth();
 
   const handleStatusToggle = async (goal: Goal) => {
     try {
       const newStatus = goal.status === 'completed' ? 'in_progress' : 'completed';
       await updateGoalStatus(goal.id, newStatus);
-      toast.success(`Goal ${newStatus === 'completed' ? 'completed' : 'reopened'}`);
+      toast({
+        title: `Goal ${newStatus === 'completed' ? 'completed' : 'reopened'}`,
+        description: `The goal has been marked as ${newStatus === 'completed' ? 'completed' : 'in progress'}.`
+      });
       onRefresh();
     } catch (error) {
       console.error('Error updating goal status:', error);
-      toast.error('There was an error updating the goal status.');
+      toast({
+        title: 'Error',
+        description: 'There was an error updating the goal status.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -72,7 +77,7 @@ export function GoalsList({
     if (isOwner(goal)) {
       return "You";
     } else if (goal.owner_id === profile?.partner_id) {
-      return "Partner";
+      return "Partner"; // Using a generic "Partner" label instead of partner_name
     } else {
       return "Unknown";
     }
@@ -85,11 +90,6 @@ export function GoalsList({
       .join('')
       .toUpperCase()
       .substring(0, 2) || 'PA';
-  };
-  
-  const openDetails = (goal: Goal) => {
-    setSelectedGoal(goal);
-    setDetailsOpen(true);
   };
   
   // Show loading state or empty state if applicable
@@ -124,7 +124,6 @@ export function GoalsList({
           handleStatusToggle={handleStatusToggle}
           onEdit={onEdit}
           confirmDelete={confirmDelete}
-          openDetails={openDetails}
         />
       ) : (
         <GoalsCardList
@@ -137,7 +136,6 @@ export function GoalsList({
           handleStatusToggle={handleStatusToggle}
           onEdit={onEdit}
           confirmDelete={confirmDelete}
-          openDetails={openDetails}
         />
       )}
 
@@ -145,13 +143,6 @@ export function GoalsList({
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
         onConfirm={handleDelete}
-      />
-      
-      <GoalDetailsDialog
-        goal={selectedGoal}
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
-        onRefresh={onRefresh}
       />
     </>
   );

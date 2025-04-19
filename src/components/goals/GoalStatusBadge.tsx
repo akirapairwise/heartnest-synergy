@@ -5,10 +5,9 @@ import { GoalStatus } from "@/types/goals";
 
 interface GoalStatusBadgeProps {
   status: GoalStatus;
-  className?: string; // Added className prop as optional
 }
 
-export function GoalStatusBadge({ status, className }: GoalStatusBadgeProps) {
+export function GoalStatusBadge({ status }: GoalStatusBadgeProps) {
   let variant: "default" | "secondary" | "destructive" | "outline" = "default";
   let statusText = "Unknown";
   
@@ -32,7 +31,7 @@ export function GoalStatusBadge({ status, className }: GoalStatusBadgeProps) {
   }
   
   return (
-    <Badge variant={variant} className={className}>
+    <Badge variant={variant} className="text-xs">
       {statusText}
     </Badge>
   );

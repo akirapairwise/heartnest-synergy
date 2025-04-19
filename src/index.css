@@ -1,14 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer components {
-  .elevated-card {
-    @apply bg-white shadow-[0_4px_16px_-2px_rgba(0,0,0,0.05)] rounded-2xl border border-gray-100 transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgba(0,0,0,0.08)];
+@layer base {
+  :root {
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-rounded: 'Quicksand', system-ui, sans-serif;
+    
+    --background: 210 40% 98%;
+    --foreground: 222.2 47.4% 11.2%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    --primary: 284 70% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 260 60% 60%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262 83% 58%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  .soft-gradient-background {
-    @apply bg-gradient-to-br from-white via-gray-50/50 to-white backdrop-blur-sm;
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 284 70% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 260 60% 60%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262.1 83.3% 57.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+  
+  html, body, #root {
+    @apply h-full overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .gradient-heading {
+    @apply bg-gradient-to-r from-love-600 via-harmony-600 to-calm-600 bg-clip-text text-transparent;
+  }
+  
+  .btn-primary-gradient {
+    @apply bg-gradient-to-r from-love-500 to-harmony-500 hover:from-love-600 hover:to-harmony-600 text-white transition-all duration-300;
+  }
+  
+  .heart-card {
+    @apply relative overflow-hidden rounded-2xl border p-4 sm:p-6 shadow-sm transition-all duration-300 hover:shadow-md;
+  }
+  
+  .heart-card::before {
+    @apply absolute inset-0 -z-10 bg-gradient-to-br from-love-50/50 to-harmony-50/50 content-[''] opacity-30 transition-opacity duration-300;
+  }
+  
+  .heart-card:hover::before {
+    @apply opacity-60;
+  }
+  
+  /* Responsive typography */
+  .text-responsive {
+    @apply text-base sm:text-lg md:text-xl;
+  }
+  
+  /* Responsive spacing */
+  .section-spacing {
+    @apply my-4 sm:my-6 md:my-8;
+  }
+  
+  .container-responsive {
+    @apply px-4 sm:px-6 md:px-8 max-w-7xl mx-auto;
+  }
+
+  /* Enhanced animations */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 3s infinite ease-in-out;
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.5s ease-out forwards;
+  }
+
+  /* Card styles */
+  .card-gradient-love {
+    @apply bg-gradient-to-br from-white to-love-50/30 border-love-100;
+  }
+
+  .card-gradient-harmony {
+    @apply bg-gradient-to-br from-white to-harmony-50/30 border-harmony-100;
+  }
+
+  .card-gradient-calm {
+    @apply bg-gradient-to-br from-white to-calm-50/30 border-calm-100;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Ensure dropdown menus are fully visible on mobile */
+  [data-radix-popper-content-wrapper] {
+    z-index: 100 !important;
+  }
+}
+
+/* Animation keyframes */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
 }

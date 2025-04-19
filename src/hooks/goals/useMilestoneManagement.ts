@@ -15,7 +15,10 @@ export const useMilestoneManagement = (onRefresh: () => void) => {
 
       if (fetchError) {
         console.error('Error fetching goal:', fetchError);
-        toast.error("Failed to load goal data");
+        toast({
+          title: "Error",
+          description: "Failed to load goal data"
+        });
         return;
       }
 
@@ -45,20 +48,25 @@ export const useMilestoneManagement = (onRefresh: () => void) => {
 
       if (updateError) {
         console.error('Error updating goal:', updateError);
-        toast.error("Failed to update milestone");
+        toast({
+          title: "Error",
+          description: "Failed to update milestone"
+        });
         return;
       }
 
-      if (isChecked) {
-        toast.success("Milestone completed!");
-      } else {
-        toast.info("Milestone unchecked");
-      }
+      toast({
+        title: "Milestone updated",
+        description: isChecked ? "Milestone completed!" : "Milestone unchecked"
+      });
 
       onRefresh();
     } catch (error) {
       console.error('Error updating milestone:', error);
-      toast.error("Failed to update milestone");
+      toast({
+        title: "Error",
+        description: "Failed to update milestone"
+      });
     }
   };
 

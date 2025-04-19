@@ -81,7 +81,7 @@ const MoodDisplay = () => {
   
   return (
     <>
-      <Card className="elevated-card soft-gradient-background overflow-hidden">
+      <Card className="shadow-md overflow-hidden rounded-xl border-none bg-gradient-to-br from-white via-gray-50 to-white">
         <CardContent className="p-6">
           <h3 className="font-medium text-base mb-5 flex items-center text-harmony-700">
             <Heart className="h-5 w-5 text-love-500 mr-2 animate-pulse-soft" />

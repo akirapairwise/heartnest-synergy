@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,16 +7,16 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Users, Info, Clock } from 'lucide-react';
+import { CalendarIcon, Info, Users } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import TimePickerField from './TimePickerField';
+import EventPreviewCard from './EventPreviewCard';
 
 const formSchema = z.object({
   title: z.string().min(2, { message: 'Title must be at least 2 characters' }),
@@ -42,19 +42,6 @@ interface EventFormProps {
   };
 }
 
-// Helper function to generate time options
-const generateTimeOptions = () => {
-  const options = [];
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const hourStr = hour.toString().padStart(2, '0');
-      const minuteStr = minute.toString().padStart(2, '0');
-      options.push(`${hourStr}:${minuteStr}`);
-    }
-  }
-  return options;
-};
-
 const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -68,11 +55,9 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
     },
   });
 
-  // For preview
   const watchedFields = form.watch();
 
   const handleSubmit = (data: FormData) => {
-    // Combine date and time if time is provided
     if (data.event_time) {
       const [hours, minutes] = data.event_time.split(':').map(Number);
       const dateWithTime = new Date(data.event_date);
@@ -81,21 +66,6 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
     }
     onSubmit(data);
   };
-
-  // Format date for display in preview
-  const getDateDisplay = (date: Date, time?: string) => {
-    const now = new Date();
-    const timeDiff = Math.ceil((date.getTime() - now.getTime()) / (1000 * 3600 * 24));
-    
-    const dateText = timeDiff === 0 ? "Today" : 
-                    timeDiff === 1 ? "Tomorrow" : 
-                    timeDiff > 0 ? `In ${timeDiff} days` : 
-                    format(date, 'PPP');
-                    
-    return time ? `${dateText} at ${time}` : dateText;
-  };
-
-  const timeOptions = generateTimeOptions();
 
   return (
     <div className="space-y-6">
@@ -180,46 +150,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="event_time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base">Time (Optional)</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="rounded-lg">
-                          <SelectValue placeholder="Select a time">
-                            {field.value ? (
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                {field.value}
-                              </div>
-                            ) : (
-                              "Select a time"
-                            )}
-                          </SelectValue>
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="no-time">No specific time</SelectItem>
-                        {timeOptions.map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Optional: Set a specific time for your event
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <TimePickerField form={form} />
             </div>
 
             <FormField
@@ -262,9 +193,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
                         </Tooltip>
                       </TooltipProvider>
                     </div>
-                    <FormDescription>
-                      Make this event visible to your partner
-                    </FormDescription>
+                    <FormMessage />
                   </div>
                   <FormControl>
                     <div className="flex items-center space-x-2">
@@ -293,60 +222,13 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
 
             {/* Preview Card */}
             {watchedFields.title && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="mb-2 text-sm font-medium">Event Preview</div>
-                <Card className="rounded-xl overflow-hidden bg-gradient-to-br from-white to-muted/30 border-muted/30">
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium leading-none text-lg">{watchedFields.title}</h3>
-                          {watchedFields.shared_with_partner && (
-                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                              <Users className="h-3 w-3 mr-1" />
-                              Shared
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <CalendarIcon className="h-4 w-4" />
-                          <span>
-                            {getDateDisplay(
-                              watchedFields.event_date, 
-                              watchedFields.event_time && watchedFields.event_time !== "no-time" 
-                                ? watchedFields.event_time 
-                                : undefined
-                            )}
-                          </span>
-                        </div>
-
-                        {watchedFields.location && (
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <CalendarIcon className="h-4 w-4" />
-                            <span className="truncate">{watchedFields.location}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-sm font-medium px-3 py-1 rounded-full bg-primary/10 text-primary">
-                          {getDateDisplay(
-                            watchedFields.event_date,
-                            watchedFields.event_time && watchedFields.event_time !== "no-time" 
-                              ? watchedFields.event_time 
-                              : undefined
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
+              <EventPreviewCard
+                title={watchedFields.title}
+                eventDate={watchedFields.event_date}
+                eventTime={watchedFields.event_time}
+                location={watchedFields.location}
+                sharedWithPartner={watchedFields.shared_with_partner}
+              />
             )}
           </div>
 

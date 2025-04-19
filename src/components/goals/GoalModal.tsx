@@ -54,7 +54,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
         
         toast({
           title: "Goal updated",
-          description: "Your goal has been updated successfully"
+          description: `Your ${formValues.isShared ? 'shared' : 'personal'} goal has been updated`
         });
       } else {
         // Create new goal
@@ -75,7 +75,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
         
         toast({
           title: "Goal created",
-          description: "Your new goal has been created successfully"
+          description: `Your new ${formValues.isShared ? 'shared' : 'personal'} goal has been created`
         });
       }
       

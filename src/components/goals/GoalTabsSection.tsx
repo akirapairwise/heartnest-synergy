@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Goal } from '@/types/goals';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -5,9 +6,24 @@ import { GoalsList } from '@/components/goals/GoalsList';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Target, Share2, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
+import { Target, Share2, ArrowUpAZ, ArrowDownAZ, SlidersHorizontal } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface GoalTabsSectionProps {
   myGoals: Goal[];
@@ -18,8 +34,9 @@ interface GoalTabsSectionProps {
   onRefresh: () => void;
 }
 
-type SortOption = 'title' | 'date' | 'status';
+type SortOption = 'title' | 'date' | 'status' | 'category';
 type SortDirection = 'asc' | 'desc';
+type GoalType = 'all' | 'personal' | 'shared';
 
 export function GoalTabsSection({
   myGoals,
@@ -32,8 +49,9 @@ export function GoalTabsSection({
   const { profile } = useAuth();
   const [sortOption, setSortOption] = useState<SortOption>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [personalGoals, setPersonalGoals] = useState<Goal[]>([]);
-  const [mySharedGoals, setMySharedGoals] = useState<Goal[]>([]);
+  const [goalTypeFilter, setGoalTypeFilter] = useState<GoalType>('all');
+  const [filteredPersonalGoals, setFilteredPersonalGoals] = useState<Goal[]>([]);
+  const [filteredSharedGoals, setFilteredSharedGoals] = useState<Goal[]>([]);
   const [partnerId, setPartnerId] = useState<string | null>(null);
 
   const sortGoals = (goals: Goal[]) => {
@@ -50,10 +68,32 @@ export function GoalTabsSection({
         case 'status':
           comparison = a.status.localeCompare(b.status);
           break;
+        case 'category':
+          // Handle null categories for sorting
+          const categoryA = a.category || '';
+          const categoryB = b.category || '';
+          comparison = categoryA.localeCompare(categoryB);
+          break;
       }
       
       return sortDirection === 'asc' ? comparison : -comparison;
     });
+  };
+
+  const filterAndSortGoals = () => {
+    let personal: Goal[] = [];
+    let shared: Goal[] = [];
+    
+    if (goalTypeFilter === 'all' || goalTypeFilter === 'personal') {
+      personal = sortGoals(myGoals.filter(goal => !goal.is_shared));
+    }
+    
+    if (goalTypeFilter === 'all' || goalTypeFilter === 'shared') {
+      shared = sortGoals(sharedGoals);
+    }
+    
+    setFilteredPersonalGoals(personal);
+    setFilteredSharedGoals(shared);
   };
 
   useEffect(() => {
@@ -61,12 +101,8 @@ export function GoalTabsSection({
       setPartnerId(profile.partner_id);
     }
     
-    const personal = sortGoals(myGoals.filter(goal => !goal.is_shared));
-    setPersonalGoals(personal);
-    
-    const shared = sortGoals(sharedGoals);
-    setMySharedGoals(shared);
-  }, [myGoals, sharedGoals, profile, sortOption, sortDirection]);
+    filterAndSortGoals();
+  }, [myGoals, sharedGoals, profile, sortOption, sortDirection, goalTypeFilter]);
 
   // Set up subscription for real-time updates on goals
   useEffect(() => {
@@ -102,20 +138,42 @@ export function GoalTabsSection({
         </TabsList>
 
         <div className="flex items-center gap-2">
+          {/* Type filter dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 px-3">
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                Filter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuLabel>Filter Goals</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value={goalTypeFilter} onValueChange={(value) => setGoalTypeFilter(value as GoalType)}>
+                <DropdownMenuRadioItem value="all">All Goals</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="personal">Personal Only</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="shared">Shared Only</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Sort options */}
           <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[130px] h-9">
               <SelectValue placeholder="Sort by..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="date">Created Date</SelectItem>
               <SelectItem value="title">Title</SelectItem>
               <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="category">Category</SelectItem>
             </SelectContent>
           </Select>
           
           <Button
             variant="outline"
             size="icon"
+            className="h-9 w-9"
             onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
           >
             {sortDirection === 'asc' ? 
@@ -136,12 +194,13 @@ export function GoalTabsSection({
           </CardHeader>
           <CardContent>
             <GoalsList 
-              goals={sharedGoals} 
+              goals={filteredSharedGoals} 
               onEdit={onEdit} 
               onDelete={onDelete}
               onRefresh={onRefresh}
               isSharedView={true}
               partnerId={partnerId}
+              isLoading={isLoading && !filteredSharedGoals.length}
             />
           </CardContent>
         </Card>
@@ -157,10 +216,11 @@ export function GoalTabsSection({
           </CardHeader>
           <CardContent>
             <GoalsList 
-              goals={personalGoals} 
+              goals={filteredPersonalGoals} 
               onEdit={onEdit} 
               onDelete={onDelete}
               onRefresh={onRefresh}
+              isLoading={isLoading && !filteredPersonalGoals.length}
             />
           </CardContent>
         </Card>

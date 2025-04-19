@@ -10,6 +10,11 @@ export const goalCategories = [
   { value: "intimacy", label: "Intimacy" }
 ];
 
+export const goalTypes = [
+  { value: "personal", label: "Personal" },
+  { value: "shared", label: "Shared" }
+];
+
 export const FormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),

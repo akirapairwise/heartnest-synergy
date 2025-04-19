@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,6 @@ import { Goal } from '@/types/goals';
 import { GoalFormValues, goalCategories } from './GoalFormSchema';
 import MilestoneInput from './MilestoneInput';
 import DeadlinePicker from './DeadlinePicker';
-import PartnerSharingOption from './PartnerSharingOption';
 import GoalFormActions from './GoalFormActions';
 import useGoalForm from '@/hooks/useGoalForm';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -133,40 +133,46 @@ export const GoalForm = (props: GoalFormProps) => {
             <DeadlinePicker form={form} />
           </div>
           
+          {/* Goal Type Selection - Personal or Shared */}
+          {hasSharingOption && (
+            <FormField
+              control={form.control}
+              name="isShared"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Goal Type</FormLabel>
+                    <FormDescription>
+                      {field.value ? 
+                        "Shared with your partner" : 
+                        "Only visible to you"}
+                    </FormDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-sm ${!field.value ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                      Personal
+                    </span>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="data-[state=checked]:bg-love-500"
+                      />
+                    </FormControl>
+                    <span className={`text-sm ${field.value ? 'text-love-500 font-medium' : 'text-muted-foreground'}`}>
+                      Shared
+                    </span>
+                  </div>
+                </FormItem>
+              )}
+            />
+          )}
+          
           {/* Milestones Section */}
           <div>
             <FormLabel className="text-base mb-2 block">Milestones</FormLabel>
             <MilestoneInput form={form} />
           </div>
-          
-          {hasSharingOption && (
-            <>
-              <Separator className="my-4" />
-              <FormField
-                control={form.control}
-                name="isShared"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Share this goal with my partner?</FormLabel>
-                      <FormDescription>
-                        {field.value ? 
-                          "This goal will be shared with your partner" : 
-                          "This goal will be kept private"}
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        className="data-[state=checked]:bg-primary"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </>
-          )}
           
           <div className="pt-4 sticky bottom-0 bg-background z-10">
             <GoalFormActions 

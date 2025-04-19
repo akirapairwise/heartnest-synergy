@@ -23,6 +23,8 @@ interface OnboardingNavigationProps {
   onNext: () => void;
   onSkip: () => void;
   onComplete: (e: React.FormEvent) => Promise<void>;
+  showSkip?: boolean;
+  showCompleteOnLastStep?: boolean;
 }
 
 const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
@@ -32,7 +34,9 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
   onPrev,
   onNext,
   onSkip,
-  onComplete
+  onComplete,
+  showSkip = true,
+  showCompleteOnLastStep = true
 }) => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -94,7 +98,7 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
       )}
       
       <div className="flex gap-2">
-        {currentStep < totalSteps && (
+        {showSkip && currentStep < totalSteps && (
           <Button variant="outline" onClick={onSkip} className="flex items-center gap-2" disabled={isLoading}>
             Skip <SkipForward className="h-4 w-4" />
           </Button>
@@ -105,22 +109,24 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
             Continue <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         ) : (
-          <Button 
-            className="btn-primary-gradient" 
-            onClick={handleComplete}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Setting up...
-              </span>
-            ) : (
-              <span className="flex items-center">
-                Complete Profile <Check className="ml-1 h-4 w-4" />
-              </span>
-            )}
-          </Button>
+          showCompleteOnLastStep && (
+            <Button 
+              className="btn-primary-gradient" 
+              onClick={handleComplete}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Setting up...
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  Complete Profile <Check className="ml-1 h-4 w-4" />
+                </span>
+              )}
+            </Button>
+          )
         )}
       </div>
     </div>

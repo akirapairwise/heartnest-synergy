@@ -22,6 +22,18 @@ export type OnboardingFormData = {
     partner_updates: boolean;
   };
   ai_consent: boolean;
+  // New relationship profile fields
+  pronouns?: string;
+  relationship_status?: string;
+  relationship_start_date?: string;
+  living_together?: string;
+  interaction_frequency?: string;
+  preferred_communication?: string;
+  areas_to_improve?: string[];
+  // Optional personalization
+  love_language_preference?: string;
+  conflict_resolution_style?: string;
+  shared_goals?: string[];
   [key: string]: any;
 };
 
@@ -46,7 +58,19 @@ export const useOnboardingForm = (totalSteps: number) => {
       tips: true,
       partner_updates: true
     },
-    ai_consent: true
+    ai_consent: true,
+    // New relationship profile fields with defaults
+    pronouns: "",
+    relationship_status: "",
+    relationship_start_date: "",
+    living_together: "",
+    interaction_frequency: "",
+    preferred_communication: "",
+    areas_to_improve: [],
+    // Optional personalization
+    love_language_preference: "",
+    conflict_resolution_style: "",
+    shared_goals: []
   });
   
   const { toast: useToastHook } = useToast();
@@ -118,9 +142,8 @@ export const useOnboardingForm = (totalSteps: number) => {
       window.scrollTo(0, 0);
     }
     
-    useToastHook({
-      title: "Step skipped",
-      description: "You can always come back to complete this step later.",
+    toast.info("Step skipped", {
+      description: "You can always come back to complete this step later."
     });
   };
 
@@ -131,6 +154,7 @@ export const useOnboardingForm = (totalSteps: number) => {
     }
   };
   
+  // Complete with both basic and personalization data
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -157,6 +181,20 @@ export const useOnboardingForm = (totalSteps: number) => {
         emotional_needs: formData.emotional_needs || null,
         relationship_goals: formData.relationship_goals || null,
         financial_attitude: formData.financial_attitude || null,
+        // New relationship fields
+        pronouns: formData.pronouns || null,
+        relationship_status: formData.relationship_status || null,
+        relationship_start_date: formData.relationship_start_date || null,
+        living_together: formData.living_together || null,
+        interaction_frequency: formData.interaction_frequency || null,
+        preferred_communication: formData.preferred_communication || null,
+        areas_to_improve: formData.areas_to_improve || null,
+        // Optional personalization
+        love_language_preference: formData.love_language_preference || null,
+        conflict_resolution_style: formData.conflict_resolution_style || null,
+        shared_goals: formData.shared_goals || null,
+        // Mark complete stage
+        profile_complete_stage: 'complete',
         // Explicitly set the onboarding flag to true
         is_onboarding_complete: true
       };
@@ -232,6 +270,64 @@ export const useOnboardingForm = (totalSteps: number) => {
     }
   };
 
+  // Complete with just basic data
+  const handleCompleteBasic = async () => {
+    setIsLoading(true);
+    
+    try {
+      // Verify user is authenticated before proceeding
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (!currentUser) {
+        toast.error("Authentication error", {
+          description: "You must be logged in to complete your profile.",
+          duration: 3000
+        });
+        navigate('/auth', { replace: true });
+        return;
+      }
+      
+      // Collect basic profile data
+      const profileData = {
+        full_name: formData.full_name || null,
+        pronouns: formData.pronouns || null,
+        relationship_status: formData.relationship_status || null,
+        relationship_start_date: formData.relationship_start_date || null,
+        living_together: formData.living_together || null,
+        interaction_frequency: formData.interaction_frequency || null,
+        preferred_communication: formData.preferred_communication || null,
+        areas_to_improve: formData.areas_to_improve || null,
+        // Mark complete stage
+        profile_complete_stage: 'basic',
+        // Explicitly set the onboarding flag to true
+        is_onboarding_complete: true
+      };
+      
+      // Update the profile with basic data
+      const updateResult = await updateProfile(profileData);
+      
+      if (updateResult?.error) {
+        throw new Error(updateResult.error.message || "Failed to update profile");
+      }
+      
+      // Show success toast with longer duration
+      toast.success("Profile basics completed!", {
+        description: "Your profile has been set up. You can complete personalization later in profile settings.",
+        duration: 3000
+      });
+      
+      // Navigate to dashboard
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error("Error", {
+        description: error instanceof Error ? error.message : "There was a problem saving your profile. Please try again."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Function to check if a step is skipped
   const isStepSkipped = (stepNumber: number) => {
     return skippedSteps.includes(stepNumber);
@@ -250,6 +346,7 @@ export const useOnboardingForm = (totalSteps: number) => {
     skipStep,
     goToStep,
     handleComplete,
+    handleCompleteBasic,
     isStepSkipped,
     totalSteps
   };

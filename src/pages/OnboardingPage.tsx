@@ -13,7 +13,7 @@ const OnboardingPage = () => {
   const [isVerifying, setIsVerifying] = useState(true);
   const navigate = useNavigate();
   
-  useDocumentTitle('Complete Your Profile | HeartNest');
+  useDocumentTitle('Complete Your Profile | Pairwise');
 
   // Verify authentication and check onboarding status
   useEffect(() => {

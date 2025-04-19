@@ -2,23 +2,27 @@
 import React from 'react';
 import { OnboardingFormData } from '@/hooks/useOnboardingForm';
 import Step1BasicInfo from './steps/Step1BasicInfo';
-import Step2Communication from './steps/Step2Communication';
-import Step3Relationship from './steps/Step3Relationship';
-import Step4Emotional from './steps/Step4Emotional';
-import Step5Preferences from './steps/Step5Preferences';
+import Step2Personalization from './steps/Step2Personalization';
+import TransitionPrompt from './TransitionPrompt';
 
 interface StepRendererProps {
   step: number;
   formData: OnboardingFormData;
   handleChange: (field: string, value: any) => void;
   handleNestedChange: (parentField: string, field: string, value: any) => void;
+  nextStep: () => void;
+  completeBasic: () => void;
+  skipToComplete: () => void;
 }
 
 const StepRenderer: React.FC<StepRendererProps> = ({
   step,
   formData,
   handleChange,
-  handleNestedChange
+  handleNestedChange,
+  nextStep,
+  completeBasic,
+  skipToComplete
 }) => {
   switch (step) {
     case 1:
@@ -30,31 +34,16 @@ const StepRenderer: React.FC<StepRendererProps> = ({
       );
     case 2:
       return (
-        <Step2Communication 
-          formData={formData} 
-          handleChange={handleChange} 
+        <TransitionPrompt 
+          onContinue={nextStep} 
+          onSkip={completeBasic} 
         />
       );
     case 3:
       return (
-        <Step3Relationship 
+        <Step2Personalization 
           formData={formData} 
           handleChange={handleChange} 
-        />
-      );
-    case 4:
-      return (
-        <Step4Emotional 
-          formData={formData} 
-          handleChange={handleChange} 
-        />
-      );
-    case 5:
-      return (
-        <Step5Preferences 
-          formData={formData} 
-          handleChange={handleChange} 
-          handleNestedChange={handleNestedChange} 
         />
       );
     default:

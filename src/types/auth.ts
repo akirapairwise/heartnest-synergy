@@ -23,6 +23,19 @@ export type Profile = {
     defaultMood?: string;
     isVisibleToPartner?: boolean;
   } | null;
+  // New relationship profile fields
+  pronouns?: string | null;
+  relationship_status?: string | null;
+  relationship_start_date?: string | null;
+  living_together?: string | null;
+  interaction_frequency?: string | null;
+  preferred_communication?: string | null;
+  areas_to_improve?: string[] | null;
+  profile_complete_stage?: 'basic' | 'complete' | null;
+  // Optional personalization fields
+  love_language_preference?: string | null;
+  conflict_resolution_style?: string | null;
+  shared_goals?: string[] | null;
 };
 
 export type AuthContextType = {

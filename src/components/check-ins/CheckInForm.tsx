@@ -108,9 +108,9 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>New Check-In</CardTitle>
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">New Check-In</CardTitle>
         <CardDescription>How are you feeling today?</CardDescription>
       </CardHeader>
       <CardContent>
@@ -123,7 +123,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
                   <button
                     key={option.value}
                     type="button"
-                    className={`flex flex-col items-center p-4 rounded-lg border transition-all ${
+                    className={`flex flex-col items-center p-3 sm:p-4 rounded-lg border transition-all ${
                       mood === option.value 
                         ? `border-primary bg-primary/10 ${option.color}` 
                         : 'border-muted hover:border-muted-foreground/50'
@@ -141,8 +141,8 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
             
             <div className="space-y-2">
               <Label>Satisfaction (1-10)</Label>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">1</span>
+              <div className="flex items-center gap-2 sm:gap-4">
+                <span className="text-sm text-muted-foreground min-w-[1ch]">1</span>
                 <Slider
                   value={[satisfactionRating]}
                   min={1}
@@ -151,7 +151,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
                   onValueChange={(value) => setSatisfactionRating(value[0])}
                   className="flex-1"
                 />
-                <span className="text-sm text-muted-foreground">10</span>
+                <span className="text-sm text-muted-foreground min-w-[1ch]">10</span>
                 <span className="ml-2 w-8 text-center font-medium">{satisfactionRating}</span>
               </div>
             </div>
@@ -163,42 +163,47 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
                 value={reflection}
                 onChange={(e) => setReflection(e.target.value)}
                 rows={4}
+                className="resize-none min-h-[100px]"
               />
             </div>
             
             {hasPartner && (
-              <div className="flex items-center space-x-2 pt-2">
+              <div className="flex items-center justify-between space-x-2 pt-2">
+                <Label htmlFor="visibility-toggle" className="flex items-center gap-1.5 cursor-pointer">
+                  {isVisibleToPartner ? (
+                    <>
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm sm:text-base">Visible to partner</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm sm:text-base">Private (only visible to you)</span>
+                    </>
+                  )}
+                </Label>
                 <Switch
                   id="visibility-toggle"
                   checked={isVisibleToPartner}
                   onCheckedChange={setIsVisibleToPartner}
                 />
-                <Label htmlFor="visibility-toggle" className="flex items-center gap-1.5 cursor-pointer">
-                  {isVisibleToPartner ? (
-                    <>
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                      <span>Visible to partner</span>
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      <span>Private (only visible to you)</span>
-                    </>
-                  )}
-                </Label>
               </div>
             )}
           </div>
           
-          <Button type="submit" className="w-full btn-primary-gradient" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            className="w-full sm:w-auto btn-primary-gradient" 
+            disabled={isLoading}
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                <span className="sm:inline">Saving...</span>
               </>
             ) : (
               <>
-                Save Check-In
+                <span className="sm:inline">Save Check-In</span>
                 <Send className="ml-2 h-4 w-4" />
               </>
             )}

@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CheckInsByDate from '@/components/check-ins/CheckInsByDate';
 import RecentCheckIns from '@/components/check-ins/RecentCheckIns';
-import CheckInForm from '@/components/check-ins/CheckInForm';  {/* New import */}
+import CheckInForm from '@/components/check-ins/CheckInForm';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -11,7 +10,7 @@ import WeeklyCheckInsSection from '@/components/check-ins/WeeklyCheckInsSection'
 
 const CheckInsPage = () => {
   useDocumentTitle('Check-Ins | HeartNest');
-  const [isCheckInFormOpen, setIsCheckInFormOpen] = useState(false);  {/* Updated state variable */}
+  const [isCheckInFormOpen, setIsCheckInFormOpen] = useState(false);
   
   const handleCheckInSaved = () => {
     setIsCheckInFormOpen(false);
@@ -19,7 +18,7 @@ const CheckInsPage = () => {
   };
   
   return (
-    <div className="container mx-auto max-w-4xl py-8 px-4">
+    <div className="container mx-auto max-w-4xl py-4 sm:py-8 px-3 sm:px-4">
       <Tabs defaultValue="daily" className="w-full">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -36,26 +35,27 @@ const CheckInsPage = () => {
           </div>
         </div>
         
-        <TabsContent value="daily" className="mt-4 space-y-8">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Daily Check-ins</h2>
+        <TabsContent value="daily" className="mt-4 space-y-6 sm:space-y-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h2 className="text-xl sm:text-2xl font-bold">Daily Check-ins</h2>
             <Button 
               onClick={() => setIsCheckInFormOpen(true)}
-              className="bg-gradient-to-r from-love-500 to-harmony-500 text-white"
+              className="w-full sm:w-auto bg-gradient-to-r from-love-500 to-harmony-500 text-white"
             >
               <Plus className="mr-2 h-4 w-4" />
               New Check-in
             </Button>
           </div>
           
-          <RecentCheckIns />
-          
-          {/* Replace CheckInModal with CheckInForm */}
           {isCheckInFormOpen && (
-            <CheckInForm 
-              onCheckInSaved={handleCheckInSaved} 
-            />
+            <div className="w-full">
+              <CheckInForm 
+                onCheckInSaved={handleCheckInSaved}
+              />
+            </div>
           )}
+          
+          <RecentCheckIns />
         </TabsContent>
         
         <TabsContent value="weekly" className="mt-4">
@@ -77,4 +77,3 @@ const CheckInsPage = () => {
 };
 
 export default CheckInsPage;
-

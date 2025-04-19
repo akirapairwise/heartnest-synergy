@@ -4,6 +4,7 @@ import { Goal } from '@/types/goals';
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ListChecks } from 'lucide-react';
+import { useMilestoneManagement } from '@/hooks/goals/useMilestoneManagement';
 
 interface GoalMilestonesProps {
   goal: Goal;

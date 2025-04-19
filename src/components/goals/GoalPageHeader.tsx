@@ -37,41 +37,37 @@ export function GoalPageHeader({
       
       <div className="flex items-center gap-2">
         {isDesktop ? (
-          <>
+          <Dialog>
             <DialogTrigger asChild>
               <Button onClick={handleOpenNewGoal} variant="gradient">
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Goal
               </Button>
             </DialogTrigger>
-            {goalModalOpen && (
-              <GoalModal
-                onClose={handleCloseModal}
-                onSuccess={onSuccess}
-              />
-            )}
-          </>
+          </Dialog>
         ) : (
-          <>
+          <Drawer>
             <DrawerTrigger asChild>
               <Button onClick={handleOpenNewGoal} variant="gradient">
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Goal
               </Button>
             </DrawerTrigger>
-            {goalModalOpen && (
-              <GoalModal
-                onClose={handleCloseModal}
-                onSuccess={onSuccess}
-              />
-            )}
-          </>
+          </Drawer>
         )}
         
         <Button variant="outline" size="icon" onClick={fetchGoals} disabled={isLoading} className="border-harmony-200 hover:bg-harmony-100/50">
           <RefreshCw className={`h-4 w-4 text-harmony-600 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
+      
+      {/* Render the goal modal separately to maintain proper component hierarchy */}
+      {goalModalOpen && (
+        <GoalModal
+          onClose={handleCloseModal}
+          onSuccess={onSuccess}
+        />
+      )}
     </div>
   );
 }

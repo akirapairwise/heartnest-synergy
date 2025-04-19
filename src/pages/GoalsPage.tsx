@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Goal } from '@/types/goals';
 import { fetchMyGoals, fetchSharedGoals } from '@/services/goalService';
@@ -145,28 +144,7 @@ const GoalsPage = () => {
         onRefresh={fetchGoals}
       />
       
-      {/* Render the edit goal modal when a goal is selected for editing */}
-      {isDesktop ? (
-        <Dialog open={goalModalOpen} onOpenChange={setGoalModalOpen}>
-          {goalModalOpen && (
-            <GoalModal
-              goal={selectedGoal}
-              onClose={handleCloseModal}
-              onSuccess={fetchGoals}
-            />
-          )}
-        </Dialog>
-      ) : (
-        <Drawer open={goalModalOpen} onOpenChange={setGoalModalOpen}>
-          {goalModalOpen && (
-            <GoalModal
-              goal={selectedGoal}
-              onClose={handleCloseModal}
-              onSuccess={fetchGoals}
-            />
-          )}
-        </Drawer>
-      )}
+      {/* Remove the redundant modal rendering here, as it's now properly handled in GoalPageHeader */}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Dialog } from "@/components/ui/dialog";
-import { Drawer } from "@/components/ui/drawer";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Goal } from "@/types/goals";
 import { createGoal } from "@/services/goalService";
@@ -93,9 +93,10 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
     }
   };
 
+  // Render the appropriate modal based on screen size
   if (isDesktop) {
     return (
-      <Dialog open={true} onOpenChange={onClose}>
+      <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
         <GoalModalContent
           goal={goal}
           isSubmitting={isSubmitting}
@@ -107,7 +108,7 @@ export function GoalModal({ goal, onClose, onSuccess }: GoalModalProps) {
   }
 
   return (
-    <Drawer open={true} onOpenChange={onClose}>
+    <Drawer open={true} onOpenChange={(open) => !open && onClose()}>
       <GoalModalContent
         goal={goal}
         isSubmitting={isSubmitting}

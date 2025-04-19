@@ -2,8 +2,9 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin } from 'lucide-react';
+import { Calendar, MapPin, Edit } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EventDetailsDialogProps {
   open: boolean;
@@ -13,6 +14,9 @@ interface EventDetailsDialogProps {
   eventDate: Date;
   location?: string | null;
   daysToEvent: number;
+  eventId: string;
+  onEditClick: () => void;
+  isCreator: boolean;
 }
 
 const EventDetailsDialog = ({
@@ -23,10 +27,11 @@ const EventDetailsDialog = ({
   eventDate,
   location,
   daysToEvent,
+  onEditClick,
+  isCreator,
 }: EventDetailsDialogProps) => {
   const handleOpenLocation = () => {
     if (!location) return;
-    // Create a Google Maps URL from the location
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
     window.open(mapsUrl, '_blank');
   };
@@ -34,8 +39,21 @@ const EventDetailsDialog = ({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+        <DialogHeader className="flex-row justify-between items-center">
           <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
+          {isCreator && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditClick();
+              }}
+              className="h-8 w-8"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
         </DialogHeader>
         
         <div className="space-y-4 mt-4">

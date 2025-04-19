@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,8 +39,6 @@ const UpcomingEventsSection = () => {
         return;
       }
 
-      console.log("Creating event with data:", formData);
-      
       const { error } = await supabase
         .from('partner_events')
         .insert([{
@@ -50,10 +47,7 @@ const UpcomingEventsSection = () => {
           event_date: formData.event_date.toISOString(),
         }]);
 
-      if (error) {
-        console.error('Error creating event:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
@@ -121,12 +115,15 @@ const UpcomingEventsSection = () => {
           events?.map((event) => (
             <EventCard
               key={event.id}
+              id={event.id}
               title={event.title}
               description={event.description}
               eventDate={new Date(event.event_date)}
               location={event.location}
               daysToEvent={event.days_to_event}
               isShared={event.shared_with_partner}
+              creatorId={event.creator_id}
+              onEventUpdated={refetch}
             />
           ))
         )}

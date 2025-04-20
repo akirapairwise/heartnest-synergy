@@ -580,6 +580,10 @@ export type Database = {
       }
     }
     Functions: {
+      connect_partners_with_code: {
+        Args: { invite_code: string; current_user_id: string }
+        Returns: string
+      }
       connect_users_by_code: {
         Args: { current_user_id: string; entered_code: string }
         Returns: string

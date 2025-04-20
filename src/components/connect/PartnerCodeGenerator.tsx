@@ -1,148 +1,86 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, Copy, Check, Clock, ArrowLeft, Sparkles, Share2 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RefreshCw, Copy, Check, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { generatePartnerCode, getActivePartnerCode } from "@/services/partnerCodeService";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from 'react-router-dom';
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from '@/contexts/AuthContext';
+import { generateInviteUrl } from '@/hooks/partner-invites/utils';
 
 const PartnerCodeGenerator = () => {
   const [code, setCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const codeLoadInitiated = useRef(false);
-  const { profile, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  
-  const hasPartner = Boolean(profile?.partner_id);
-  
-  useEffect(() => {
-    // Skip if auth is still loading or we've already initiated code loading
-    // or if user already has a partner
-    if (authLoading || codeLoadInitiated.current || hasPartner) {
+  const { user, profile } = useAuth();
+
+  const generatePartnerCode = async () => {
+    if (!user) {
+      toast.error('You must be logged in to generate a code');
       return;
     }
-    
-    // Mark that we've started loading code to prevent multiple loads
-    codeLoadInitiated.current = true;
-    
-    // Load existing code
-    loadExistingCode();
-  }, [hasPartner, authLoading]); 
-  
-  const loadExistingCode = async () => {
+
     setIsLoading(true);
     try {
-      const { code, error } = await getActivePartnerCode();
+      const { data, error } = await supabase.rpc('create_partner_invite', [user.id]);
+
       if (error) {
-        console.error('Error loading existing code:', error);
-        return;
-      }
-      
-      if (code) {
-        setCode(code);
-      }
-    } catch (error) {
-      console.error('Error loading partner code:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleGenerateCode = async () => {
-    setIsLoading(true);
-    try {
-      const { code, error } = await generatePartnerCode();
-      if (error) {
-        console.error('Error generating code:', error);
+        console.error('Error generating partner code:', error);
         toast.error('Failed to generate partner code');
         return;
       }
-      
-      setCode(code);
-      toast.success('Partner code generated successfully');
+
+      if (data) {
+        setCode(data);
+        toast.success('Partner code generated successfully');
+      }
     } catch (error) {
-      console.error('Error generating partner code:', error);
-      toast.error('Failed to generate partner code');
+      console.error('Unexpected error generating partner code:', error);
+      toast.error('An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
   };
-  
+
+  useEffect(() => {
+    // Initial code generation if no partner exists
+    if (user && !profile?.partner_id && !code) {
+      generatePartnerCode();
+    }
+  }, [user, profile]);
+
   const handleCopyCode = () => {
     if (!code) return;
     
-    navigator.clipboard.writeText(code);
+    const inviteUrl = generateInviteUrl(code);
+    navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
-    toast.success('Code copied to clipboard');
+    toast.success('Invite link copied to clipboard');
     
     setTimeout(() => setCopied(false), 2000);
   };
-  
-  const handleSkip = () => {
-    navigate('/dashboard');
-  };
-  
-  // Show loading state while auth is initializing
-  if (authLoading) {
+
+  if (profile?.partner_id) {
     return (
       <Card className="w-full border-0 bg-transparent shadow-none">
-        <CardContent className="flex justify-center py-10">
-          <p className="text-muted-foreground">Loading profile...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  if (hasPartner) {
-    return (
-      <Card className="w-full border-0 bg-transparent shadow-none">
-        <CardHeader className="px-0 pt-0">
-          <div className="flex justify-center mb-4">
-            <div className="bg-harmony-100 text-harmony-600 p-4 rounded-full">
-              <Share2 className="h-6 w-6" />
-            </div>
-          </div>
+        <CardHeader>
           <CardTitle>Already Connected</CardTitle>
-          <CardDescription>You're already connected with a partner</CardDescription>
+          <CardDescription>You are already connected with a partner</CardDescription>
         </CardHeader>
-        <CardContent className="text-center px-0">
-          <p className="text-muted-foreground">
-            You are currently connected with a partner and cannot generate a new code.
-          </p>
-        </CardContent>
-        <CardFooter className="flex justify-center px-0">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="gap-2 hover:bg-harmony-50 hover:text-harmony-600 transition-all"
-            onClick={handleSkip}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Return to Dashboard
-          </Button>
-        </CardFooter>
       </Card>
     );
   }
-  
+
   return (
     <Card className="w-full border-0 bg-transparent shadow-none">
-      <CardHeader className="px-0 pt-0">
-        <div className="flex justify-center mb-4">
-          <div className="bg-harmony-100 text-harmony-600 p-4 rounded-full">
-            <Share2 className="h-6 w-6" />
-          </div>
-        </div>
+      <CardHeader>
         <CardTitle>Generate Partner Code</CardTitle>
         <CardDescription>Create a code for your partner to connect with you</CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-4 px-0">
+      <CardContent>
         {code ? (
-          <div className="space-y-4 animate-fade-in">
+          <div className="space-y-4">
             <div className="p-6 bg-gradient-to-br from-harmony-50 to-white rounded-lg border border-harmony-100 shadow-sm text-center">
               <p className="text-sm text-harmony-700 font-medium mb-2">
                 Share this code with your partner
@@ -166,65 +104,35 @@ const PartnerCodeGenerator = () => {
               </div>
             </div>
             
-            <p className="text-sm text-center text-muted-foreground">
-              Your partner will need to enter this code in their account to connect with you
-            </p>
+            <div className="flex justify-center">
+              <Button 
+                variant="outline" 
+                onClick={generatePartnerCode}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Regenerate Code
+              </Button>
+            </div>
           </div>
         ) : (
-          <div className="p-6 rounded-lg border border-dashed border-harmony-200 bg-harmony-50/50 flex flex-col items-center justify-center text-center">
-            <div className="bg-harmony-100 text-harmony-600 p-3 rounded-full mb-4">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <p className="mb-4 text-harmony-600">
-              Generate a unique code that your partner can use to connect with you
-            </p>
-            <Button 
-              onClick={handleGenerateCode} 
-              disabled={isLoading}
-              className="gap-2 bg-harmony-500 hover:bg-harmony-600 transition-all shadow-sm"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  Generate Partner Code
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-      </CardContent>
-      
-      <CardFooter className="flex justify-center gap-2 px-0">
-        {code && (
           <Button 
-            variant="outline" 
-            size="sm" 
-            className="gap-2 hover:bg-harmony-50 hover:text-harmony-600 transition-all"
-            onClick={handleGenerateCode}
+            onClick={generatePartnerCode} 
             disabled={isLoading}
+            className="w-full"
           >
             {isLoading ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
+              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
             ) : (
-              <RefreshCw className="h-4 w-4" />
+              'Generate Partner Code'
             )}
-            Generate New Code
           </Button>
         )}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="gap-2 hover:text-muted-foreground/80 transition-all"
-          onClick={handleSkip}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Skip for now
-        </Button>
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 };

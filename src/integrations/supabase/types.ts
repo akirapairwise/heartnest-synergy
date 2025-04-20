@@ -372,6 +372,30 @@ export type Database = {
         }
         Relationships: []
       }
+      relationships: {
+        Row: {
+          connected_at: string | null
+          id: string
+          status: string | null
+          user_id_1: string
+          user_id_2: string
+        }
+        Insert: {
+          connected_at?: string | null
+          id?: string
+          status?: string | null
+          user_id_1: string
+          user_id_2: string
+        }
+        Update: {
+          connected_at?: string | null
+          id?: string
+          status?: string | null
+          user_id_1?: string
+          user_id_2?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           areas_to_improve: string[] | null

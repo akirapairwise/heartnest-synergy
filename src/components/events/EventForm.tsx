@@ -17,6 +17,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import TimePickerField from './TimePickerField';
 import EventPreviewCard from './EventPreviewCard';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { DrawerContent, Drawer, DrawerTrigger } from '@/components/ui/drawer';
 
 const formSchema = z.object({
   title: z.string().min(2, { message: 'Title must be at least 2 characters' }),
@@ -43,6 +45,8 @@ interface EventFormProps {
 }
 
 const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -67,11 +71,21 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
     onSubmit(data);
   };
 
+  const DatePickerContent = (
+    <Calendar
+      mode="single"
+      selected={form.getValues("event_date")}
+      onSelect={(date) => date && form.setValue("event_date", date)}
+      initialFocus
+      className="p-3 pointer-events-auto"
+    />
+  );
+
   return (
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          <div className="grid gap-6">
+          <div className="grid gap-4 sm:gap-6">
             <FormField
               control={form.control}
               name="title"
@@ -99,7 +113,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
                   <FormControl>
                     <Textarea 
                       placeholder="Add some details about your event" 
-                      className="min-h-[100px] rounded-lg focus:ring-primary focus:border-primary transition-all resize-none"
+                      className="min-h-[80px] sm:min-h-[100px] rounded-lg focus:ring-primary focus:border-primary transition-all resize-none"
                       {...field} 
                       value={field.value || ''}
                     />
@@ -109,42 +123,65 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
               )}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               <FormField
                 control={form.control}
                 name="event_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel className="text-base">Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "pl-3 text-left font-normal rounded-lg",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, 'PPP')
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    {isMobile ? (
+                      <Drawer>
+                        <DrawerTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "pl-3 text-left font-normal rounded-lg w-full",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, 'PPP')
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </DrawerTrigger>
+                        <DrawerContent className="p-0">
+                          <div className="p-4 bg-background">
+                            <h4 className="font-medium text-center mb-4">Select Date</h4>
+                            {DatePickerContent}
+                          </div>
+                        </DrawerContent>
+                      </Drawer>
+                    ) : (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "pl-3 text-left font-normal rounded-lg",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, 'PPP')
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          {DatePickerContent}
+                        </PopoverContent>
+                      </Popover>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -176,10 +213,10 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
               control={form.control}
               name="shared_with_partner"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between p-4 rounded-lg border bg-muted/20">
+                <FormItem className="flex flex-row items-center justify-between p-3 sm:p-4 rounded-lg border bg-muted/20">
                   <div className="space-y-0.5">
                     <div className="flex items-center">
-                      <FormLabel className="text-base cursor-pointer">Share with Partner</FormLabel>
+                      <FormLabel className="text-sm sm:text-base cursor-pointer">Share with Partner</FormLabel>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -232,7 +269,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
             )}
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-2">
             <Button
               type="button"
               variant="outline"

@@ -38,7 +38,7 @@ const TimePickerField = ({ form }: TimePickerFieldProps) => {
                 </SelectValue>
               </SelectTrigger>
             </FormControl>
-            <SelectContent>
+            <SelectContent className="max-h-[40vh] overflow-y-auto">
               <SelectItem value="no-time">No specific time</SelectItem>
               {timeOptions.map((time) => (
                 <SelectItem key={time} value={time}>
@@ -47,7 +47,7 @@ const TimePickerField = ({ form }: TimePickerFieldProps) => {
               ))}
             </SelectContent>
           </Select>
-          <FormDescription>
+          <FormDescription className="text-xs sm:text-sm">
             Optional: Set a specific time for your event
           </FormDescription>
           <FormMessage />

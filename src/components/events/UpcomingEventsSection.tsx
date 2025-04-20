@@ -11,6 +11,8 @@ import EventForm from './EventForm';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 
 interface EventWithFeedback {
   id: string;
@@ -31,6 +33,7 @@ const UpcomingEventsSection = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const fabRef = useRef<HTMLButtonElement>(null);
   const { user, profile } = useAuth();
+  const isMobile = useIsMobile();
 
   const { data: events, isLoading, refetch } = useQuery({
     queryKey: ['upcoming-events', user?.id, profile?.partner_id],
@@ -123,6 +126,13 @@ const UpcomingEventsSection = () => {
     }
   };
 
+  const EventFormContainer = (
+    <EventForm
+      onSubmit={handleCreateEvent}
+      onCancel={() => setIsCreateDialogOpen(false)}
+    />
+  );
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -171,7 +181,7 @@ const UpcomingEventsSection = () => {
           className="gap-2 rounded-full bg-primary hover:bg-primary/90 transition-transform duration-300 hover:scale-105 shadow-sm"
         >
           <Plus className="h-4 w-4" />
-          Add Event
+          <span className="hidden sm:inline">Add Event</span>
         </Button>
       </div>
 
@@ -223,19 +233,31 @@ const UpcomingEventsSection = () => {
         </Button>
       </motion.div>
 
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-love-50 to-harmony-50 p-6 -m-6 mb-2">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold">Create New Event</DialogTitle>
-            </DialogHeader>
-          </div>
-          <EventForm
-            onSubmit={handleCreateEvent}
-            onCancel={() => setIsCreateDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      {isMobile ? (
+        <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DrawerContent className="max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-love-50 to-harmony-50 p-4">
+              <DrawerHeader className="p-0">
+                <DrawerTitle className="text-xl font-semibold">Create New Event</DrawerTitle>
+              </DrawerHeader>
+            </div>
+            <div className="p-4 pb-8">
+              {EventFormContainer}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="sm:max-w-[500px] rounded-xl overflow-hidden">
+            <div className="bg-gradient-to-r from-love-50 to-harmony-50 p-6 -m-6 mb-2">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold">Create New Event</DialogTitle>
+              </DialogHeader>
+            </div>
+            {EventFormContainer}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

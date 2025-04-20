@@ -2,10 +2,12 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Edit, Heart } from 'lucide-react';
+import { Calendar, MapPin, Edit, Heart, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { isEventPast } from './utils/eventStatus';
+import EventFeedback from './EventFeedback';
 
 interface EventDetailsDialogProps {
   open: boolean;
@@ -18,6 +20,9 @@ interface EventDetailsDialogProps {
   eventId: string;
   onEditClick: () => void;
   isCreator: boolean;
+  feedback?: string | null;
+  hasFeedback?: boolean;
+  onFeedbackSaved: () => void;
 }
 
 const EventDetailsDialog = ({
@@ -30,7 +35,14 @@ const EventDetailsDialog = ({
   daysToEvent,
   onEditClick,
   isCreator,
+  eventId,
+  feedback,
+  hasFeedback,
+  onFeedbackSaved,
 }: EventDetailsDialogProps) => {
+  const { user } = useAuth();
+  const isPast = isEventPast(eventDate);
+
   const handleOpenLocation = () => {
     if (!location) return;
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
@@ -39,6 +51,7 @@ const EventDetailsDialog = ({
 
   // Function to get tag class based on days remaining
   const getCountdownTagClass = () => {
+    if (isPast) return "bg-muted text-muted-foreground";
     if (daysToEvent === 0) return "bg-primary text-primary-foreground animate-pulse-soft";
     if (daysToEvent === 1) return "bg-primary/90 text-primary-foreground";
     if (daysToEvent <= 3) return "bg-primary/80 text-primary-foreground";
@@ -50,7 +63,15 @@ const EventDetailsDialog = ({
       <DialogContent className="sm:max-w-[500px] rounded-xl p-0 overflow-hidden">
         <div className="bg-gradient-to-r from-love-50 to-harmony-50 p-6">
           <DialogHeader className="flex-row justify-between items-center">
-            <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
+            <div className="flex items-center gap-2">
+              <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
+              {isPast && (
+                <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Past Event
+                </span>
+              )}
+            </div>
             {isCreator && (
               <Button
                 variant="ghost"
@@ -73,7 +94,7 @@ const EventDetailsDialog = ({
               </div>
               <div>
                 <div className="text-foreground font-medium">{format(eventDate, 'PPP')}</div>
-                {daysToEvent >= 0 && (
+                {!isPast && daysToEvent >= 0 && (
                   <span className={cn(
                     "inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium",
                     getCountdownTagClass()
@@ -81,6 +102,11 @@ const EventDetailsDialog = ({
                     {daysToEvent === 0 ? "Today!" : 
                      daysToEvent === 1 ? "Tomorrow" : 
                      `In ${daysToEvent} days`}
+                  </span>
+                )}
+                {isPast && (
+                  <span className="inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium bg-muted text-muted-foreground">
+                    {Math.abs(daysToEvent)} days ago
                   </span>
                 )}
               </div>
@@ -105,6 +131,17 @@ const EventDetailsDialog = ({
               <div className="mt-6 bg-white/80 rounded-xl p-4 shadow-sm">
                 <h4 className="text-sm uppercase tracking-wide text-muted-foreground mb-2">Details</h4>
                 <p className="whitespace-pre-wrap text-foreground">{description}</p>
+              </div>
+            )}
+
+            {isPast && (
+              <div className="mt-6 bg-white/80 rounded-xl p-4 shadow-sm">
+                <EventFeedback 
+                  eventId={eventId} 
+                  existingFeedback={feedback} 
+                  user={user}
+                  onFeedbackSaved={onFeedbackSaved}
+                />
               </div>
             )}
 

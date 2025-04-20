@@ -27,7 +27,7 @@ const UpcomingEventsSection = () => {
       // 2. Events shared with the user by their partner (if they have one)
       let query = supabase
         .from('partner_events_with_countdown')
-        .select('*')
+        .select('*, feedback, has_feedback')
         .or(`creator_id.eq.${user.id}${profile?.partner_id ? `,and(creator_id.eq.${profile.partner_id},shared_with_partner.eq.true)` : ''}`)
         .order('event_date', { ascending: true })
         .limit(10);
@@ -72,6 +72,7 @@ const UpcomingEventsSection = () => {
           ...formData,
           creator_id: user.id,
           event_date: formData.event_date.toISOString(),
+          has_feedback: false,
         }]);
 
       if (error) throw error;
@@ -169,6 +170,8 @@ const UpcomingEventsSection = () => {
               daysToEvent={event.days_to_event}
               isShared={event.shared_with_partner}
               creatorId={event.creator_id}
+              feedback={event.feedback}
+              hasFeedback={event.has_feedback}
               onEventUpdated={refetch}
             />
           ))

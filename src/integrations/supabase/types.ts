@@ -374,57 +374,90 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          areas_to_improve: string[] | null
           avatar_url: string | null
           bio: string | null
           communication_style: string | null
+          conflict_resolution_style: string | null
           created_at: string
           emotional_needs: string | null
           financial_attitude: string | null
           full_name: string | null
           id: string
+          interaction_frequency: string | null
           is_onboarding_complete: boolean
+          living_together: string | null
           location: string | null
           love_language: string | null
+          love_language_preference: string | null
           mood_settings: Json | null
           nickname: string | null
           partner_id: string | null
+          preferred_communication: string | null
+          profile_complete_stage: string | null
+          pronouns: string | null
           relationship_goals: string | null
+          relationship_start_date: string | null
+          relationship_status: string | null
+          shared_goals: string[] | null
           updated_at: string
         }
         Insert: {
+          areas_to_improve?: string[] | null
           avatar_url?: string | null
           bio?: string | null
           communication_style?: string | null
+          conflict_resolution_style?: string | null
           created_at?: string
           emotional_needs?: string | null
           financial_attitude?: string | null
           full_name?: string | null
           id: string
+          interaction_frequency?: string | null
           is_onboarding_complete?: boolean
+          living_together?: string | null
           location?: string | null
           love_language?: string | null
+          love_language_preference?: string | null
           mood_settings?: Json | null
           nickname?: string | null
           partner_id?: string | null
+          preferred_communication?: string | null
+          profile_complete_stage?: string | null
+          pronouns?: string | null
           relationship_goals?: string | null
+          relationship_start_date?: string | null
+          relationship_status?: string | null
+          shared_goals?: string[] | null
           updated_at?: string
         }
         Update: {
+          areas_to_improve?: string[] | null
           avatar_url?: string | null
           bio?: string | null
           communication_style?: string | null
+          conflict_resolution_style?: string | null
           created_at?: string
           emotional_needs?: string | null
           financial_attitude?: string | null
           full_name?: string | null
           id?: string
+          interaction_frequency?: string | null
           is_onboarding_complete?: boolean
+          living_together?: string | null
           location?: string | null
           love_language?: string | null
+          love_language_preference?: string | null
           mood_settings?: Json | null
           nickname?: string | null
           partner_id?: string | null
+          preferred_communication?: string | null
+          profile_complete_stage?: string | null
+          pronouns?: string | null
           relationship_goals?: string | null
+          relationship_start_date?: string | null
+          relationship_status?: string | null
+          shared_goals?: string[] | null
           updated_at?: string
         }
         Relationships: []
@@ -538,42 +571,64 @@ export type Database = {
       get_partner_profile: {
         Args: { user_id: string }
         Returns: {
+          areas_to_improve: string[] | null
           avatar_url: string | null
           bio: string | null
           communication_style: string | null
+          conflict_resolution_style: string | null
           created_at: string
           emotional_needs: string | null
           financial_attitude: string | null
           full_name: string | null
           id: string
+          interaction_frequency: string | null
           is_onboarding_complete: boolean
+          living_together: string | null
           location: string | null
           love_language: string | null
+          love_language_preference: string | null
           mood_settings: Json | null
           nickname: string | null
           partner_id: string | null
+          preferred_communication: string | null
+          profile_complete_stage: string | null
+          pronouns: string | null
           relationship_goals: string | null
+          relationship_start_date: string | null
+          relationship_status: string | null
+          shared_goals: string[] | null
           updated_at: string
         }[]
       }
       get_profile_by_user_id: {
         Args: { user_id: string }
         Returns: {
+          areas_to_improve: string[] | null
           avatar_url: string | null
           bio: string | null
           communication_style: string | null
+          conflict_resolution_style: string | null
           created_at: string
           emotional_needs: string | null
           financial_attitude: string | null
           full_name: string | null
           id: string
+          interaction_frequency: string | null
           is_onboarding_complete: boolean
+          living_together: string | null
           location: string | null
           love_language: string | null
+          love_language_preference: string | null
           mood_settings: Json | null
           nickname: string | null
           partner_id: string | null
+          preferred_communication: string | null
+          profile_complete_stage: string | null
+          pronouns: string | null
           relationship_goals: string | null
+          relationship_start_date: string | null
+          relationship_status: string | null
+          shared_goals: string[] | null
           updated_at: string
         }[]
       }

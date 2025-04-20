@@ -57,7 +57,7 @@ const CodeInputForm = () => {
     setError(null);
     
     try {
-      // Then accept the invitation using improved function from partnershipService
+      // Accept the invitation using improved function from partnershipService
       console.log('Accepting invitation with code:', formattedCode);
       const { error } = await acceptInvitation(formattedCode, user.id);
       
@@ -68,14 +68,18 @@ const CodeInputForm = () => {
         
         // Display more specific guidance based on error message
         if (error.message.includes("verify inviter profile")) {
-          toast.error('Could not verify the inviter\'s profile. Please try again or ask them to resend the invitation code.');
+          toast.error('Could not verify the inviter\'s profile. The code may be invalid or the inviter\'s account may not exist.');
+        } else if (error.message.includes("create your profile")) {
+          toast.error('Could not create your profile. Please try logging out and logging back in.');
         }
         return;
       }
       
       // Update profile to reflect new partner connection
       let profileUpdated = false;
-      const maxProfileRefreshAttempts = 3;
+      const maxProfileRefreshAttempts = 5;
+      
+      toast.success('Partner connection initiated! Updating your profile...');
       
       for (let attempt = 1; attempt <= maxProfileRefreshAttempts; attempt++) {
         try {
@@ -84,8 +88,15 @@ const CodeInputForm = () => {
             // Add a slight delay before refreshing profile
             await new Promise(resolve => setTimeout(resolve, 1000));
             await fetchUserProfile(user.id);
-            profileUpdated = true;
-            break;
+            
+            // Verify partner is actually connected
+            if (profile?.partner_id) {
+              profileUpdated = true;
+              console.log('Profile updated successfully with partner!');
+              break;
+            } else {
+              console.log('Profile refreshed but partner not found yet, retrying...');
+            }
           }
         } catch (profileError) {
           console.error(`Error refreshing profile after connection (attempt ${attempt}):`, profileError);

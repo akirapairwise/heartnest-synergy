@@ -74,15 +74,26 @@ const ProfileSettings = () => {
     setIsSubmitting(true);
     
     try {
+      // Create mood_settings object to ensure it has the right structure
       const moodSettings = {
         ...(profile?.mood_settings || {}),
         isVisibleToPartner: formData.isMoodVisibleToPartner
       };
-      
-      await updateProfile({
+
+      // Log what we're sending to the database
+      console.log('Updating profile with data:', {
         ...formData,
         mood_settings: moodSettings,
       });
+      
+      const result = await updateProfile({
+        ...formData,
+        mood_settings: moodSettings,
+      });
+      
+      if (result && result.error) {
+        throw new Error(result.error.message || 'Failed to update profile');
+      }
       
       toast.success('Profile updated successfully');
     } catch (error: any) {

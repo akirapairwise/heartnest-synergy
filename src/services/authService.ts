@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/types/auth';
 import { toast } from 'sonner';
@@ -21,6 +22,8 @@ export const fetchUserProfile = async (userId: string) => {
         error 
       };
     }
+
+    console.log('Profile data fetched:', data);
 
     return { 
       profile: data as Profile, 
@@ -128,10 +131,14 @@ export const updateProfile = async (userId: string, data: Partial<Profile>) => {
   try {
     console.log('Updating profile for user:', userId, 'with data:', data);
     
+    // Make sure we don't try to update ID if it's in the data object
+    // as user_id is a primary key and cannot be changed
+    const { id, user_id, ...updateData } = data as any;
+    
     const { error } = await supabase
       .from('user_profiles')
       .update({
-        ...data,
+        ...updateData,
         updated_at: new Date().toISOString()
       })
       .eq('id', userId);
@@ -139,12 +146,11 @@ export const updateProfile = async (userId: string, data: Partial<Profile>) => {
     if (error) {
       console.error('Supabase error updating profile:', error);
       toast.error('Failed to update profile');
+      return { error };
     } else {
       console.log('Profile updated successfully');
-      toast.success('Profile updated successfully');
+      return { error: null };
     }
-    
-    return { error };
   } catch (error) {
     console.error('Error updating profile:', error);
     return { error };

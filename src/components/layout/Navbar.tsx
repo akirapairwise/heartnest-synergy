@@ -14,9 +14,17 @@ const Navbar = () => {
   const { toast } = useToast();
   const { profile, signOut } = useAuth();
   
+  // Get initials from full name or use 'U' as fallback
   const initials = profile?.full_name 
     ? profile.full_name.split(' ').map(name => name[0]).join('').toUpperCase() 
     : 'U';
+  
+  // Get avatar URL or use null
+  const avatarUrl = profile?.avatar_url || null;
+  
+  console.log('Profile in Navbar:', profile);
+  console.log('Avatar URL:', avatarUrl);
+  console.log('Initials:', initials);
   
   const navItems = [
     { path: "/dashboard", icon: <Home className="h-4 w-4" />, label: "Dashboard" },
@@ -78,7 +86,11 @@ const Navbar = () => {
               className="h-8 w-8 cursor-pointer" 
               onClick={() => handleNavigation('/profile/settings')}
             >
-              <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(initials)}`} />
+              {avatarUrl ? (
+                <AvatarImage src={avatarUrl} alt={profile?.full_name || 'User'} />
+              ) : (
+                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(initials)}`} />
+              )}
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             

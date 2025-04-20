@@ -19,32 +19,58 @@ export const usePartnerConnection = () => {
     setIsLoading(true);
 
     try {
-      // Call the Supabase function to process the invite
-      const { data, error } = await supabase.rpc('process_partner_invite', {
-        p_invite_code: inviteCode.toUpperCase(),
-        p_current_user_id: user.id
-      });
+      // Use the existing partner code service directly rather than RPC
+      const { data, error } = await supabase
+        .from('partner_codes')
+        .select('*')
+        .eq('code', inviteCode.toUpperCase())
+        .eq('is_used', false)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
 
       if (error) {
-        console.error('Partner connection error:', error);
-        toast.error(error.message || 'Failed to connect with partner');
+        console.error('Error fetching partner code:', error);
+        toast.error('Failed to validate invitation code');
         return false;
       }
 
-      if (data === 'success') {
-        // Refresh user profile to get updated partner information
-        if (fetchUserProfile) {
-          await fetchUserProfile(user.id);
-        }
-
-        toast.success('🎉 You are now connected with your partner!');
-        navigate('/dashboard');
-        return true;
-      } else {
-        // Handle specific validation messages
-        toast.error(data);
+      if (!data) {
+        toast.error('Invalid or expired invitation code');
         return false;
       }
+
+      // Check if it's the user's own code
+      if (data.inviter_id === user.id) {
+        toast.error('You cannot connect with yourself');
+        return false;
+      }
+
+      // Link the partners
+      const { error: linkError } = await supabase.rpc('link_partners', {
+        user_id_1: user.id, 
+        user_id_2: data.inviter_id
+      });
+
+      if (linkError) {
+        console.error('Error connecting partners:', linkError);
+        toast.error('Failed to connect with partner');
+        return false;
+      }
+
+      // Mark the code as used
+      await supabase
+        .from('partner_codes')
+        .update({ is_used: true })
+        .eq('code', inviteCode.toUpperCase());
+
+      // Refresh user profile to get updated partner information
+      if (fetchUserProfile) {
+        await fetchUserProfile(user.id);
+      }
+
+      toast.success('🎉 You are now connected with your partner!');
+      navigate('/dashboard');
+      return true;
     } catch (err) {
       console.error('Unexpected partner connection error:', err);
       toast.error('An unexpected error occurred');

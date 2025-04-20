@@ -22,7 +22,34 @@ const PartnerCodeGenerator = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.rpc('create_partner_invite', [user.id]);
+      // Calculate expiration date (48 hours from now)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 48);
+      
+      // Delete any existing codes for this user
+      await supabase
+        .from('partner_codes')
+        .delete()
+        .eq('inviter_id', user.id)
+        .eq('is_used', false);
+      
+      // Generate a random code
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let generatedCode = '';
+      for (let i = 0; i < 6; i++) {
+        generatedCode += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      
+      // Insert the new code
+      const { error } = await supabase
+        .from('partner_codes')
+        .insert({
+          code: generatedCode,
+          inviter_id: user.id,
+          is_used: false,
+          created_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString()
+        });
 
       if (error) {
         console.error('Error generating partner code:', error);
@@ -30,10 +57,8 @@ const PartnerCodeGenerator = () => {
         return;
       }
 
-      if (data) {
-        setCode(data);
-        toast.success('Partner code generated successfully');
-      }
+      setCode(generatedCode);
+      toast.success('Partner code generated successfully');
     } catch (error) {
       console.error('Unexpected error generating partner code:', error);
       toast.error('An unexpected error occurred');

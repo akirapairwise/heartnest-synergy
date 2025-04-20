@@ -52,11 +52,12 @@ const UpcomingEventsSection = () => {
         
         for (const event of eventsData) {
           // Fetch feedback for this event if it exists
-          const { data: feedbackData } = await supabase
-            .from('event_feedback')
+          // Use type assertion to temporarily bypass TypeScript error
+          const { data: feedbackData } = await (supabase
+            .from('event_feedback' as any)
             .select('feedback')
             .eq('event_id', event.id)
-            .single();
+            .single() as any);
           
           eventsWithFeedback.push({
             ...event,

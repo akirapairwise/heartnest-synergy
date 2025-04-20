@@ -30,11 +30,12 @@ const EventFeedback = ({ eventId, existingFeedback, user, onFeedbackSaved }: Eve
     setIsSubmitting(true);
     try {
       // First check if the event_feedback record exists
-      const { data: existingRecord, error: checkError } = await supabase
-        .from('event_feedback')
+      // Use type assertion to temporarily bypass TypeScript error
+      const { data: existingRecord, error: checkError } = await (supabase
+        .from('event_feedback' as any)
         .select('*')
         .eq('event_id', eventId)
-        .single();
+        .single() as any);
       
       if (checkError && checkError.code !== 'PGRST116') {
         // Error other than "no rows returned"
@@ -43,26 +44,26 @@ const EventFeedback = ({ eventId, existingFeedback, user, onFeedbackSaved }: Eve
       
       if (existingRecord) {
         // Update existing feedback
-        const { error } = await supabase
-          .from('event_feedback')
+        const { error } = await (supabase
+          .from('event_feedback' as any)
           .update({ 
             feedback: feedback,
             updated_at: new Date().toISOString()
           })
-          .eq('event_id', eventId);
+          .eq('event_id', eventId) as any);
           
         if (error) throw error;
       } else {
         // Insert new feedback
-        const { error } = await supabase
-          .from('event_feedback')
+        const { error } = await (supabase
+          .from('event_feedback' as any)
           .insert({ 
             event_id: eventId,
             user_id: user.id,
             feedback: feedback,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          });
+          }) as any);
           
         if (error) throw error;
       }

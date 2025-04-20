@@ -15,20 +15,34 @@ import { motion } from 'framer-motion';
 const UpcomingEventsSection = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const fabRef = useRef<HTMLButtonElement>(null);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const { data: events, isLoading, refetch } = useQuery({
-    queryKey: ['upcoming-events'],
+    queryKey: ['upcoming-events', user?.id, profile?.partner_id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!user) return [];
+      
+      // Build the query to fetch events the user should see:
+      // 1. Events created by the user
+      // 2. Events shared with the user by their partner (if they have one)
+      let query = supabase
         .from('partner_events_with_countdown')
         .select('*')
+        .or(`creator_id.eq.${user.id}${profile?.partner_id ? `,and(creator_id.eq.${profile.partner_id},shared_with_partner.eq.true)` : ''}`)
         .order('event_date', { ascending: true })
         .limit(10);
 
-      if (error) throw error;
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching events:', error);
+        throw error;
+      }
+      
+      console.log('Fetched events:', data);
       return data;
     },
+    enabled: !!user,
   });
 
   // Filter for nearest upcoming event

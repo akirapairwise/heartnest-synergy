@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { OperationResult } from "../types";
 
@@ -56,7 +57,7 @@ export async function handlePartnerConnection(
     console.log('Starting partner linking process with atomic transaction...');
     
     // Step 3: Use transaction pattern to update both profiles atomically
-    // First update both profiles in a single atomic operation
+    // Use the link_partners function which is more reliable for bidirectional linking
     const { error: transactionError } = await supabase.rpc('link_partners', {
       user_id_1: currentUserId,
       user_id_2: partnerId
@@ -141,7 +142,7 @@ export async function ensureProfileExists(userId: string): Promise<any> {
       attempt++;
       console.log(`Attempt ${attempt} to ensure profile for user: ${userId}`);
       
-      // Check if profile exists first
+      // First, check if profile exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('user_profiles')
         .select('*')
@@ -150,18 +151,14 @@ export async function ensureProfileExists(userId: string): Promise<any> {
       
       if (checkError) {
         console.error(`Error checking if profile exists (attempt ${attempt}):`, checkError);
-        
-        // If permission error, fail fast as retrying won't help
-        if (checkError.code === '42501') {
-          console.error('Permission denied when checking profile');
-          await new Promise(resolve => setTimeout(resolve, 500));
-          continue;
-        }
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 500));
+        continue;
       }
       
       // If profile exists, return it
       if (existingProfile) {
-        console.log(`Profile already exists for user: ${userId}`, existingProfile);
+        console.log(`Profile already exists for user: ${userId}`);
         return existingProfile;
       }
       
@@ -181,13 +178,13 @@ export async function ensureProfileExists(userId: string): Promise<any> {
           .single();
         
         if (!insertError && newProfile) {
-          console.log(`Successfully created profile for user: ${userId}`, newProfile);
+          console.log(`Successfully created profile for user: ${userId}`);
           return newProfile;
         }
         
         // Handle duplicate key violation (concurrent creation)
         if (insertError && insertError.code === '23505') {
-          console.log(`Profile was created concurrently for user: ${userId}, fetching it now`);
+          console.log(`Profile was created concurrently for user: ${userId}, fetching it again`);
           
           // Wait a moment before fetching again
           await new Promise(resolve => setTimeout(resolve, 300));
@@ -200,7 +197,7 @@ export async function ensureProfileExists(userId: string): Promise<any> {
             .maybeSingle();
             
           if (!fetchError && concurrentProfile) {
-            console.log(`Successfully fetched concurrently created profile for user: ${userId}`, concurrentProfile);
+            console.log(`Successfully fetched concurrently created profile for user: ${userId}`);
             return concurrentProfile;
           }
           
@@ -209,34 +206,6 @@ export async function ensureProfileExists(userId: string): Promise<any> {
           }
         } else if (insertError) {
           console.error(`Error creating profile (attempt ${attempt}):`, insertError);
-        }
-        
-        // Try upsert as a fallback if insertion failed
-        if (attempt === MAX_RETRIES - 1) {
-          console.log(`Trying upsert for user ${userId} as fallback`);
-          
-          const { data: upsertedProfile, error: upsertError } = await supabase
-            .from('user_profiles')
-            .upsert({
-              id: userId,
-              is_onboarding_complete: false,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }, { 
-              onConflict: 'id',
-              ignoreDuplicates: false 
-            })
-            .select()
-            .single();
-            
-          if (!upsertError && upsertedProfile) {
-            console.log(`Successfully upserted profile for user: ${userId}`, upsertedProfile);
-            return upsertedProfile;
-          }
-          
-          if (upsertError) {
-            console.error('Failed on upsert attempt:', upsertError);
-          }
         }
       } catch (createError) {
         console.error(`Unexpected error in profile creation (attempt ${attempt}):`, createError);
@@ -256,7 +225,7 @@ export async function ensureProfileExists(userId: string): Promise<any> {
       .maybeSingle();
       
     if (!finalError && finalProfile) {
-      console.log(`Found profile on final check for user: ${userId}`, finalProfile);
+      console.log(`Found profile on final check for user: ${userId}`);
       return finalProfile;
     }
     

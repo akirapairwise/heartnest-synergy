@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { acceptInvitation } from '@/services/partners/partnershipService';
 import { formatToken } from '@/hooks/partner-invites/utils';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Form component for entering and submitting a partner code
@@ -31,142 +29,6 @@ const CodeInputForm = () => {
       setError(null);
     }
   }, [profile?.partner_id]);
-  
-  const validateCode = async (inputCode: string) => {
-    // Clean the code (remove spaces, uppercase)
-    const formattedCode = formatToken(inputCode);
-    
-    if (!formattedCode) {
-      return { valid: false, error: 'Please enter a valid invitation code' };
-    }
-    
-    try {
-      console.log('Validating code:', formattedCode);
-      
-      // First try to check in partner_codes table
-      const { data: partnerCodeData, error: partnerCodeError } = await supabase
-        .from('partner_codes')
-        .select('*')
-        .eq('code', formattedCode)
-        .eq('is_used', false)
-        .or('expires_at.is.null,expires_at.gt.now()')
-        .maybeSingle();
-      
-      if (partnerCodeData) {
-        console.log('Found valid partner code:', partnerCodeData);
-        
-        // Check if user is trying to connect to themselves
-        if (partnerCodeData.inviter_id === user?.id) {
-          return { valid: false, error: 'You cannot connect with yourself' };
-        }
-        
-        // Check if the inviter already has a partner
-        const { data: inviterProfile, error: inviterProfileError } = await supabase
-          .from('user_profiles')
-          .select('partner_id')
-          .eq('id', partnerCodeData.inviter_id)
-          .single();
-          
-        if (inviterProfileError) {
-          console.error('Error checking inviter profile:', inviterProfileError);
-          
-          // If profile doesn't exist, try to create it
-          if (inviterProfileError.code === 'PGRST116') {
-            console.log('Inviter profile not found, creating one...');
-            const { error: createProfileError } = await supabase
-              .from('user_profiles')
-              .insert({
-                id: partnerCodeData.inviter_id,
-                is_onboarding_complete: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-              
-            if (createProfileError) {
-              console.error('Error creating inviter profile:', createProfileError);
-              return { valid: false, error: 'Error creating partner profile. Please try again.' };
-            }
-            
-            // Continue with validation after creating profile
-            return { valid: true, error: null };
-          }
-          
-          return { valid: false, error: 'Error checking partner status. Please try again.' };
-        } else if (inviterProfile?.partner_id && inviterProfile.partner_id !== user?.id) {
-          return { valid: false, error: 'The inviter is already connected with another partner' };
-        }
-        
-        return { valid: true, error: null };
-      }
-      
-      console.log('No partner code found, checking partner_invites table...');
-      
-      // If not found in partner_codes, try the partner_invites table
-      const { data: inviteData, error: inviteError } = await supabase
-        .from('partner_invites')
-        .select('*')
-        .eq('token', formattedCode)
-        .eq('is_accepted', false)
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
-      
-      if (inviteData) {
-        console.log('Found valid partner invite:', inviteData);
-        
-        // Check if user is trying to connect to themselves
-        if (inviteData.inviter_id === user?.id) {
-          return { valid: false, error: 'You cannot connect with yourself' };
-        }
-        
-        // Check if the inviter already has a partner
-        const { data: inviterProfile, error: inviterProfileError } = await supabase
-          .from('user_profiles')
-          .select('partner_id')
-          .eq('id', inviteData.inviter_id)
-          .single();
-          
-        if (inviterProfileError) {
-          console.error('Error checking inviter profile:', inviterProfileError);
-          
-          // If profile doesn't exist, try to create it
-          if (inviterProfileError.code === 'PGRST116') {
-            console.log('Inviter profile not found, creating one...');
-            const { error: createProfileError } = await supabase
-              .from('user_profiles')
-              .insert({
-                id: inviteData.inviter_id,
-                is_onboarding_complete: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-              
-            if (createProfileError) {
-              console.error('Error creating inviter profile:', createProfileError);
-              return { valid: false, error: 'Error creating partner profile. Please try again.' };
-            }
-            
-            // Continue with validation after creating profile
-            return { valid: true, error: null };
-          }
-          
-          return { valid: false, error: 'Error checking partner status. Please try again.' };
-        } else if (inviterProfile?.partner_id && inviterProfile.partner_id !== user?.id) {
-          return { valid: false, error: 'The inviter is already connected with another partner' };
-        }
-        
-        return { valid: true, error: null };
-      }
-      
-      console.log('No valid partner code or invite found');
-      return { 
-        valid: false, 
-        error: 'Invalid invitation code. It may be expired or already used.' 
-      };
-    } catch (err) {
-      console.error('Error validating invite code:', err);
-      return { valid: false, error: 'Failed to validate code. Please try again.' };
-    }
-  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,64 +56,26 @@ const CodeInputForm = () => {
     setError(null);
     
     try {
-      // Ensure current user profile exists
-      const { data: currentUserProfile, error: currentUserProfileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-        
-      if (currentUserProfileError) {
-        console.error('Error checking current user profile:', currentUserProfileError);
-        // Create profile if it doesn't exist
-        if (currentUserProfileError.code === 'PGRST116') {
-          console.log('Current user profile not found, creating one...');
-          const { error: createProfileError } = await supabase
-            .from('user_profiles')
-            .insert({
-              id: user.id,
-              is_onboarding_complete: false,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-            
-          if (createProfileError) {
-            console.error('Error creating current user profile:', createProfileError);
-            setError('Error creating your profile. Please try again.');
-            setIsSubmitting(false);
-            return;
-          }
-        } else {
-          setError('Error checking your profile. Please try again.');
-          setIsSubmitting(false);
-          return;
-        }
-      }
-      
-      // First validate the code
-      setIsValidating(true);
-      const validationResult = await validateCode(formattedCode);
-      setIsValidating(false);
-      
-      if (!validationResult.valid) {
-        setError(validationResult.error || 'Invalid code');
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Then accept the invitation
+      // Then accept the invitation using improved function from partnershipService
+      console.log('Accepting invitation with code:', formattedCode);
       const { error } = await acceptInvitation(formattedCode, user.id);
       
       if (error) {
-        setError(error.message);
+        setError(error.message || 'Error connecting with partner. Please try again.');
         console.error('Error accepting invitation:', error);
         setIsSubmitting(false);
         return;
       }
       
       // Update profile to reflect new partner connection
-      if (fetchUserProfile) {
-        await fetchUserProfile(user.id);
+      try {
+        if (fetchUserProfile) {
+          console.log('Refreshing user profile after connection...');
+          await fetchUserProfile(user.id);
+        }
+      } catch (profileError) {
+        console.error('Error refreshing profile after connection:', profileError);
+        // We can continue even if this fails
       }
       
       // Show success message
@@ -262,7 +86,6 @@ const CodeInputForm = () => {
     } catch (err: any) {
       console.error('Error submitting code:', err);
       setError(err.message || 'Failed to redeem code. Please try again.');
-      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }

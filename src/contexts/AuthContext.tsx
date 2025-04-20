@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -55,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(data.session?.user || null);
       
       if (data.session?.user) {
-        const profileResult = await fetchUserProfile(data.session.user.id);
+        const profileResult = await apiFetchUserProfile(data.session.user.id);
         setProfile(profileResult.profile);
         setIsOnboardingComplete(profileResult.isOnboardingComplete);
       }
@@ -86,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (currentSession?.user) {
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             // Only fetch profile if we have a session
-            fetchUserProfile(currentSession.user.id).then(({ profile, isOnboardingComplete }) => {
+            apiFetchUserProfile(currentSession.user.id).then(({ profile, isOnboardingComplete }) => {
               setProfile(profile);
               setIsOnboardingComplete(isOnboardingComplete);
             });

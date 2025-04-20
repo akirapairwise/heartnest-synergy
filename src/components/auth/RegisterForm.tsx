@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,15 +63,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
       
       if (signUpError) {
         setError(signUpError.message);
-        toast({
-          title: "Registration failed",
-          description: signUpError.message,
+        useToastHook({
           variant: "destructive",
+          description: signUpError.message
         });
       } else {
         setRegistrationComplete(true);
-        toast({
-          title: "Account created successfully!",
+        useToastHook({
           description: "Your account has been created. Let's set up your profile!",
         });
         
@@ -85,10 +82,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
     } catch (error) {
       console.error('Authentication error:', error);
       setError('An unexpected error occurred. Please try again.');
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+      useToastHook({
         variant: "destructive",
+        description: "An unexpected error occurred. Please try again.",
       });
     } finally {
       setIsLoading(false);

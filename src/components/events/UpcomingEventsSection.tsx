@@ -12,6 +12,21 @@ import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
+interface EventWithFeedback {
+  id: string;
+  title: string;
+  description: string | null;
+  creator_id: string;
+  location: string | null;
+  event_date: string;
+  shared_with_partner: boolean;
+  created_at: string;
+  updated_at: string;
+  days_to_event: number;
+  feedback?: string | null;
+  has_feedback?: boolean;
+}
+
 const UpcomingEventsSection = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const fabRef = useRef<HTMLButtonElement>(null);
@@ -22,25 +37,39 @@ const UpcomingEventsSection = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      // Build the query to fetch events the user should see:
-      // 1. Events created by the user
-      // 2. Events shared with the user by their partner (if they have one)
-      let query = supabase
-        .from('partner_events_with_countdown')
-        .select('*, feedback, has_feedback')
-        .or(`creator_id.eq.${user.id}${profile?.partner_id ? `,and(creator_id.eq.${profile.partner_id},shared_with_partner.eq.true)` : ''}`)
-        .order('event_date', { ascending: true })
-        .limit(10);
-
-      const { data, error } = await query;
-
-      if (error) {
+      try {
+        // Fetch events with countdown
+        const { data: eventsData, error: eventsError } = await supabase
+          .from('partner_events_with_countdown')
+          .select('*')
+          .or(`creator_id.eq.${user.id}${profile?.partner_id ? `,and(creator_id.eq.${profile.partner_id},shared_with_partner.eq.true)` : ''}`)
+          .order('event_date', { ascending: true });
+        
+        if (eventsError) throw eventsError;
+        
+        // For past events, fetch additional feedback data
+        const eventsWithFeedback: EventWithFeedback[] = [];
+        
+        for (const event of eventsData) {
+          // Fetch feedback for this event if it exists
+          const { data: feedbackData } = await supabase
+            .from('event_feedback')
+            .select('feedback')
+            .eq('event_id', event.id)
+            .single();
+          
+          eventsWithFeedback.push({
+            ...event,
+            feedback: feedbackData?.feedback || null,
+            has_feedback: feedbackData?.feedback ? true : false
+          });
+        }
+        
+        return eventsWithFeedback;
+      } catch (error) {
         console.error('Error fetching events:', error);
         throw error;
       }
-      
-      console.log('Fetched events:', data);
-      return data;
     },
     enabled: !!user,
   });
@@ -72,7 +101,6 @@ const UpcomingEventsSection = () => {
           ...formData,
           creator_id: user.id,
           event_date: formData.event_date.toISOString(),
-          has_feedback: false,
         }]);
 
       if (error) throw error;

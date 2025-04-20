@@ -29,15 +29,43 @@ const EventFeedback = ({ eventId, existingFeedback, user, onFeedbackSaved }: Eve
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('partner_events')
-        .update({ 
-          feedback: feedback,
-          has_feedback: true
-        })
-        .eq('id', eventId);
-
-      if (error) throw error;
+      // First check if the event_feedback record exists
+      const { data: existingRecord, error: checkError } = await supabase
+        .from('event_feedback')
+        .select('*')
+        .eq('event_id', eventId)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        // Error other than "no rows returned"
+        throw checkError;
+      }
+      
+      if (existingRecord) {
+        // Update existing feedback
+        const { error } = await supabase
+          .from('event_feedback')
+          .update({ 
+            feedback: feedback,
+            updated_at: new Date().toISOString()
+          })
+          .eq('event_id', eventId);
+          
+        if (error) throw error;
+      } else {
+        // Insert new feedback
+        const { error } = await supabase
+          .from('event_feedback')
+          .insert({ 
+            event_id: eventId,
+            user_id: user.id,
+            feedback: feedback,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",

@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, ArrowRight, Loader2, User } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2, User, RefreshCw } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { acceptInvitation } from '@/services/partners/partnershipService';
@@ -19,11 +19,12 @@ const CodeInputForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
   const { user, fetchUserProfile, profile } = useAuth();
   
   // Check if user already has a partner
-  React.useEffect(() => {
+  useEffect(() => {
     if (profile?.partner_id) {
       setError("You are already connected with a partner. Please disconnect first.");
     } else {
@@ -76,17 +77,18 @@ const CodeInputForm = () => {
       }
       
       // Update profile to reflect new partner connection
+      toast.success('Partner connection successful! Updating your profile...');
+      
+      // Implement retry logic for refreshing profile
       let profileUpdated = false;
-      const maxProfileRefreshAttempts = 5;
+      const maxAttempts = 5;
       
-      toast.success('Partner connection initiated! Updating your profile...');
-      
-      for (let attempt = 1; attempt <= maxProfileRefreshAttempts; attempt++) {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           if (fetchUserProfile) {
             console.log(`Refreshing user profile after connection (attempt ${attempt})...`);
             // Add a slight delay before refreshing profile
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
             await fetchUserProfile(user.id);
             
             // Verify partner is actually connected
@@ -100,10 +102,6 @@ const CodeInputForm = () => {
           }
         } catch (profileError) {
           console.error(`Error refreshing profile after connection (attempt ${attempt}):`, profileError);
-          if (attempt < maxProfileRefreshAttempts) {
-            // Wait longer between retry attempts
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          }
         }
       }
       
@@ -118,6 +116,13 @@ const CodeInputForm = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+  
+  const handleRetry = () => {
+    setRetryCount(retryCount + 1);
+    setError(null);
+    // Clear the code field to encourage the user to try a new code
+    setCode('');
   };
   
   const handleSkip = () => {
@@ -140,7 +145,20 @@ const CodeInputForm = () => {
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="flex flex-col gap-2">
+              <span>{error}</span>
+              {(error.includes("verify inviter profile") || error.includes("create your profile")) && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRetry} 
+                  className="self-start mt-1"
+                >
+                  <RefreshCw className="h-3 w-3 mr-2" />
+                  Try Again
+                </Button>
+              )}
+            </AlertDescription>
           </Alert>
         )}
         

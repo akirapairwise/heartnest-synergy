@@ -1,10 +1,9 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { Profile } from '@/types/auth';
 import { 
-  fetchUserProfile, 
+  fetchUserProfile as apiFetchUserProfile, 
   signIn as apiSignIn, 
   signUp as apiSignUp, 
   signOut as apiSignOut, 
@@ -107,15 +106,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const fetchUserProfileContext = async (userId: string) => {
+  const fetchUserProfileContext = async (userId: string): Promise<void> => {
     try {
-      const result = await fetchUserProfile(userId);
+      const result = await apiFetchUserProfile(userId);
       setProfile(result.profile);
       setIsOnboardingComplete(result.isOnboardingComplete);
-      return result;
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      return { profile: null, isOnboardingComplete: null, error };
+      // Don't update state on error
     }
   };
 
@@ -191,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const contextValue = {
+  const contextValue: AuthContextType = {
     session,
     user,
     profile,

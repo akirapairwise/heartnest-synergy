@@ -11,8 +11,8 @@ interface TransitionPromptProps {
 
 const TransitionPrompt: React.FC<TransitionPromptProps> = ({ onContinue, onSkip }) => {
   return (
-    <Card className="border-none shadow-none">
-      <CardContent className="px-0">
+    <Card className="border-none shadow-none bg-gradient-to-br from-love-50 via-harmony-50 to-calm-50">
+      <CardContent className="px-4 py-6">
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">
@@ -22,17 +22,17 @@ const TransitionPrompt: React.FC<TransitionPromptProps> = ({ onContinue, onSkip 
               We can ask a few more optional questions to make your experience even more meaningful — or you can do this later from your profile settings.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-3 mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
               <Button 
                 onClick={onContinue}
-                className="btn-primary-gradient flex-1 gap-2"
+                className="btn-primary-gradient flex-1 gap-2 shadow-md hover:shadow-lg transition-all"
               >
                 Continue to Personalize <UserCog className="h-4 w-4" />
               </Button>
               <Button 
                 variant="outline"
                 onClick={onSkip}
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 shadow-sm hover:shadow transition-all"
               >
                 Go to Dashboard <ArrowRight className="h-4 w-4" />
               </Button>

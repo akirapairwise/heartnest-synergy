@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
 
 interface RegisterFormProps {
   setError: (error: string | null) => void;
@@ -23,7 +24,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   
-  const { toast } = useToast();
+  const { toast: useToastHook } = useToast();
   const { signUp } = useAuth();
   const navigate = useNavigate();
   
@@ -75,9 +76,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
           description: "Your account has been created. Let's set up your profile!",
         });
         
-        // Navigate to onboarding or dashboard after a short delay
+        // Navigate to onboarding after a short delay
         setTimeout(() => {
-          navigate('/onboarding');
+          console.log("Redirecting to onboarding after registration");
+          navigate('/onboarding', { replace: true });
         }, 1500);
       }
     } catch (error) {
@@ -194,7 +196,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ setError, error }) => {
         {!registrationComplete && (
           <Button 
             type="submit" 
-            className="w-full bg-gradient-to-r from-love-500 to-harmony-500 hover:from-love-600 hover:to-harmony-600 text-white"
+            className="w-full bg-gradient-to-r from-love-500 to-harmony-500 hover:from-love-600 hover:to-harmony-600 text-white shadow-md hover:shadow-lg transition-all"
             disabled={isLoading || registrationComplete}
           >
             {isLoading ? (

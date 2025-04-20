@@ -13,7 +13,7 @@ const OnboardingPage = () => {
   const [isVerifying, setIsVerifying] = useState(true);
   const navigate = useNavigate();
   
-  useDocumentTitle('Complete Your Profile | Pairwise');
+  useDocumentTitle('Complete Your Profile | HeartNest');
 
   // Verify authentication and check onboarding status
   useEffect(() => {
@@ -64,10 +64,12 @@ const OnboardingPage = () => {
     // Only redirect if we're done loading and know the onboarding status
     if (!isLoading && !isVerifying) {
       if (isOnboardingComplete) {
+        console.log("Onboarding already completed, redirecting to dashboard");
         toast.success("Onboarding already completed! Redirecting to dashboard.");
         navigate('/dashboard', { replace: true });
       } else if (!user) {
         // If no user is found, redirect to auth page
+        console.log("No user found, redirecting to auth page");
         toast.error("Authentication required. Please log in.");
         navigate('/auth', { replace: true });
       }

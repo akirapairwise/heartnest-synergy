@@ -13,7 +13,7 @@ export async function handlePartnerConnection(
   try {
     console.log(`Starting partner connection between user ${currentUserId} and partner ${partnerId}`);
     
-    // Step 1: Ensure profiles exist for both users with better error handling
+    // Step 1: Ensure profiles exist for both users with maximum retries
     const currentUserProfile = await ensureProfileExists(currentUserId);
     if (!currentUserProfile) {
       console.error(`Failed to ensure profile exists for current user: ${currentUserId}`);
@@ -23,7 +23,7 @@ export async function handlePartnerConnection(
     const partnerProfile = await ensureProfileExists(partnerId);
     if (!partnerProfile) {
       console.error(`Failed to ensure profile exists for partner: ${partnerId}`);
-      return { error: new Error('Could not create or verify partner profile. Please try again.') };
+      return { error: new Error('Could not verify inviter profile. Please try again.') };
     }
     
     console.log('Successfully ensured both profiles exist:', { 
@@ -56,65 +56,69 @@ export async function handlePartnerConnection(
     
     console.log('Starting partner linking process with atomic transaction...');
     
-    // Step 3: Use transaction pattern to update both profiles atomically
-    // Use the link_partners function which is more reliable for bidirectional linking
-    const { error: transactionError } = await supabase.rpc('link_partners', {
-      user_id_1: currentUserId,
-      user_id_2: partnerId
-    });
-    
-    if (transactionError) {
-      console.error('Error in atomic partner linking:', transactionError);
+    // Use the link_partners function for reliability
+    try {
+      const { error: transactionError } = await supabase.rpc('link_partners', {
+        user_id_1: currentUserId,
+        user_id_2: partnerId
+      });
+      
+      if (transactionError) {
+        console.error('Error in atomic partner linking:', transactionError);
+        return { error: new Error('Failed to link partners. Please try again.') };
+      }
+      
+      console.log('Successfully linked partners using atomic operation');
+      
+      // If this was a partner code, mark it as used
+      if (code) {
+        const { error: updateCodeError } = await supabase
+          .from('partner_codes')
+          .update({ is_used: true })
+          .eq('code', code);
+          
+        if (updateCodeError) {
+          console.error('Error marking partner code as used:', updateCodeError);
+          // Non-critical error, we can continue
+        }
+      }
+      
+      // Clear any unaccepted invitations from both users to prevent confusion
+      await cleanupUnacceptedInvitations(currentUserId);
+      await cleanupUnacceptedInvitations(partnerId);
+      
+      // Double-check connection was established correctly
+      const { data: verificationData, error: verificationError } = await supabase
+        .from('user_profiles')
+        .select('id, partner_id')
+        .in('id', [currentUserId, partnerId]);
+        
+      if (verificationError) {
+        console.error('Error verifying connection:', verificationError);
+        // Non-critical error, we can continue
+      } else {
+        // Verify both connections
+        const updatedCurrentUser = verificationData?.find(p => p.id === currentUserId);
+        const updatedPartner = verificationData?.find(p => p.id === partnerId);
+        
+        if (!updatedCurrentUser?.partner_id || updatedCurrentUser.partner_id !== partnerId) {
+          console.error('Current user not properly connected to partner after update!');
+        }
+        
+        if (!updatedPartner?.partner_id || updatedPartner.partner_id !== currentUserId) {
+          console.error('Partner not properly connected to current user after update!');
+        }
+        
+        if ((updatedCurrentUser?.partner_id === partnerId) && (updatedPartner?.partner_id === currentUserId)) {
+          console.log('Verified bidirectional connection is established correctly!');
+        }
+      }
+      
+      return { error: null };
+    } catch (transactionError) {
+      console.error('Transaction error in linking partners:', transactionError);
       return { error: new Error('Failed to link partners. Please try again.') };
     }
-    
-    console.log('Successfully linked partners using atomic operation');
-    
-    // If this was a partner code, mark it as used
-    if (code) {
-      const { error: updateCodeError } = await supabase
-        .from('partner_codes')
-        .update({ is_used: true })
-        .eq('code', code);
-        
-      if (updateCodeError) {
-        console.error('Error marking partner code as used:', updateCodeError);
-        // Non-critical error, we can continue
-      }
-    }
-    
-    // Clear any unaccepted invitations from both users to prevent confusion
-    await cleanupUnacceptedInvitations(currentUserId);
-    await cleanupUnacceptedInvitations(partnerId);
-    
-    // Double-check connection was established correctly
-    const { data: verificationData, error: verificationError } = await supabase
-      .from('user_profiles')
-      .select('id, partner_id')
-      .in('id', [currentUserId, partnerId]);
-      
-    if (verificationError) {
-      console.error('Error verifying connection:', verificationError);
-      // Non-critical error, we can continue
-    } else {
-      // Verify both connections
-      const updatedCurrentUser = verificationData?.find(p => p.id === currentUserId);
-      const updatedPartner = verificationData?.find(p => p.id === partnerId);
-      
-      if (!updatedCurrentUser?.partner_id || updatedCurrentUser.partner_id !== partnerId) {
-        console.error('Current user not properly connected to partner after update!');
-      }
-      
-      if (!updatedPartner?.partner_id || updatedPartner.partner_id !== currentUserId) {
-        console.error('Partner not properly connected to current user after update!');
-      }
-      
-      if ((updatedCurrentUser?.partner_id === partnerId) && (updatedPartner?.partner_id === currentUserId)) {
-        console.log('Verified bidirectional connection is established correctly!');
-      }
-    }
-    
-    return { error: null };
   } catch (error) {
     console.error('Error in handlePartnerConnection:', error);
     return { error };
@@ -135,24 +139,24 @@ export async function ensureProfileExists(userId: string): Promise<any> {
     console.log(`Ensuring profile exists for user: ${userId}`);
     
     // Maximum number of attempts to check/create profile
-    const MAX_RETRIES = 3;
+    const MAX_RETRIES = 5;  // Increased from 3 to 5
     let attempt = 0;
     
     while (attempt < MAX_RETRIES) {
       attempt++;
       console.log(`Attempt ${attempt} to ensure profile for user: ${userId}`);
       
-      // First, check if profile exists
+      // First, check if profile exists with direct query
       const { data: existingProfile, error: checkError } = await supabase
         .from('user_profiles')
-        .select('*')
+        .select('id, partner_id')
         .eq('id', userId)
         .maybeSingle();
       
       if (checkError) {
         console.error(`Error checking if profile exists (attempt ${attempt}):`, checkError);
         // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
         continue;
       }
       
@@ -174,8 +178,8 @@ export async function ensureProfileExists(userId: string): Promise<any> {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           })
-          .select()
-          .single();
+          .select('*')
+          .maybeSingle();
         
         if (!insertError && newProfile) {
           console.log(`Successfully created profile for user: ${userId}`);
@@ -187,12 +191,12 @@ export async function ensureProfileExists(userId: string): Promise<any> {
           console.log(`Profile was created concurrently for user: ${userId}, fetching it again`);
           
           // Wait a moment before fetching again
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           // Fetch the profile that was created concurrently
           const { data: concurrentProfile, error: fetchError } = await supabase
             .from('user_profiles')
-            .select('*')
+            .select('id, partner_id')
             .eq('id', userId)
             .maybeSingle();
             
@@ -213,14 +217,15 @@ export async function ensureProfileExists(userId: string): Promise<any> {
       
       // Wait before retrying with exponential backoff
       if (attempt < MAX_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
     
     // One last attempt to fetch the profile directly
+    console.log(`Final attempt to fetch profile for user: ${userId}`);
     const { data: finalProfile, error: finalError } = await supabase
       .from('user_profiles')
-      .select('*')
+      .select('id, partner_id')
       .eq('id', userId)
       .maybeSingle();
       

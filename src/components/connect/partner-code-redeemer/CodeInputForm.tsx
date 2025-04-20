@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -64,18 +65,35 @@ const CodeInputForm = () => {
         setError(error.message || 'Error connecting with partner. Please try again.');
         console.error('Error accepting invitation:', error);
         setIsSubmitting(false);
+        
+        // Display more specific guidance based on error message
+        if (error.message.includes("verify inviter profile")) {
+          toast.error('Could not verify the inviter\'s profile. Please try again or ask them to resend the invitation code.');
+        }
         return;
       }
       
       // Update profile to reflect new partner connection
-      try {
-        if (fetchUserProfile) {
-          console.log('Refreshing user profile after connection...');
-          await fetchUserProfile(user.id);
+      let profileUpdated = false;
+      const maxProfileRefreshAttempts = 3;
+      
+      for (let attempt = 1; attempt <= maxProfileRefreshAttempts; attempt++) {
+        try {
+          if (fetchUserProfile) {
+            console.log(`Refreshing user profile after connection (attempt ${attempt})...`);
+            // Add a slight delay before refreshing profile
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await fetchUserProfile(user.id);
+            profileUpdated = true;
+            break;
+          }
+        } catch (profileError) {
+          console.error(`Error refreshing profile after connection (attempt ${attempt}):`, profileError);
+          if (attempt < maxProfileRefreshAttempts) {
+            // Wait longer between retry attempts
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
         }
-      } catch (profileError) {
-        console.error('Error refreshing profile after connection:', profileError);
-        // We can continue even if this fails
       }
       
       // Show success message
@@ -125,6 +143,7 @@ const CodeInputForm = () => {
                 className="flex-1"
                 disabled={isSubmitting || isValidating || !!profile?.partner_id}
                 autoComplete="off"
+                autoFocus
               />
               <Button 
                 type="submit" 

@@ -45,9 +45,10 @@ export type AuthContextType = {
   isLoading: boolean;
   isOnboardingComplete: boolean | null;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any | null }>;
+  signUp: (email: string, password: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
   updateOnboardingStatus: (isComplete: boolean) => Promise<{ error: any | null } | undefined>;
   updateProfile: (data: Partial<Profile>) => Promise<{ error: any | null } | undefined>;
   fetchUserProfile: (userId: string) => Promise<void>;
+  refreshSession: () => Promise<void>;
 };

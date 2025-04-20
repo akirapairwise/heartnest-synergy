@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,22 +73,11 @@ const ProfileSettings = () => {
     setIsSubmitting(true);
     
     try {
-      // Create mood_settings object to ensure it has the right structure
-      const moodSettings = {
-        ...(profile?.mood_settings || {}),
-        isVisibleToPartner: formData.isMoodVisibleToPartner
-      };
-
-      // Log what we're sending to the database
-      console.log('Updating profile with data:', {
-        ...formData,
-        mood_settings: moodSettings,
-      });
+      // No need to manually restructure the mood_settings object here
+      // The updateProfile function will handle it properly
+      console.log('Submitting form data:', formData);
       
-      const result = await updateProfile({
-        ...formData,
-        mood_settings: moodSettings,
-      });
+      const result = await updateProfile(formData);
       
       if (result && result.error) {
         throw new Error(result.error.message || 'Failed to update profile');

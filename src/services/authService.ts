@@ -135,12 +135,33 @@ export const updateProfile = async (userId: string, data: Partial<Profile>) => {
     // as user_id is a primary key and cannot be changed
     const { id, user_id, ...updateData } = data as any;
     
+    // Extract isMoodVisibleToPartner from the data if it exists
+    // This should not be sent directly to the database column
+    const { isMoodVisibleToPartner, ...restData } = updateData;
+    
+    // Prepare the mood_settings object correctly
+    let finalMoodSettings = updateData.mood_settings || {};
+    
+    // If isMoodVisibleToPartner is provided, add it to the mood_settings object
+    if (isMoodVisibleToPartner !== undefined) {
+      finalMoodSettings = {
+        ...finalMoodSettings,
+        isVisibleToPartner: isMoodVisibleToPartner
+      };
+    }
+    
+    const finalData = {
+      ...restData,
+      // Only include mood_settings if it has content
+      ...(Object.keys(finalMoodSettings).length > 0 ? { mood_settings: finalMoodSettings } : {}),
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('Final data being sent to database:', finalData);
+    
     const { error } = await supabase
       .from('user_profiles')
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
+      .update(finalData)
       .eq('id', userId);
       
     if (error) {

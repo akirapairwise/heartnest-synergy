@@ -99,15 +99,38 @@ const UpcomingEventsSection = () => {
         return;
       }
 
+      // Log the data we're about to save
+      console.log('Creating event with data:', {
+        ...formData,
+        creator_id: user.id,
+        event_date: formData.event_date instanceof Date ? formData.event_date.toISOString() : formData.event_date,
+      });
+
+      // Make sure we have a valid date
+      if (!(formData.event_date instanceof Date)) {
+        toast({
+          title: "Error",
+          description: "Invalid event date format",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('partner_events')
         .insert([{
-          ...formData,
+          title: formData.title,
+          description: formData.description || null,
+          location: formData.location || null,
+          shared_with_partner: formData.shared_with_partner || false,
           creator_id: user.id,
           event_date: formData.event_date.toISOString(),
         }]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: "Success",
@@ -120,7 +143,7 @@ const UpcomingEventsSection = () => {
       console.error('Error creating event:', error);
       toast({
         title: "Error",
-        description: "Failed to create event",
+        description: "Failed to create event. Please try again.",
         variant: "destructive"
       });
     }

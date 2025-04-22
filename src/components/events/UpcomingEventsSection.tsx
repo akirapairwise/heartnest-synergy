@@ -235,26 +235,28 @@ const UpcomingEventsSection = () => {
 
       {isMobile ? (
         <Drawer open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DrawerContent className="max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-love-50 to-harmony-50 p-4">
+          <DrawerContent className="max-h-[90vh] overflow-y-auto flex flex-col px-3 pb-3">
+            <div className="bg-gradient-to-r from-love-50 to-harmony-50 p-4 rounded-t-xl sticky top-0 z-10">
               <DrawerHeader className="p-0">
                 <DrawerTitle className="text-xl font-semibold">Create New Event</DrawerTitle>
               </DrawerHeader>
             </div>
-            <div className="p-4 pb-8">
+            <div className="flex-1 overflow-y-auto pb-2">
               {EventFormContainer}
             </div>
           </DrawerContent>
         </Drawer>
       ) : (
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="sm:max-w-[500px] rounded-xl overflow-hidden">
+          <DialogContent className="sm:max-w-[500px] rounded-xl overflow-hidden p-0">
             <div className="bg-gradient-to-r from-love-50 to-harmony-50 p-6 -m-6 mb-2">
               <DialogHeader>
                 <DialogTitle className="text-xl font-semibold">Create New Event</DialogTitle>
               </DialogHeader>
             </div>
-            {EventFormContainer}
+            <div className="max-h-[70vh] overflow-y-auto px-2 pb-4">
+              {EventFormContainer}
+            </div>
           </DialogContent>
         </Dialog>
       )}

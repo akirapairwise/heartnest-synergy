@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Conflict, ConflictStatus } from '@/types/conflicts';
 import { Clock, CheckCircle, X, Archive } from "lucide-react";
@@ -8,6 +7,7 @@ import ConflictResolution from './ConflictResolution';
 import ConflictResponseDialog from './ConflictResponseDialog';
 import { getStatusInfo, formatDate } from './utils/ConflictStatusUtils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Link } from "react-router-dom";
 
 type ConflictCardProps = {
   conflict: Conflict;
@@ -34,6 +34,8 @@ const ConflictCard = ({
   // Styling for the resolved/archived states
   const opacityClass = isArchived ? "opacity-60 pointer-events-none" : "";
   
+  const viewResolutionUrl = `/conflicts/${conflict.id}`;
+
   return (
     <div className={`border rounded-lg p-4 bg-white shadow-sm transition-all group hover:shadow-md relative ${opacityClass}`}>
       <div className="flex items-start justify-between mb-3">
@@ -81,7 +83,7 @@ const ConflictCard = ({
             Archived
           </div>
         )}
-        {/* Right (response dialog, resolution drawer) */}
+        {/* Right (response dialog, NEW: resolution link) */}
         <div className="flex items-center space-x-2">
           {needsResponse && (
             <ConflictResponseDialog
@@ -90,60 +92,22 @@ const ConflictCard = ({
             />
           )}
           {!conflict.resolved_at && conflict.responder_statement && conflict.ai_resolution_plan && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button 
-                  variant="harmony"
-                  size="sm"
-                  className="hover-scale flex items-center"
-                  onClick={() => setSelectedConflict(conflict)}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  View Resolution
-                </Button>
-              </SheetTrigger>
-              <SheetContent 
-                className="sm:max-w-md md:max-w-lg lg:max-w-xl p-0 bg-white/95 border-0 rounded-none rounded-l-xl shadow-xl flex flex-col"
-                side="right"
-              >
-                <div className="relative h-full flex flex-col">
-                  {/* Sticky Header */}
-                  <SheetHeader className="sticky top-0 z-10 bg-white/95 px-6 py-4 border-b">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <SheetTitle className="flex items-center gap-2">
-                          <CheckCircle className="h-5 w-5 text-harmony-500" />
-                          Conflict Resolution
-                        </SheetTitle>
-                        <SheetDescription>
-                          AI-generated guidance to resolve this conflict
-                        </SheetDescription>
-                      </div>
-                      <SheetClose asChild>
-                        <button
-                          className="flex items-center justify-center rounded-full bg-muted/80 hover:bg-muted text-muted-foreground w-8 h-8 transition-all ml-2"
-                          aria-label="Close"
-                          type="button"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      </SheetClose>
-                    </div>
-                  </SheetHeader>
-                  {/* Scrollable Content */}
-                  <ScrollArea className="flex-1 min-h-0 max-h-[80vh] w-full px-6 py-4">
-                    {selectedConflict && (
-                      <div className="py-2">
-                        <ConflictResolution 
-                          conflict={selectedConflict}
-                          onUpdate={onSuccess}
-                        />
-                      </div>
-                    )}
-                  </ScrollArea>
-                </div>
-              </SheetContent>
-            </Sheet>
+            <Link
+              to={viewResolutionUrl}
+              className="inline-flex items-center px-3 py-1.5 rounded-md bg-harmony-500 text-white font-medium text-sm shadow hover:scale-105 transition-transform"
+              title="View full conflict resolution"
+            >
+              <CheckCircle className="h-4 w-4 mr-1" /> View Resolution
+            </Link>
+          )}
+          {conflict.resolved_at && (
+            <Link
+              to={viewResolutionUrl}
+              className="inline-flex items-center px-3 py-1.5 rounded-md bg-green-600 text-white font-medium text-sm shadow hover:scale-105 transition-transform"
+              title="View full conflict resolution"
+            >
+              <CheckCircle className="h-4 w-4 mr-1" /> View Resolution
+            </Link>
           )}
         </div>
       </div>

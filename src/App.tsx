@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,6 +19,7 @@ import RecommendationsPage from "./pages/RecommendationsPage";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 import AppLayout from "./components/layout/AppLayout";
 import InvitePage from "./pages/InvitePage";
+import ConflictResolutionPage from "./pages/ConflictResolutionPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +40,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/invite" element={<InvitePage />} />
+          <Route path="/conflicts/:id" element={<ConflictResolutionPage />} />
           
           {/* Routes that require authentication and completed onboarding */}
           <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

@@ -42,10 +42,12 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       .from('conflicts')
       .select(`
         *,
-        initiator:user_profiles!initiator_id(full_name),
-        responder:user_profiles!responder_id(full_name)
+        initiator:user_profiles(full_name),
+        responder:user_profiles(full_name)
       `)
       .eq('id', conflictId)
+      .eq('initiator:user_profiles.id', supabase.rpc('get_profile_by_user_id', { user_id: 'initiator_id' }))
+      .eq('responder:user_profiles.id', supabase.rpc('get_profile_by_user_id', { user_id: 'responder_id' }))
       .single();
     
     if (fetchError) {
@@ -70,13 +72,22 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
     
     console.log('Making request to edge function with conflict ID:', conflictId);
     
-    // Extract partner names with proper type checks
-    // Use type assertion to tell TypeScript that these properties exist
-    const initiatorProfile = conflict.initiator as { full_name: string | null } | null;
-    const responderProfile = conflict.responder as { full_name: string | null } | null;
+    // Handle safer type checking for user names
+    // First, attempt a separate query to get user names directly
+    const { data: initiatorData } = await supabase
+      .from('user_profiles')
+      .select('full_name')
+      .eq('id', conflict.initiator_id)
+      .single();
+      
+    const { data: responderData } = await supabase
+      .from('user_profiles')
+      .select('full_name')
+      .eq('id', conflict.responder_id)
+      .single();
     
-    const initiatorName = initiatorProfile?.full_name || "Initiator";
-    const responderName = responderProfile?.full_name || "Responder";
+    const initiatorName = initiatorData?.full_name || "Initiator";
+    const responderName = responderData?.full_name || "Responder";
     
     // Direct API call to the resolve-conflict edge function with proper headers
     const response = await fetch('https://itmegnklwvtitwknyvkm.functions.supabase.co/resolve-conflict', {

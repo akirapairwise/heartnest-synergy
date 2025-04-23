@@ -71,7 +71,7 @@ const ConflictCard = ({ conflict, status, userId, onSuccess }: ConflictCardProps
                 View Resolution
               </Button>
             </SheetTrigger>
-            <SheetContent className="sm:max-w-md">
+            <SheetContent className="sm:max-w-md md:max-w-lg lg:max-w-xl overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>Conflict Resolution</SheetTitle>
                 <SheetDescription>

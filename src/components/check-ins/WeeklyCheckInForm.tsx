@@ -45,7 +45,7 @@ interface WeeklyCheckInFormProps {
 const WeeklyCheckInForm = ({ open, onOpenChange, onCheckInComplete }: WeeklyCheckInFormProps) => {
   const { user, session } = useAuth();
   const [loading, setLoading] = useState(false);
-  const { fetchWeeklyAISummary } = useWeeklyAISummary();
+  const { fetchSummary } = useWeeklyAISummary();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -89,7 +89,7 @@ const WeeklyCheckInForm = ({ open, onOpenChange, onCheckInComplete }: WeeklyChec
       });
       
       // Trigger the AI summary generation
-      fetchWeeklyAISummary();
+      fetchSummary();
       
       // Close the modal and reset the form
       onOpenChange(false);

@@ -48,7 +48,7 @@ const WeeklyAISummary = () => {
       <div className="bg-white p-4 rounded-lg border border-harmony-100">
         <p className="text-sm whitespace-pre-line">{summary}</p>
         <div className="flex justify-end mt-2">
-          <Button variant="ghost" size="xs" onClick={fetchSummary}>
+          <Button variant="ghost" size="sm" onClick={fetchSummary}>
             <RotateCcw className="h-4 w-4 mr-1" />
             Refresh
           </Button>

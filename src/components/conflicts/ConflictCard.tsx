@@ -61,8 +61,8 @@ const ConflictCard = ({
         </div>
       )}
       <div className="mt-3 flex justify-between items-center">
-        {/* Left (archive button if not archived/resolved) */}
-        {!conflict.resolved_at && !isArchived && !!onArchive && (
+        {/* Left (archive button if resolved and not already archived) */}
+        {conflict.resolved_at && !isArchived && !!onArchive && (
           <Button
             type="button"
             variant="ghost"
@@ -70,7 +70,7 @@ const ConflictCard = ({
             aria-label="Archive conflict"
             className="text-muted-foreground opacity-70 hover:opacity-100 ml-1"
             onClick={() => onArchive(conflict.id)}
-            title="Archive this conflict"
+            title="Archive this resolved conflict"
           >
             <Archive className="h-5 w-5" />
           </Button>

@@ -47,18 +47,23 @@ const ConflictsSection = () => {
     }
   }, [user]);
 
-  // Archiving is local-only: just hide from view (add persistence to DB if needed)
+  // Only allow archiving resolved conflicts
   const handleArchive = (conflictId: string) => {
-    setArchivedIds(prev => [...prev, conflictId]);
+    const conflict = conflicts.find(c => c.id === conflictId);
+    if (conflict && conflict.resolved_at) {
+      setArchivedIds(prev => [...prev, conflictId]);
+    }
   };
 
   // Split conflicts into active (unresolved, unarchived), resolved, and archived
   const activeAndPending = conflicts
     .filter(c => !c.resolved_at && !archivedIds.includes(c.id))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  
   const resolved = conflicts
     .filter(c => !!c.resolved_at && !archivedIds.includes(c.id))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  
   const archived = conflicts
     .filter(c => archivedIds.includes(c.id))
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -164,4 +169,3 @@ const ConflictsSection = () => {
 };
 
 export default ConflictsSection;
-

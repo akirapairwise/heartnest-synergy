@@ -103,12 +103,12 @@ const ConflictCard = ({
                 </Button>
               </SheetTrigger>
               <SheetContent 
-                className="sm:max-w-md md:max-w-lg lg:max-w-xl p-0 bg-white/90 border-0 rounded-none rounded-l-xl shadow-xl animate-slide-in-right flex flex-col"
+                className="sm:max-w-md md:max-w-lg lg:max-w-xl p-0 bg-white/95 border-0 rounded-none rounded-l-xl shadow-xl flex flex-col"
                 side="right"
               >
                 <div className="relative h-full flex flex-col">
                   {/* Sticky Header */}
-                  <SheetHeader className="sticky top-0 z-10 bg-white/90 px-6 py-4 border-b">
+                  <SheetHeader className="sticky top-0 z-10 bg-white/95 px-6 py-4 border-b">
                     <div className="flex justify-between items-center">
                       <div>
                         <SheetTitle className="flex items-center gap-2">
@@ -131,9 +131,9 @@ const ConflictCard = ({
                     </div>
                   </SheetHeader>
                   {/* Scrollable Content */}
-                  <ScrollArea className="flex-1 min-h-0 max-h-[72vh] w-full px-6 py-4">
+                  <ScrollArea className="flex-1 min-h-0 max-h-[80vh] w-full px-6 py-4">
                     {selectedConflict && (
-                      <div>
+                      <div className="py-2">
                         <ConflictResolution 
                           conflict={selectedConflict}
                           onUpdate={onSuccess}

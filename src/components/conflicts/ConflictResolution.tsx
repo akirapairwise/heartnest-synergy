@@ -43,7 +43,7 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
 
   return (
     <div className="w-full">
-      <ScrollArea className="max-h-[60vh] md:max-h-[50vh] w-full rounded-md border bg-muted/10 p-3 sm:p-6 md:p-8">
+      <div className="rounded-md border bg-muted/10 p-4">
         <div className="whitespace-pre-line space-y-6">
           {conflict.ai_resolution_plan.split('\n\n').map((section, index) => {
             // Highlight each block for clarity
@@ -59,7 +59,7 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
       {!conflict.resolved_at && (
         <div className="flex justify-end mt-4">
           <Button onClick={markAsResolved} variant="outline">

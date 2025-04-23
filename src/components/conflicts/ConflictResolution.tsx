@@ -2,7 +2,7 @@
 import React from 'react';
 import { Conflict } from '@/types/conflicts';
 import { Button } from "@/components/ui/button";
-import { Smile, Handshake, Lightbulb, Heart, CheckCircle, Copy } from "lucide-react";
+import { Smile, Handshake, Lightbulb, Heart, CheckCircle, Copy, Share2 } from "lucide-react";
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,9 +75,20 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
     toast.success("Copied to clipboard!");
   };
 
+  // Helper for sharing via platforms
+  const shareViaWhatsApp = (text: string) => {
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
+  const shareViaSMS = (text: string) => {
+    const url = `sms:?&body=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="w-full h-full flex flex-col">
-      <ScrollArea className="w-full flex-1 max-h-[70vh] pb-2">
+      <ScrollArea className="w-full flex-1 max-h-[70vh] px-1">
         <div className="flex flex-col gap-5 py-1">
           {!isJson && (
             <div className="p-5 rounded-xl shadow-sm border bg-white">
@@ -100,6 +111,7 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
                   </div>
                 </div>
               </div>
+              
               {/* Tips as bullet list */}
               <div className="p-5 rounded-xl shadow-sm border card-gradient-love animate-fade-in flex flex-row gap-3 items-start">
                 <Lightbulb className="text-love-500 mt-1" size={26} />
@@ -123,6 +135,7 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
                   </ul>
                 </div>
               </div>
+              
               {/* Empathy block from A to B */}
               {plan.empathy_prompts?.partner_a && (
                 <div className="relative p-5 rounded-xl shadow-sm border bg-gradient-to-br from-blue-100/90 to-blue-50/80 animate-fade-in flex items-start gap-3">
@@ -134,19 +147,40 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
                     <blockquote className="italic rounded px-3 py-2 border-l-4 border-calm-400 bg-calm-50 text-calm-700 text-justify text-[15px] whitespace-pre-line">
                       {plan.empathy_prompts.partner_a}
                     </blockquote>
+                    
+                    <div className="flex space-x-2 mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-calm-600 border-calm-300 hover:bg-calm-100"
+                        onClick={() => handleCopy(plan.empathy_prompts!.partner_a!)}
+                      >
+                        <Copy size={14} className="mr-1" />
+                        Copy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-calm-600 border-calm-300 hover:bg-calm-100"
+                        onClick={() => shareViaWhatsApp(plan.empathy_prompts!.partner_a!)}
+                      >
+                        <Share2 size={14} className="mr-1" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-calm-600 border-calm-300 hover:bg-calm-100"
+                        onClick={() => shareViaSMS(plan.empathy_prompts!.partner_a!)}
+                      >
+                        <Share2 size={14} className="mr-1" />
+                        SMS
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-4 top-4 text-blue-500 hover:bg-blue-100"
-                    onClick={() => handleCopy(plan.empathy_prompts!.partner_a!)}
-                    aria-label="Copy empathy"
-                    title="Copy to clipboard"
-                  >
-                    <Copy size={18} />
-                  </Button>
                 </div>
               )}
+              
               {/* Empathy block from B to A */}
               {plan.empathy_prompts?.partner_b && (
                 <div className="relative p-5 rounded-xl shadow-sm border bg-gradient-to-br from-pink-100/90 to-pink-50/80 animate-fade-in flex items-start gap-3">
@@ -160,17 +194,37 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
                     <blockquote className="italic rounded px-3 py-2 border-l-4 border-love-400 bg-love-50 text-love-700 text-justify text-[15px] whitespace-pre-line">
                       {plan.empathy_prompts.partner_b}
                     </blockquote>
+                    
+                    <div className="flex space-x-2 mt-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-love-600 border-love-300 hover:bg-love-100"
+                        onClick={() => handleCopy(plan.empathy_prompts!.partner_b!)}
+                      >
+                        <Copy size={14} className="mr-1" />
+                        Copy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-love-600 border-love-300 hover:bg-love-100"
+                        onClick={() => shareViaWhatsApp(plan.empathy_prompts!.partner_b!)}
+                      >
+                        <Share2 size={14} className="mr-1" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-love-600 border-love-300 hover:bg-love-100"
+                        onClick={() => shareViaSMS(plan.empathy_prompts!.partner_b!)}
+                      >
+                        <Share2 size={14} className="mr-1" />
+                        SMS
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-4 top-4 text-pink-500 hover:bg-pink-100"
-                    onClick={() => handleCopy(plan.empathy_prompts!.partner_b!)}
-                    aria-label="Copy empathy"
-                    title="Copy to clipboard"
-                  >
-                    <Copy size={18} />
-                  </Button>
                 </div>
               )}
             </>

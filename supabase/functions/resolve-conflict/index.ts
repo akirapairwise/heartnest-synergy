@@ -59,13 +59,7 @@ serve(async (req) => {
 
     // Format the improved prompt for OpenAI, using personalized names
     const prompt = `
-You are a compassionate relationship AI. Given the conflict perspectives, do the following:
-
-1. Summarize the issue neutrally.
-2. Offer 2–3 resolution tips.
-3. Write one empathy statement for each partner.
-
-Here are the perspectives:
+You are a compassionate and emotionally intelligent relationship coach. Your role is to neutrally understand conflicts between two partners, summarize the issue fairly, suggest practical resolution steps, and generate empathy-based messages for each partner to help them reconnect. Use gentle, supportive language. Do not take sides.
 
 ${initiatorName}'s perspective:
 ${initiator_statement}
@@ -73,19 +67,28 @@ ${initiator_statement}
 ${responderName}'s perspective:
 ${responder_statement}
 
-Return the result in this JSON format:
+Please:
+1. Summarize the conflict neutrally (2-3 sentences).
+2. Suggest 2-3 practical and emotionally safe steps they can take to resolve the issue.
+3. Write one empathy-based message from ${initiatorName} to ${responderName}.
+4. Write one empathy-based message from ${responderName} to ${initiatorName}.
+
+Return your complete answer in this exact JSON format:
 
 {
-  "summary": "Brief neutral summary of the conflict (2-3 sentences)",
-  "resolution_tips": "2-3 actionable tips for resolving the conflict",
-  "empathy_prompts": "Two empathy-based statements, one from each partner to reconnect"
+  "summary": "Neutrally written overview of the conflict...",
+  "resolution_tips": "- Tip 1\\n- Tip 2\\n- Tip 3",
+  "empathy_prompts": {
+    "partner_a": "Empathy message from ${initiatorName} to ${responderName}",
+    "partner_b": "Empathy message from ${responderName} to ${initiatorName}"
+  }
 }
 
-Please finish all fields completely and ensure the response is properly formatted JSON with no truncation. The content for each field should be detailed and complete.`;
+Ensure all fields are complete and thoroughly filled out. Do not abbreviate or cut off any content. The empathy messages should be detailed, thoughtful, and complete.`;
 
     console.log('Sending request to OpenAI');
 
-    // Call OpenAI API
+    // Call OpenAI API with increased token limit
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -95,12 +98,12 @@ Please finish all fields completely and ensure the response is properly formatte
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are a wise, emotionally intelligent relationship coach.' },
+          { role: 'system', content: 'You are a wise, emotionally intelligent relationship coach. Provide complete, untruncated responses.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.6,
+        temperature: 0.7,
         response_format: { type: "json_object" },
-        max_tokens: 3000, // Increased to ensure we get the full response
+        max_tokens: 4000, // Increased to ensure no truncation
       }),
     });
 
@@ -124,36 +127,25 @@ Please finish all fields completely and ensure the response is properly formatte
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(aiResponse);
-      // Validate that the required fields are present
-      if (!parsedResponse.summary || !parsedResponse.resolution_tips || !parsedResponse.empathy_prompts) {
-        console.error('OpenAI response missing required fields:', parsedResponse);
-        throw new Error('OpenAI response missing required fields');
+      // Validate that the required fields are present and not truncated
+      if (!parsedResponse.summary || 
+          !parsedResponse.resolution_tips || 
+          !parsedResponse.empathy_prompts ||
+          !parsedResponse.empathy_prompts.partner_a ||
+          !parsedResponse.empathy_prompts.partner_b) {
+        console.error('OpenAI response missing required fields or contains truncated content:', parsedResponse);
+        throw new Error('OpenAI response missing required fields or contains truncated content');
       }
     } catch (e) {
       console.error('Error parsing OpenAI response:', e, 'Raw response:', aiResponse);
       throw new Error('Invalid format in OpenAI response');
     }
 
-    // Format the AI resolution plan with emojis and section headings, including personalized names
-    const formattedResolutionPlan = `
-🧩 Summary:
-${parsedResponse.summary}
-
-🛠️ Resolution Tips:
-${parsedResponse.resolution_tips}
-
-💬 Empathy Prompts:
-${parsedResponse.empathy_prompts}
-`.trim();
-
     // Return the parsed AI-generated content
     return new Response(
       JSON.stringify({
         success: true,
-        data: {
-          ...parsedResponse,
-          formatted_plan: formattedResolutionPlan
-        }
+        data: parsedResponse
       }),
       {
         headers: {

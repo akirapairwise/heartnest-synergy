@@ -40,7 +40,7 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
     // First, fetch the conflict to get both statements
     const { data: conflict, error: fetchError } = await supabase
       .from('conflicts')
-      .select('*')
+      .select('*, initiator:initiator_id(full_name), responder:responder_id(full_name)')
       .eq('id', conflictId)
       .single();
     
@@ -66,6 +66,10 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
     
     console.log('Making request to edge function with conflict ID:', conflictId);
     
+    // Extract partner names
+    const initiatorName = conflict.initiator?.full_name || "Initiator";
+    const responderName = conflict.responder?.full_name || "Responder";
+    
     // Direct API call to the resolve-conflict edge function with proper headers
     const response = await fetch('https://itmegnklwvtitwknyvkm.functions.supabase.co/resolve-conflict', {
       method: 'POST',
@@ -76,7 +80,9 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       body: JSON.stringify({
         conflict_id: conflict.id,
         initiator_statement: conflict.initiator_statement,
-        responder_statement: conflict.responder_statement
+        responder_statement: conflict.responder_statement,
+        initiator_name: initiatorName,
+        responder_name: responderName
       })
     });
     
@@ -94,31 +100,23 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       throw new Error(data?.error || 'Failed to generate AI resolution: Invalid response format');
     }
     
-    // Extract the structured data from the response
-    const { summary, resolution_tips, empathy_prompts } = data.data;
-    
-    if (!summary || !resolution_tips || !empathy_prompts) {
-      console.error('Missing required fields in edge function response:', data);
-      throw new Error('Edge function response is missing required fields');
-    }
-    
-    // Format the AI resolution plan with emojis and section headings
-    const formattedResolutionPlan = `
+    // Use the formatted plan or extract the structured data from the response
+    const aiResolutionPlan = data.data.formatted_plan || `
 🧩 Summary:
-${summary}
+${data.data.summary}
 
 🛠️ Resolution Tips:
-${resolution_tips}
+${data.data.resolution_tips}
 
 💬 Empathy Prompts:
-${empathy_prompts}
+${data.data.empathy_prompts}
 `.trim();
     
     // Update the conflict with the AI resolution plan
     const { error: updateError } = await supabase
       .from('conflicts')
       .update({
-        ai_resolution_plan: formattedResolutionPlan
+        ai_resolution_plan: aiResolutionPlan
       })
       .eq('id', conflictId);
     

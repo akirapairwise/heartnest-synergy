@@ -43,29 +43,34 @@ serve(async (req) => {
       throw new Error('Invalid JSON in request body');
     }
 
-    const { initiator_statement, responder_statement, conflict_id } = parsedData;
+    const { initiator_statement, responder_statement, conflict_id, initiator_name, responder_name } = parsedData;
 
+    // Add proper validation for required fields
     if (!initiator_statement || !responder_statement || !conflict_id) {
       console.error('Missing required parameters');
       throw new Error('Missing required parameters');
     }
 
+    // Use provided names or default to initiator/responder if not available
+    const initiatorName = initiator_name || "Initiator";
+    const responderName = responder_name || "Responder";
+
     console.log('Processing conflict with ID:', conflict_id);
 
-    // Format the improved prompt for OpenAI, following user instructions
+    // Format the improved prompt for OpenAI, using personalized names
     const prompt = `
 You are a wise and emotionally intelligent relationship coach. Your goal is to neutrally summarize both sides of a conflict between two partners and offer calm, healing suggestions. Use soft, non-blaming language. Encourage empathy and connection. 
 
-Partner A's perspective:
+${initiatorName}'s perspective:
 ${initiator_statement}
 
-Partner B's perspective:
+${responderName}'s perspective:
 ${responder_statement}
 
 Instructions:
 1. First, provide a neutral summary of the conflict (2-3 sentences).
 2. Then, provide 2-3 practical, actionable tips for resolving the conflict.
-3. Finally, suggest one empathy-based statement that each partner could say to reconnect.
+3. Finally, suggest one empathy-based statement that each partner could say to reconnect. Make these statements personal by referring to each person by name.
 
 Return the result in the following JSON format:
 
@@ -91,7 +96,8 @@ Return the result in the following JSON format:
           { role: 'user', content: prompt }
         ],
         temperature: 0.6,
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
+        max_tokens: 2000, // Ensure we get the full response
       }),
     });
 
@@ -109,6 +115,7 @@ Return the result in the following JSON format:
     }
 
     console.log('Successfully received response from OpenAI');
+    console.log('Response length:', aiResponse.length);
 
     // Parse the JSON response from OpenAI
     let parsedResponse;
@@ -116,6 +123,7 @@ Return the result in the following JSON format:
       parsedResponse = JSON.parse(aiResponse);
       // Validate that the required fields are present
       if (!parsedResponse.summary || !parsedResponse.resolution_tips || !parsedResponse.empathy_prompts) {
+        console.error('OpenAI response missing required fields:', parsedResponse);
         throw new Error('OpenAI response missing required fields');
       }
     } catch (e) {
@@ -123,11 +131,26 @@ Return the result in the following JSON format:
       throw new Error('Invalid format in OpenAI response');
     }
 
+    // Format the AI resolution plan with emojis and section headings, including personalized names
+    const formattedResolutionPlan = `
+🧩 Summary:
+${parsedResponse.summary}
+
+🛠️ Resolution Tips:
+${parsedResponse.resolution_tips}
+
+💬 Empathy Prompts:
+${parsedResponse.empathy_prompts}
+`.trim();
+
     // Return the parsed AI-generated content
     return new Response(
       JSON.stringify({
         success: true,
-        data: parsedResponse
+        data: {
+          ...parsedResponse,
+          formatted_plan: formattedResolutionPlan
+        }
       }),
       {
         headers: {

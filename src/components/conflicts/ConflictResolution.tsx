@@ -2,11 +2,10 @@
 import React from 'react';
 import { Conflict } from '@/types/conflicts';
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Lightbulb, ScrollText, Sparkles } from "lucide-react";
+import { CheckCircle, Sparkles } from "lucide-react";
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import ResolutionSection from './resolution/ResolutionSection';
 import ProcessingState from './resolution/ProcessingState';
 
 type ConflictResolutionProps = {
@@ -39,32 +38,15 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
   };
   
   // If AI hasn't generated resolution content yet
-  if (!conflict.ai_summary || !conflict.ai_reflection || !conflict.ai_resolution_plan) {
+  if (!conflict.ai_resolution_plan) {
     return <ProcessingState />;
   }
   
   return (
     <div className="space-y-6">
-      <ResolutionSection 
-        icon={<ScrollText className="h-5 w-5 text-blue-500" />}
-        title="Summary"
-        content={conflict.ai_summary}
-        iconColor="text-blue-500"
-      />
-      
-      <ResolutionSection 
-        icon={<Lightbulb className="h-5 w-5 text-amber-500" />}
-        title="Reflection"
-        content={conflict.ai_reflection}
-        iconColor="text-amber-500"
-      />
-      
-      <ResolutionSection 
-        icon={<Sparkles className="h-5 w-5 text-purple-500" />}
-        title="Action Plan"
-        content={conflict.ai_resolution_plan}
-        iconColor="text-purple-500"
-      />
+      <div className="whitespace-pre-line">
+        {conflict.ai_resolution_plan}
+      </div>
       
       {!conflict.resolved_at && (
         <div className="flex justify-end mt-4">

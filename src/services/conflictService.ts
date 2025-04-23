@@ -94,19 +94,19 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       throw new Error(data?.error || 'Failed to generate AI resolution: Invalid response format');
     }
     
-    const { summary, reflection, plan } = data.data;
+    // Use only the plan field now, as it contains the complete formatted text
+    const { plan } = data.data;
     
-    if (!summary || !reflection || !plan) {
+    if (!plan) {
       console.error('Missing data in edge function response:', data);
       throw new Error('Edge function response is missing required fields');
     }
     
     // Update the conflict with the AI resolution
+    // This now only needs to update the ai_resolution_plan field
     const { error: updateError } = await supabase
       .from('conflicts')
       .update({
-        ai_summary: summary,
-        ai_reflection: reflection,
         ai_resolution_plan: plan
       })
       .eq('id', conflictId);

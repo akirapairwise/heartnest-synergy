@@ -50,6 +50,8 @@ serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
+    console.log('Processing conflict with ID:', conflict_id);
+
     // Format the improved prompt for OpenAI, following user instructions
     const prompt = `
 You are a wise and emotionally intelligent relationship coach. Your goal is to neutrally summarize both sides of a conflict between two partners and offer calm, healing suggestions. Use soft, non-blaming language. Encourage empathy and connection. 
@@ -69,7 +71,7 @@ Instructions:
 
 Example output:
 🧩 Summary:
-One partner feels neglected because they are usually the one initiating activities. The other partner is dealing with work stress and didn’t notice the imbalance.
+One partner feels neglected because they are usually the one initiating activities. The other partner is dealing with work stress and didn't notice the imbalance.
 
 🛠️ Resolution Tips:
 1. Schedule a weekly check-in to talk about emotional needs.
@@ -77,10 +79,12 @@ One partner feels neglected because they are usually the one initiating activiti
 3. Create a shared calendar to visualize together time.
 
 💬 Empathy Prompts:
-Partner A: “I didn’t realize how much that affected you. I want us to feel balanced.”
-Partner B: “Thank you for telling me. I’ll try to be more mindful of our connection.”
+Partner A: "I didn't realize how much that affected you. I want us to feel balanced."
+Partner B: "Thank you for telling me. I'll try to be more mindful of our connection."
 
 Now, analyze the perspectives above and generate output in that format, using friendly and compassionate wording. Output everything as readable text.`;
+
+    console.log('Sending request to OpenAI');
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -112,14 +116,16 @@ Now, analyze the perspectives above and generate output in that format, using fr
       throw new Error('No response from OpenAI.');
     }
 
-    // Send generated text as ai_resolution_plan and leave ai_summary/ai_reflection blank
+    console.log('Successfully received response from OpenAI');
+
+    // Return the AI-generated content directly as the plan
     return new Response(
       JSON.stringify({
         success: true,
         data: {
-          summary: "", // deprecated
-          reflection: "", // deprecated
-          plan: aiResponse // main formatted output, ready to render as markdown or plain text
+          summary: "", // No longer using separate fields
+          reflection: "", // No longer using separate fields
+          plan: aiResponse // Return the formatted text directly
         }
       }),
       {

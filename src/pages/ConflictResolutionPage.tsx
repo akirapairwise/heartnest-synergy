@@ -11,18 +11,18 @@ import EmpathyMessages from "@/components/conflicts/resolution/EmpathyMessages";
 import JournalNote from "@/components/conflicts/resolution/JournalNote";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { HandHeart, Puzzle, MessageSquare } from "lucide-react";
+import { BrainCircuit, Lightbulb, MessageCircle } from "lucide-react";
 
-type Plan = {
+// Helper to detect new JSON format
+function tryParseAIPlan(plan: string): {
   summary?: string;
   resolution_tips?: string;
   empathy_prompts?: { partner_a?: string; partner_b?: string; };
   raw?: string;
-};
-
-function tryParseAIPlan(plan: string): Plan {
+} {
   try {
     const json = JSON.parse(plan);
+    // New schema (with empathy_prompts as object)
     if (
       typeof json.summary === "string" &&
       typeof json.resolution_tips === "string" &&
@@ -30,8 +30,10 @@ function tryParseAIPlan(plan: string): Plan {
     ) {
       return json;
     }
+    // Legacy fallback
     return { raw: plan };
   } catch {
+    // Legacy fallback
     return { raw: plan };
   }
 }
@@ -84,35 +86,36 @@ const ConflictResolutionPage = () => {
   const isJson = !!plan.summary;
 
   return (
-    <div className="max-w-2xl mx-auto py-6 flex flex-col gap-7 w-full animate-fade-in">
+    <div className="max-w-3xl mx-auto py-6 flex flex-col gap-7 w-full px-4 sm:px-6">
       <HeaderBar dateStr={conflict.created_at} onBack={() => navigate("/dashboard")} />
 
       {/* Conflict Summary Section */}
       <section className="rounded-xl shadow card-gradient-harmony p-6 border border-harmony-100">
         <h2 className="font-bold text-xl flex items-center gap-2 text-harmony-700 mb-3">
-          <HandHeart className="text-love-500" size={24} />
+          <BrainCircuit className="text-harmony-500" size={24} />
           Conflict Summary
         </h2>
-        <ResolutionSummary summary={plan.summary || plan.raw || ""} />
+        {!isJson && (
+          <Card className="p-5 rounded-xl bg-white">
+            <div className="whitespace-pre-line text-muted-foreground">{plan.raw}</div>
+          </Card>
+        )}
+        {isJson && (
+          <>
+            <ResolutionSummary summary={plan.summary || ""} />
+            <div className="mt-6">
+              <ResolutionTips tips={plan.resolution_tips || ""} />
+            </div>
+          </>
+        )}
       </section>
-
-      {/* Resolution Tips Section */}
-      {isJson && (
-        <section className="rounded-xl shadow card-gradient-love p-6 border border-love-100">
-          <h2 className="font-bold text-xl flex items-center gap-2 text-love-700 mb-3">
-            <Puzzle className="text-love-500" size={24} />
-            Resolution Tips
-          </h2>
-          <ResolutionTips tips={plan.resolution_tips || ""} />
-        </section>
-      )}
 
       {/* Empathy Messages Section */}
       {isJson && (
-        <section className="rounded-xl shadow card-gradient-calm p-6 border border-calm-100">
-          <h2 className="font-bold text-xl flex items-center gap-2 text-calm-700 mb-3">
-            <MessageSquare className="text-calm-500" size={24} />
-            Nurturing Connection
+        <section className="rounded-xl shadow card-gradient-love p-6 border border-love-100">
+          <h2 className="font-bold text-xl flex items-center gap-2 text-love-700 mb-3">
+            <MessageCircle className="text-love-500" size={24} />
+            Empathy Messages
           </h2>
           <EmpathyMessages empathy_prompts={plan.empathy_prompts || {}} />
         </section>
@@ -120,6 +123,10 @@ const ConflictResolutionPage = () => {
 
       {/* Journal Section */}
       <section className="rounded-xl shadow card-gradient-calm p-6 border border-calm-100">
+        <h2 className="font-bold text-xl flex items-center gap-2 text-calm-700 mb-3">
+          <Lightbulb className="text-calm-500" size={24} />
+          Reflection Journal
+        </h2>
         <JournalNote conflict={conflict} userId={user?.id || ""} />
       </section>
     </div>

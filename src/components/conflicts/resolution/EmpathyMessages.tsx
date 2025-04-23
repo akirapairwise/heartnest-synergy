@@ -1,6 +1,5 @@
-
 import React from "react";
-import { MessageSquare, Flower, MessageCircle } from "lucide-react";
+import { MessageSquare, MessageCircle, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
@@ -34,7 +33,7 @@ const promptConfig = [
 
 const handleCopy = (txt: string) => {
   navigator.clipboard.writeText(txt);
-  toast.success("Message copied to clipboard!");
+  toast.success("Message copied! Ready to share 💌");
 };
 
 const shareViaWhatsApp = (text: string) => {
@@ -45,10 +44,6 @@ const shareViaWhatsApp = (text: string) => {
 const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) => {
   return (
     <section className="mt-2">
-      <h2 className="font-bold text-lg sm:text-xl mb-4 text-love-700 flex items-center gap-2">
-        <MessageSquare className="text-love-500" size={24} />
-        Nurturing Connection
-      </h2>
       <div className="flex flex-col gap-5">
         {promptConfig.map(({ direction, label, icon, promptKey, instructions, border, button }) => {
           const text = empathy_prompts?.[promptKey];
@@ -68,7 +63,7 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) =>
                   className={button}
                   onClick={() => handleCopy(text)}
                 >
-                  <Flower size={14} className="mr-1" />
+                  <Heart size={14} className="mr-1" />
                   Copy Message
                 </Button>
                 <Button
@@ -78,7 +73,7 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) =>
                   onClick={() => shareViaWhatsApp(text)}
                 >
                   <MessageCircle size={14} className="mr-1" />
-                  Share
+                  Share via WhatsApp
                 </Button>
               </div>
               <div className="text-sm text-muted-foreground mt-1 ml-1">{instructions}</div>

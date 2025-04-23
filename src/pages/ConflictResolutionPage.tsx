@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,20 +85,36 @@ const ConflictResolutionPage = () => {
   return (
     <div className="max-w-2xl mx-auto py-6 flex flex-col gap-7 w-full animate-fade-in">
       <HeaderBar dateStr={conflict.created_at} onBack={() => navigate("/dashboard")} />
-      <Card className="p-5 border card-gradient-harmony">
+
+      {/* Conflict Summary Section */}
+      <section className="rounded-xl shadow card-gradient-harmony p-6 border border-harmony-100">
+        <h2 className="font-bold text-xl flex items-center gap-2 text-harmony-700 mb-3">
+          <span role="img" aria-label="Summary">🧩</span>
+          Conflict Summary
+        </h2>
         <ResolutionSummary summary={plan.summary || plan.raw || ""} />
-      </Card>
+      </section>
+
+      {/* Resolution Tips Section */}
       {isJson && (
-        <>
-          <Card className="p-5 border card-gradient-love">
-            <ResolutionTips tips={plan.resolution_tips || ""} />
-          </Card>
-          <Card className="p-5 border bg-love-50 card-gradient-calm">
-            <EmpathyMessages empathy_prompts={plan.empathy_prompts || {}} />
-          </Card>
-        </>
+        <section className="rounded-xl shadow card-gradient-love p-6 border border-love-100">
+          <h2 className="font-bold text-xl flex items-center gap-2 text-love-700 mb-3">
+            <span role="img" aria-label="Tips">🛠️</span>
+            Resolution Tips
+          </h2>
+          <ResolutionTips tips={plan.resolution_tips || ""} />
+        </section>
       )}
-      <JournalNote conflict={conflict} userId={user?.id || ""} />
+
+      {/* Empathy Messages Section */}
+      {isJson && (
+        <EmpathyMessages empathy_prompts={plan.empathy_prompts || {}} />
+      )}
+
+      {/* Journal Section */}
+      <section className="rounded-xl shadow card-gradient-calm p-6 border border-calm-100">
+        <JournalNote conflict={conflict} userId={user?.id || ""} />
+      </section>
     </div>
   );
 };

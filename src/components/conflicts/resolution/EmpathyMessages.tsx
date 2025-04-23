@@ -12,17 +12,23 @@ type EmpathyMessagesProps = {
 const promptConfig = [
   {
     direction: "a",
-    label: "👤 From You to Your Partner",
+    label: "From You to Your Partner",
     icon: <Heart className="text-calm-500 mt-1" size={22} />,
     promptKey: "partner_a",
     instructions: "Share this message with your partner if it feels right.",
+    color: "calm",
+    border: "border-l-4 border-calm-400 bg-calm-50/80",
+    button: "text-calm-600 border-calm-300 hover:bg-calm-100"
   },
   {
     direction: "b",
-    label: "👤 From Your Partner to You",
+    label: "From Your Partner to You",
     icon: <Handshake className="text-love-500 mt-1" size={22} />,
     promptKey: "partner_b",
-    instructions: "Optionally, let your partner share the message below with you.",
+    instructions: "Optionally let your partner share the message below with you.",
+    color: "love",
+    border: "border-l-4 border-love-400 bg-love-50/80",
+    button: "text-love-600 border-love-300 hover:bg-love-100"
   },
 ];
 
@@ -38,27 +44,27 @@ const shareViaWhatsApp = (text: string) => {
 
 const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) => {
   return (
-    <div>
-      <div className="font-semibold text-base mb-3 text-love-700">
-        💬 Empathy Messages
-      </div>
-      <div className="flex flex-col gap-4">
-        {promptConfig.map(({ direction, label, icon, promptKey, instructions }) => {
-          const text = (empathy_prompts as any)[promptKey];
+    <section className="mt-2">
+      <h2 className="font-bold text-lg sm:text-xl mb-2 text-love-700 flex items-center gap-2">
+        <span role="img" aria-label="Empathy">💬</span> Empathy Messages
+      </h2>
+      <div className="flex flex-col gap-5">
+        {promptConfig.map(({ direction, label, icon, promptKey, instructions, border, button }) => {
+          const text = empathy_prompts?.[promptKey];
           if (!text) return null;
           return (
-            <div key={direction} className="mb-1 last:mb-0">
+            <div key={direction} className={`p-4 rounded-xl ${border} shadow-sm`}>
               <div className="flex items-center gap-2 font-medium text-harmony-700 mb-1">
-                {icon} <span>{label}</span>
+                {icon} <span className={`text-base font-semibold`}>{label}</span>
               </div>
-              <ScrollArea className="rounded border bg-white/70 px-3 py-2 mb-1 text-[15px] whitespace-pre-line text-calm-800">
+              <ScrollArea className="rounded bg-white/70 px-3 py-2 mb-1 text-[15px] whitespace-pre-line text-calm-800 max-h-[180px] border border-dashed">
                 {text}
               </ScrollArea>
               <div className="flex flex-wrap gap-2 mt-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-calm-600 border-calm-300 hover:bg-calm-100"
+                  className={button}
                   onClick={() => handleCopy(text)}
                 >
                   <Copy size={14} className="mr-1" />
@@ -67,7 +73,7 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) =>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-calm-600 border-calm-300 hover:bg-calm-100"
+                  className={button}
                   onClick={() => shareViaWhatsApp(text)}
                 >
                   <Share2 size={14} className="mr-1" />
@@ -79,8 +85,9 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) =>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };
 
 export default EmpathyMessages;
+

@@ -37,17 +37,11 @@ export const getConflictStatus = (conflict: Conflict, userId: string): ConflictS
 
 export const generateAIResolution = async (conflictId: string): Promise<void> => {
   try {
-    // First, fetch the conflict to get both statements
+    // First, fetch the conflict details without joins
     const { data: conflict, error: fetchError } = await supabase
       .from('conflicts')
-      .select(`
-        *,
-        initiator:user_profiles(full_name),
-        responder:user_profiles(full_name)
-      `)
+      .select('*')
       .eq('id', conflictId)
-      .eq('initiator:user_profiles.id', supabase.rpc('get_profile_by_user_id', { user_id: 'initiator_id' }))
-      .eq('responder:user_profiles.id', supabase.rpc('get_profile_by_user_id', { user_id: 'responder_id' }))
       .single();
     
     if (fetchError) {
@@ -60,8 +54,7 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       throw new Error('Conflict not found or missing statements');
     }
     
-    // Use the supabase JWT as the authorization token - this approach relies on 
-    // RLS policies on the server to handle permissions correctly
+    // Use the supabase JWT as the authorization token
     const { data: authData } = await supabase.auth.getSession();
     const authToken = authData?.session?.access_token;
     
@@ -72,8 +65,7 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
     
     console.log('Making request to edge function with conflict ID:', conflictId);
     
-    // Handle safer type checking for user names
-    // First, attempt a separate query to get user names directly
+    // Fetch user names separately with individual queries to avoid join issues
     const { data: initiatorData } = await supabase
       .from('user_profiles')
       .select('full_name')
@@ -86,10 +78,11 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       .eq('id', conflict.responder_id)
       .single();
     
+    // Use safe defaults if user data is not found
     const initiatorName = initiatorData?.full_name || "Initiator";
     const responderName = responderData?.full_name || "Responder";
     
-    // Direct API call to the resolve-conflict edge function with proper headers
+    // Direct API call to the resolve-conflict edge function
     const response = await fetch('https://itmegnklwvtitwknyvkm.functions.supabase.co/resolve-conflict', {
       method: 'POST',
       headers: {

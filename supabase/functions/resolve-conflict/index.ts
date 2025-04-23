@@ -97,7 +97,7 @@ Return the result in the following JSON format:
         ],
         temperature: 0.6,
         response_format: { type: "json_object" },
-        max_tokens: 2000, // Ensure we get the full response
+        max_tokens: 2500, // Increased to ensure we get the full response
       }),
     });
 

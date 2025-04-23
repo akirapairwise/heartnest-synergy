@@ -2,41 +2,42 @@
 import React from 'react';
 import { Conflict } from '@/types/conflicts';
 import { Button } from "@/components/ui/button";
-import { Smile, AlignJustify, Heart, CheckCircle } from "lucide-react";
+import { Smile, Handshake, Lightbulb, Heart, CheckCircle, Copy } from "lucide-react";
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import ProcessingState from './resolution/ProcessingState';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+// Helper to detect new JSON format
+function tryParseAIPlan(plan: string): {
+  summary?: string;
+  resolution_tips?: string;
+  empathy_prompts?: { partner_a?: string; partner_b?: string; };
+  raw?: string;
+} {
+  try {
+    const json = JSON.parse(plan);
+    // New schema (with empathy_prompts as object)
+    if (
+      typeof json.summary === "string" &&
+      typeof json.resolution_tips === "string" &&
+      typeof json.empathy_prompts === "object"
+    ) {
+      return json;
+    }
+    // Legacy fallback
+    return { raw: plan };
+  } catch {
+    // Legacy fallback
+    return { raw: plan };
+  }
+}
+
 type ConflictResolutionProps = {
   conflict: Conflict;
   onUpdate: () => void;
 };
-
-const sectionDetails = [
-  {
-    label: "Summary",
-    icon: <AlignJustify className="text-harmony-500 mr-2" size={22} />,
-    emoji: "🧩",
-    key: "🧩 Summary:",
-    card: "card-gradient-harmony",
-  },
-  {
-    label: "Resolution Tips",
-    icon: <Smile className="text-love-500 mr-2" size={22} />,
-    emoji: "🛠️",
-    key: "🛠️ Resolution Tips:",
-    card: "card-gradient-love",
-  },
-  {
-    label: "Empathy Prompts",
-    icon: <Heart className="text-calm-500 mr-2" size={22} />,
-    emoji: "💬",
-    key: "💬 Empathy Prompts:",
-    card: "card-gradient-calm",
-  },
-];
 
 const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => {
   const { user } = useAuth();
@@ -64,65 +65,125 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
     return <ProcessingState />;
   }
 
-  // Split the content by double newlines to separate sections
-  const blocks = conflict.ai_resolution_plan.split('\n\n');
+  // Handle new JSON or old string format
+  const plan = tryParseAIPlan(conflict.ai_resolution_plan);
+  const isJson = !!plan.summary;
 
-  // Helper to extract the content after the emoji and title
-  function getSectionContent(section: string) {
-    const idx = section.indexOf(':');
-    if (idx !== -1 && idx < section.length - 1) {
-      return section.slice(idx + 1).trim();
-    }
-    return section;
-  }
-
-  // Process each section and extract content based on the emoji markers
-  const sectionContent = sectionDetails.map((detail) => {
-    // Find the block that starts with this emoji key
-    const found = blocks.find((block) => 
-      block.trim().startsWith(detail.key)
-    );
-    
-    return {
-      ...detail,
-      content: found ? getSectionContent(found) : "",
-    };
-  });
+  // Helper for copying text and showing toast
+  const handleCopy = (txt: string) => {
+    navigator.clipboard.writeText(txt);
+    toast.success("Copied to clipboard!");
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
       <ScrollArea className="w-full flex-1 max-h-[70vh] pb-2">
         <div className="flex flex-col gap-5 py-1">
-          {sectionContent.map(
-            ({ label, icon, card, content }, idx) =>
-              content && (
-                <div key={label}
-                  className={`p-5 rounded-xl shadow-sm border flex flex-col gap-2 ${card} animate-fade-in`}
-                >
-                  <div className="flex items-center mb-1">
-                    {icon}
-                    <span className="font-semibold text-base sm:text-lg text-foreground tracking-wide">{label}</span>
-                  </div>
-                  <div className="text-justify text-muted-foreground leading-relaxed whitespace-pre-line text-sm sm:text-base">
-                    {content}
-                  </div>
-                </div>
-              )
-          )}
-
-          {/* Fallback for any unprocessed sections or if the expected format is different */}
-          {sectionContent.every(section => !section.content) && (
+          {!isJson && (
             <div className="p-5 rounded-xl shadow-sm border bg-white">
               <div className="whitespace-pre-line text-muted-foreground">
-                {conflict.ai_resolution_plan}
+                {plan.raw}
               </div>
             </div>
+          )}
+          {isJson && (
+            <>
+              {/* Summary */}
+              <div className="p-5 rounded-xl shadow-sm border card-gradient-harmony animate-fade-in flex flex-row gap-3 items-start">
+                <Smile className="text-harmony-500 mr-2 mt-1" size={26} />
+                <div className="flex-1">
+                  <div className="font-semibold text-base sm:text-lg text-harmony-600 mb-1">
+                    Conflict Summary
+                  </div>
+                  <div className="text-justify text-muted-foreground leading-relaxed whitespace-pre-line text-sm sm:text-base">
+                    {plan.summary}
+                  </div>
+                </div>
+              </div>
+              {/* Tips as bullet list */}
+              <div className="p-5 rounded-xl shadow-sm border card-gradient-love animate-fade-in flex flex-row gap-3 items-start">
+                <Lightbulb className="text-love-500 mt-1" size={26} />
+                <div className="flex-1">
+                  <div className="font-semibold text-base sm:text-lg text-love-600 mb-1">
+                    Resolution Tips
+                  </div>
+                  <ul className="list-disc ml-5 text-sm sm:text-base text-justify">
+                    {/* Support both dash-delineated and newlines */}
+                    {plan.resolution_tips?.split(/\n|•/g)
+                      .map(item => item.replace(/^- /, '').trim())
+                      .filter(Boolean)
+                      .map((tip, idx) => (
+                        <li key={idx} className="mb-1">
+                          <span className="inline-flex items-center gap-1">
+                            <Lightbulb className="text-yellow-400 inline mr-1" size={16} />
+                            {tip}
+                          </span>
+                        </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              {/* Empathy block from A to B */}
+              {plan.empathy_prompts?.partner_a && (
+                <div className="relative p-5 rounded-xl shadow-sm border bg-gradient-to-br from-blue-100/90 to-blue-50/80 animate-fade-in flex items-start gap-3">
+                  <Heart className="text-calm-500 mt-1" size={24} />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-base text-calm-600">Empathy from You</span>
+                    </div>
+                    <blockquote className="italic rounded px-3 py-2 border-l-4 border-calm-400 bg-calm-50 text-calm-700 text-justify text-[15px] whitespace-pre-line">
+                      {plan.empathy_prompts.partner_a}
+                    </blockquote>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-4 top-4 text-blue-500 hover:bg-blue-100"
+                    onClick={() => handleCopy(plan.empathy_prompts!.partner_a!)}
+                    aria-label="Copy empathy"
+                    title="Copy to clipboard"
+                  >
+                    <Copy size={18} />
+                  </Button>
+                </div>
+              )}
+              {/* Empathy block from B to A */}
+              {plan.empathy_prompts?.partner_b && (
+                <div className="relative p-5 rounded-xl shadow-sm border bg-gradient-to-br from-pink-100/90 to-pink-50/80 animate-fade-in flex items-start gap-3">
+                  <Handshake className="text-love-500 mt-1" size={24} />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-base text-love-700">
+                        Empathy from Your Partner
+                      </span>
+                    </div>
+                    <blockquote className="italic rounded px-3 py-2 border-l-4 border-love-400 bg-love-50 text-love-700 text-justify text-[15px] whitespace-pre-line">
+                      {plan.empathy_prompts.partner_b}
+                    </blockquote>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-4 top-4 text-pink-500 hover:bg-pink-100"
+                    onClick={() => handleCopy(plan.empathy_prompts!.partner_b!)}
+                    aria-label="Copy empathy"
+                    title="Copy to clipboard"
+                  >
+                    <Copy size={18} />
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </ScrollArea>
       {!conflict.resolved_at && (
         <div className="flex justify-end mt-4">
-          <Button onClick={markAsResolved} variant="harmony" className="text-white px-5 rounded-md font-medium text-base shadow-md hover:scale-105 transition-transform duration-200">
+          <Button
+            onClick={markAsResolved}
+            variant="harmony"
+            className="text-white px-5 rounded-md font-medium text-base shadow-md hover:scale-105 transition-transform duration-200 bg-gradient-to-r from-green-400 to-emerald-500"
+          >
             <CheckCircle className="mr-2 h-4 w-4" />
             Mark as Resolved
           </Button>

@@ -63,26 +63,17 @@ Partner B's perspective:
 ${responder_statement}
 
 Instructions:
-1. Summarize the conflict using a neutral, warm tone. Begin the section with "🧩 Summary:" (use emoji).
-2. Write 2-3 practical, numbered resolution tips for both partners to try, title the section "🛠️ Resolution Tips:" (use emoji).
-3. Write one empathy phrase each partner could say to reconnect, in a section called "💬 Empathy Prompts:" (use emoji). 
-- For empathy prompts, prefix each line with either "Partner A:" or "Partner B:"
-- Keep the language soft, non-blaming, and encouraging.
+1. First, provide a neutral summary of the conflict (2-3 sentences).
+2. Then, provide 2-3 practical, actionable tips for resolving the conflict.
+3. Finally, suggest one empathy-based statement that each partner could say to reconnect.
 
-Example output:
-🧩 Summary:
-One partner feels neglected because they are usually the one initiating activities. The other partner is dealing with work stress and didn't notice the imbalance.
+Return the result in the following JSON format:
 
-🛠️ Resolution Tips:
-1. Schedule a weekly check-in to talk about emotional needs.
-2. Alternate who plans the weekly date or activity.
-3. Create a shared calendar to visualize together time.
-
-💬 Empathy Prompts:
-Partner A: "I didn't realize how much that affected you. I want us to feel balanced."
-Partner B: "Thank you for telling me. I'll try to be more mindful of our connection."
-
-Now, analyze the perspectives above and generate output in that format, using friendly and compassionate wording. Output everything as readable text.`;
+{
+  "summary": "Brief neutral summary of the conflict...",
+  "resolution_tips": "A list of 2–3 actionable tips for resolving the conflict.",
+  "empathy_prompts": "Two empathy-based statements, one from each partner to reconnect."
+}`;
 
     console.log('Sending request to OpenAI');
 
@@ -100,6 +91,7 @@ Now, analyze the perspectives above and generate output in that format, using fr
           { role: 'user', content: prompt }
         ],
         temperature: 0.6,
+        response_format: { type: "json_object" }
       }),
     });
 
@@ -118,15 +110,24 @@ Now, analyze the perspectives above and generate output in that format, using fr
 
     console.log('Successfully received response from OpenAI');
 
-    // Return the AI-generated content directly as the plan
+    // Parse the JSON response from OpenAI
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(aiResponse);
+      // Validate that the required fields are present
+      if (!parsedResponse.summary || !parsedResponse.resolution_tips || !parsedResponse.empathy_prompts) {
+        throw new Error('OpenAI response missing required fields');
+      }
+    } catch (e) {
+      console.error('Error parsing OpenAI response:', e, 'Raw response:', aiResponse);
+      throw new Error('Invalid format in OpenAI response');
+    }
+
+    // Return the parsed AI-generated content
     return new Response(
       JSON.stringify({
         success: true,
-        data: {
-          summary: "", // No longer using separate fields
-          reflection: "", // No longer using separate fields
-          plan: aiResponse // Return the formatted text directly
-        }
+        data: parsedResponse
       }),
       {
         headers: {

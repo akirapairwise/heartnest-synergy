@@ -64,10 +64,10 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
     return <ProcessingState />;
   }
 
-  // Split and map over the generation for sectioned display
+  // Split the content by double newlines to separate sections
   const blocks = conflict.ai_resolution_plan.split('\n\n');
 
-  // Helper to extract main content after the first colon (":\n")
+  // Helper to extract the content after the emoji and title
   function getSectionContent(section: string) {
     const idx = section.indexOf(':');
     if (idx !== -1 && idx < section.length - 1) {
@@ -76,11 +76,13 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
     return section;
   }
 
-  // We match each of the expected sections by the heading key (emojis with text)
-  const sectionContent = sectionDetails.map((detail, i) => {
-    const found = blocks.find((b) =>
-      b.trim().startsWith(detail.key)
+  // Process each section and extract content based on the emoji markers
+  const sectionContent = sectionDetails.map((detail) => {
+    // Find the block that starts with this emoji key
+    const found = blocks.find((block) => 
+      block.trim().startsWith(detail.key)
     );
+    
     return {
       ...detail,
       content: found ? getSectionContent(found) : "",
@@ -89,7 +91,7 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
 
   return (
     <div className="w-full h-full flex flex-col">
-      <ScrollArea className="w-full flex-1 max-h-[60vh] pb-2">
+      <ScrollArea className="w-full flex-1 max-h-[70vh] pb-2">
         <div className="flex flex-col gap-5 py-1">
           {sectionContent.map(
             ({ label, icon, card, content }, idx) =>
@@ -107,6 +109,15 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
                 </div>
               )
           )}
+
+          {/* Fallback for any unprocessed sections or if the expected format is different */}
+          {sectionContent.every(section => !section.content) && (
+            <div className="p-5 rounded-xl shadow-sm border bg-white">
+              <div className="whitespace-pre-line text-muted-foreground">
+                {conflict.ai_resolution_plan}
+              </div>
+            </div>
+          )}
         </div>
       </ScrollArea>
       {!conflict.resolved_at && (
@@ -122,4 +133,3 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
 };
 
 export default ConflictResolution;
-

@@ -81,7 +81,7 @@ Return the result in this JSON format:
   "empathy_prompts": "Two empathy-based statements, one from each partner to reconnect"
 }
 
-Please finish all fields completely and ensure the response is properly formatted JSON.`;
+Please finish all fields completely and ensure the response is properly formatted JSON with no truncation. The content for each field should be detailed and complete.`;
 
     console.log('Sending request to OpenAI');
 

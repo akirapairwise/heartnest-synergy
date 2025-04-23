@@ -1,12 +1,13 @@
 
 import React from 'react';
 import { Conflict, ConflictStatus } from '@/types/conflicts';
-import { Clock, CheckCircle } from "lucide-react";
+import { Clock, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import ConflictResolution from './ConflictResolution';
 import ConflictResponseDialog from './ConflictResponseDialog';
 import { getStatusInfo, formatDate } from './utils/ConflictStatusUtils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type ConflictCardProps = {
   conflict: Conflict;
@@ -22,7 +23,7 @@ const ConflictCard = ({ conflict, status, userId, onSuccess }: ConflictCardProps
   const needsResponse = status === 'pending_response' && isUserResponder;
   
   return (
-    <div className="border rounded-lg p-4">
+    <div className="border rounded-lg p-4 bg-white shadow-sm">
       <div className="flex items-start justify-between mb-3">
         <h3 className="font-medium">
           {conflict.topic || "Untitled Conflict"}
@@ -63,29 +64,51 @@ const ConflictCard = ({ conflict, status, userId, onSuccess }: ConflictCardProps
           <Sheet>
             <SheetTrigger asChild>
               <Button 
-                variant="outline" 
+                variant="harmony"
                 size="sm"
+                className="hover-scale"
                 onClick={() => setSelectedConflict(conflict)}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 View Resolution
               </Button>
             </SheetTrigger>
-            <SheetContent className="sm:max-w-md md:max-w-lg lg:max-w-xl overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Conflict Resolution</SheetTitle>
-                <SheetDescription>
-                  AI-generated guidance to help resolve this conflict
-                </SheetDescription>
-              </SheetHeader>
-              {selectedConflict && (
-                <div className="mt-6">
-                  <ConflictResolution 
-                    conflict={selectedConflict}
-                    onUpdate={onSuccess}
-                  />
-                </div>
-              )}
+            <SheetContent 
+              className="sm:max-w-md md:max-w-lg lg:max-w-xl p-0 bg-white/80 border-0 rounded-none rounded-l-xl shadow-xl animate-slide-in-right"
+            >
+              <div className="relative h-full flex flex-col">
+                {/* Sticky Header */}
+                <SheetHeader className="sticky top-0 z-10 bg-white/90 px-6 py-4 border-b">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <SheetTitle>Conflict Resolution</SheetTitle>
+                      <SheetDescription>
+                        AI-generated guidance to help resolve this conflict
+                      </SheetDescription>
+                    </div>
+                    <SheetClose asChild>
+                      <button
+                        className="flex items-center justify-center rounded-full bg-muted/70 hover:bg-muted text-muted-foreground w-8 h-8 transition-all ml-2"
+                        aria-label="Close"
+                        type="button"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </SheetClose>
+                  </div>
+                </SheetHeader>
+                {/* Scrollable Content */}
+                <ScrollArea className="flex-1 min-h-0 max-h-[70vh] w-full px-6 py-4">
+                  {selectedConflict && (
+                    <div>
+                      <ConflictResolution 
+                        conflict={selectedConflict}
+                        onUpdate={onSuccess}
+                      />
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
             </SheetContent>
           </Sheet>
         )}
@@ -95,3 +118,4 @@ const ConflictCard = ({ conflict, status, userId, onSuccess }: ConflictCardProps
 };
 
 export default ConflictCard;
+

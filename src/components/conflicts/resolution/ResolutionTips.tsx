@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Lightbulb } from "lucide-react";
+import { HeartHandshake } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 type ResolutionTipsProps = {
@@ -8,22 +8,21 @@ type ResolutionTipsProps = {
 };
 
 const ResolutionTips: React.FC<ResolutionTipsProps> = ({ tips }) => (
-  <Card className="p-5 rounded-xl border card-gradient-love animate-fade-in">
+  <Card className="p-5 rounded-xl border card-gradient-harmony animate-fade-in">
     <div className="flex flex-row gap-3 items-start">
-      <Lightbulb className="text-love-500 mt-1" size={26} />
+      <HeartHandshake className="text-calm-500 mt-1" size={26} />
       <div className="flex-1">
-        <div className="font-semibold text-base sm:text-lg text-love-600 mb-1">
-          🛠️ Resolution Tips
+        <div className="font-extrabold text-lg sm:text-xl text-calm-600 mb-2 uppercase tracking-wider">
+          🌿 Growth Pathways
         </div>
-        <ul className="list-disc ml-5 text-sm sm:text-base text-justify">
-          {/* Support both dash-delineated and newlines */}
+        <ul className="list-disc ml-5 text-base sm:text-base text-justify">
           {tips.split(/\n|•/g)
             .map(item => item.replace(/^- /, '').trim())
             .filter(Boolean)
             .map((tip, idx) => (
-              <li key={idx} className="mb-1">
+              <li key={idx} className="mb-2">
                 <span className="inline-flex items-center gap-1">
-                  <Lightbulb className="text-yellow-400 inline mr-1" size={16} />
+                  <HeartHandshake className="text-calm-400 inline mr-1" size={16} />
                   {tip}
                 </span>
               </li>

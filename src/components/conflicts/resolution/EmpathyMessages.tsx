@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Copy, Share2, Heart, Handshake } from "lucide-react";
+import { MessageCircle, Flower } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
@@ -12,29 +12,29 @@ type EmpathyMessagesProps = {
 const promptConfig = [
   {
     direction: "a",
-    label: "From You to Your Partner",
-    icon: <Heart className="text-calm-500 mt-1" size={22} />,
+    label: "Compassionate Words to Your Partner",
+    icon: <Flower className="text-love-500 mt-1" size={22} />,
     promptKey: "partner_a",
-    instructions: "Share this message with your partner if it feels right.",
-    color: "calm",
-    border: "border-l-4 border-calm-400 bg-calm-50/80",
-    button: "text-calm-600 border-calm-300 hover:bg-calm-100"
-  },
-  {
-    direction: "b",
-    label: "From Your Partner to You",
-    icon: <Handshake className="text-love-500 mt-1" size={22} />,
-    promptKey: "partner_b",
-    instructions: "Optionally let your partner share the message below with you.",
+    instructions: "Share this message with your partner when you feel ready.",
     color: "love",
     border: "border-l-4 border-love-400 bg-love-50/80",
     button: "text-love-600 border-love-300 hover:bg-love-100"
+  },
+  {
+    direction: "b",
+    label: "Your Partner's Heartfelt Message",
+    icon: <MessageCircle className="text-calm-500 mt-1" size={22} />,
+    promptKey: "partner_b",
+    instructions: "Your partner's message of understanding and care.",
+    color: "calm",
+    border: "border-l-4 border-calm-400 bg-calm-50/80",
+    button: "text-calm-600 border-calm-300 hover:bg-calm-100"
   },
 ];
 
 const handleCopy = (txt: string) => {
   navigator.clipboard.writeText(txt);
-  toast.success("Copied to clipboard!");
+  toast.success("Message copied to clipboard!");
 };
 
 const shareViaWhatsApp = (text: string) => {
@@ -45,8 +45,9 @@ const shareViaWhatsApp = (text: string) => {
 const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) => {
   return (
     <section className="mt-2">
-      <h2 className="font-bold text-lg sm:text-xl mb-2 text-love-700 flex items-center gap-2">
-        <span role="img" aria-label="Empathy">💬</span> Empathy Messages
+      <h2 className="font-bold text-lg sm:text-xl mb-4 text-love-700 flex items-center gap-2">
+        <Flower role="img" aria-label="Empathy" size={24} className="text-love-500" /> 
+        Nurturing Connection
       </h2>
       <div className="flex flex-col gap-5">
         {promptConfig.map(({ direction, label, icon, promptKey, instructions, border, button }) => {
@@ -54,10 +55,10 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) =>
           if (!text) return null;
           return (
             <div key={direction} className={`p-4 rounded-xl ${border} shadow-sm`}>
-              <div className="flex items-center gap-2 font-medium text-harmony-700 mb-1">
-                {icon} <span className={`text-base font-semibold`}>{label}</span>
+              <div className="flex items-center gap-2 font-semibold text-harmony-700 mb-2">
+                {icon} <span className={`text-base`}>{label}</span>
               </div>
-              <ScrollArea className="rounded bg-white/70 px-3 py-2 mb-1 text-[15px] whitespace-pre-line text-calm-800 max-h-[180px] border border-dashed">
+              <ScrollArea className="rounded bg-white/70 px-3 py-2 mb-2 text-[15px] whitespace-pre-line text-calm-800 max-h-[180px] border border-dashed">
                 {text}
               </ScrollArea>
               <div className="flex flex-wrap gap-2 mt-2">
@@ -67,8 +68,8 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) =>
                   className={button}
                   onClick={() => handleCopy(text)}
                 >
-                  <Copy size={14} className="mr-1" />
-                  Copy
+                  <Flower size={14} className="mr-1" />
+                  Copy Message
                 </Button>
                 <Button
                   variant="outline"
@@ -76,8 +77,8 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) =>
                   className={button}
                   onClick={() => shareViaWhatsApp(text)}
                 >
-                  <Share2 size={14} className="mr-1" />
-                  WhatsApp
+                  <MessageCircle size={14} className="mr-1" />
+                  Share
                 </Button>
               </div>
               <div className="text-sm text-muted-foreground mt-1 ml-1">{instructions}</div>
@@ -90,4 +91,3 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) =>
 };
 
 export default EmpathyMessages;
-

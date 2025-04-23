@@ -103,7 +103,7 @@ Ensure all fields are complete and thoroughly filled out. Do not abbreviate or c
         ],
         temperature: 0.7,
         response_format: { type: "json_object" },
-        max_tokens: 4000, // Increased to ensure no truncation
+        max_tokens: 8000, // Significantly increased to ensure no truncation
       }),
     });
 
@@ -135,6 +135,18 @@ Ensure all fields are complete and thoroughly filled out. Do not abbreviate or c
           !parsedResponse.empathy_prompts.partner_b) {
         console.error('OpenAI response missing required fields or contains truncated content:', parsedResponse);
         throw new Error('OpenAI response missing required fields or contains truncated content');
+      }
+      
+      // Additional validation to check for truncation in each field
+      const summaryLength = parsedResponse.summary.length;
+      const tipsLength = parsedResponse.resolution_tips.length;
+      const promptALength = parsedResponse.empathy_prompts.partner_a.length;
+      const promptBLength = parsedResponse.empathy_prompts.partner_b.length;
+      
+      console.log(`Field lengths - Summary: ${summaryLength}, Tips: ${tipsLength}, PromptA: ${promptALength}, PromptB: ${promptBLength}`);
+      
+      if (summaryLength < 10 || tipsLength < 10 || promptALength < 20 || promptBLength < 20) {
+        throw new Error('Detected potentially truncated content in the OpenAI response');
       }
     } catch (e) {
       console.error('Error parsing OpenAI response:', e, 'Raw response:', aiResponse);

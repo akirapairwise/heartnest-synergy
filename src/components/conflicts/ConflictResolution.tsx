@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import ProcessingState from './resolution/ProcessingState';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card } from '@/components/ui/card';
 
 // Helper to detect new JSON format
 function tryParseAIPlan(plan: string): {
@@ -91,141 +92,159 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
       <ScrollArea className="w-full flex-1 max-h-[70vh] px-1">
         <div className="flex flex-col gap-5 py-1">
           {!isJson && (
-            <div className="p-5 rounded-xl shadow-sm border bg-white">
-              <div className="whitespace-pre-line text-muted-foreground">
-                {plan.raw}
-              </div>
-            </div>
+            <Card className="p-5 rounded-xl bg-white">
+              <ScrollArea className="h-full max-h-[500px]">
+                <div className="whitespace-pre-line text-muted-foreground">
+                  {plan.raw}
+                </div>
+              </ScrollArea>
+            </Card>
           )}
           {isJson && (
             <>
               {/* Summary */}
-              <div className="p-5 rounded-xl shadow-sm border card-gradient-harmony animate-fade-in flex flex-row gap-3 items-start">
-                <Smile className="text-harmony-500 mr-2 mt-1" size={26} />
-                <div className="flex-1">
-                  <div className="font-semibold text-base sm:text-lg text-harmony-600 mb-1">
-                    Conflict Summary
-                  </div>
-                  <div className="text-justify text-muted-foreground leading-relaxed whitespace-pre-line text-sm sm:text-base">
-                    {plan.summary}
+              <Card className="p-5 rounded-xl border card-gradient-harmony animate-fade-in">
+                <div className="flex flex-row gap-3 items-start">
+                  <Smile className="text-harmony-500 mr-2 mt-1" size={26} />
+                  <div className="flex-1">
+                    <div className="font-semibold text-base sm:text-lg text-harmony-600 mb-1">
+                      🧩 Conflict Summary
+                    </div>
+                    <div className="text-justify text-muted-foreground leading-relaxed whitespace-pre-line text-sm sm:text-base">
+                      {plan.summary}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Card>
               
               {/* Tips as bullet list */}
-              <div className="p-5 rounded-xl shadow-sm border card-gradient-love animate-fade-in flex flex-row gap-3 items-start">
-                <Lightbulb className="text-love-500 mt-1" size={26} />
-                <div className="flex-1">
-                  <div className="font-semibold text-base sm:text-lg text-love-600 mb-1">
-                    Resolution Tips
+              <Card className="p-5 rounded-xl border card-gradient-love animate-fade-in">
+                <div className="flex flex-row gap-3 items-start">
+                  <Lightbulb className="text-love-500 mt-1" size={26} />
+                  <div className="flex-1">
+                    <div className="font-semibold text-base sm:text-lg text-love-600 mb-1">
+                      🛠️ Resolution Tips
+                    </div>
+                    <ul className="list-disc ml-5 text-sm sm:text-base text-justify">
+                      {/* Support both dash-delineated and newlines */}
+                      {plan.resolution_tips?.split(/\n|•/g)
+                        .map(item => item.replace(/^- /, '').trim())
+                        .filter(Boolean)
+                        .map((tip, idx) => (
+                          <li key={idx} className="mb-1">
+                            <span className="inline-flex items-center gap-1">
+                              <Lightbulb className="text-yellow-400 inline mr-1" size={16} />
+                              {tip}
+                            </span>
+                          </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="list-disc ml-5 text-sm sm:text-base text-justify">
-                    {/* Support both dash-delineated and newlines */}
-                    {plan.resolution_tips?.split(/\n|•/g)
-                      .map(item => item.replace(/^- /, '').trim())
-                      .filter(Boolean)
-                      .map((tip, idx) => (
-                        <li key={idx} className="mb-1">
-                          <span className="inline-flex items-center gap-1">
-                            <Lightbulb className="text-yellow-400 inline mr-1" size={16} />
-                            {tip}
-                          </span>
-                        </li>
-                    ))}
-                  </ul>
                 </div>
+              </Card>
+              
+              <div className="font-semibold text-base sm:text-lg mb-3 text-gray-700">
+                💬 Empathy Prompts
               </div>
               
               {/* Empathy block from A to B */}
               {plan.empathy_prompts?.partner_a && (
-                <div className="relative p-5 rounded-xl shadow-sm border bg-gradient-to-br from-blue-100/90 to-blue-50/80 animate-fade-in flex items-start gap-3">
-                  <Heart className="text-calm-500 mt-1" size={24} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-base text-calm-600">Empathy from You</span>
-                    </div>
-                    <blockquote className="italic rounded px-3 py-2 border-l-4 border-calm-400 bg-calm-50 text-calm-700 text-justify text-[15px] whitespace-pre-line">
-                      {plan.empathy_prompts.partner_a}
-                    </blockquote>
-                    
-                    <div className="flex space-x-2 mt-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-calm-600 border-calm-300 hover:bg-calm-100"
-                        onClick={() => handleCopy(plan.empathy_prompts!.partner_a!)}
-                      >
-                        <Copy size={14} className="mr-1" />
-                        Copy
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-calm-600 border-calm-300 hover:bg-calm-100"
-                        onClick={() => shareViaWhatsApp(plan.empathy_prompts!.partner_a!)}
-                      >
-                        <Share2 size={14} className="mr-1" />
-                        WhatsApp
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-calm-600 border-calm-300 hover:bg-calm-100"
-                        onClick={() => shareViaSMS(plan.empathy_prompts!.partner_a!)}
-                      >
-                        <Share2 size={14} className="mr-1" />
-                        SMS
-                      </Button>
+                <Card className="p-5 rounded-xl border bg-gradient-to-br from-blue-100/90 to-blue-50/80 animate-fade-in">
+                  <div className="flex items-start gap-3">
+                    <Heart className="text-calm-500 mt-1" size={24} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-base text-calm-600">Partner A ➡️ B</span>
+                      </div>
+                      <ScrollArea className="max-h-[200px]">
+                        <blockquote className="italic rounded px-3 py-2 border-l-4 border-calm-400 bg-calm-50 text-calm-700 text-justify text-[15px] whitespace-pre-line">
+                          {plan.empathy_prompts.partner_a}
+                        </blockquote>
+                      </ScrollArea>
+                      
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-calm-600 border-calm-300 hover:bg-calm-100"
+                          onClick={() => handleCopy(plan.empathy_prompts!.partner_a!)}
+                        >
+                          <Copy size={14} className="mr-1" />
+                          Copy
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-calm-600 border-calm-300 hover:bg-calm-100"
+                          onClick={() => shareViaWhatsApp(plan.empathy_prompts!.partner_a!)}
+                        >
+                          <Share2 size={14} className="mr-1" />
+                          WhatsApp
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-calm-600 border-calm-300 hover:bg-calm-100"
+                          onClick={() => shareViaSMS(plan.empathy_prompts!.partner_a!)}
+                        >
+                          <Share2 size={14} className="mr-1" />
+                          SMS
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Card>
               )}
               
               {/* Empathy block from B to A */}
               {plan.empathy_prompts?.partner_b && (
-                <div className="relative p-5 rounded-xl shadow-sm border bg-gradient-to-br from-pink-100/90 to-pink-50/80 animate-fade-in flex items-start gap-3">
-                  <Handshake className="text-love-500 mt-1" size={24} />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-base text-love-700">
-                        Empathy from Your Partner
-                      </span>
-                    </div>
-                    <blockquote className="italic rounded px-3 py-2 border-l-4 border-love-400 bg-love-50 text-love-700 text-justify text-[15px] whitespace-pre-line">
-                      {plan.empathy_prompts.partner_b}
-                    </blockquote>
-                    
-                    <div className="flex space-x-2 mt-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-love-600 border-love-300 hover:bg-love-100"
-                        onClick={() => handleCopy(plan.empathy_prompts!.partner_b!)}
-                      >
-                        <Copy size={14} className="mr-1" />
-                        Copy
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-love-600 border-love-300 hover:bg-love-100"
-                        onClick={() => shareViaWhatsApp(plan.empathy_prompts!.partner_b!)}
-                      >
-                        <Share2 size={14} className="mr-1" />
-                        WhatsApp
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-love-600 border-love-300 hover:bg-love-100"
-                        onClick={() => shareViaSMS(plan.empathy_prompts!.partner_b!)}
-                      >
-                        <Share2 size={14} className="mr-1" />
-                        SMS
-                      </Button>
+                <Card className="p-5 rounded-xl border bg-gradient-to-br from-pink-100/90 to-pink-50/80 animate-fade-in">
+                  <div className="flex items-start gap-3">
+                    <Handshake className="text-love-500 mt-1" size={24} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-base text-love-700">
+                          Partner B ➡️ A
+                        </span>
+                      </div>
+                      <ScrollArea className="max-h-[200px]">
+                        <blockquote className="italic rounded px-3 py-2 border-l-4 border-love-400 bg-love-50 text-love-700 text-justify text-[15px] whitespace-pre-line">
+                          {plan.empathy_prompts.partner_b}
+                        </blockquote>
+                      </ScrollArea>
+                      
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-love-600 border-love-300 hover:bg-love-100"
+                          onClick={() => handleCopy(plan.empathy_prompts!.partner_b!)}
+                        >
+                          <Copy size={14} className="mr-1" />
+                          Copy
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-love-600 border-love-300 hover:bg-love-100"
+                          onClick={() => shareViaWhatsApp(plan.empathy_prompts!.partner_b!)}
+                        >
+                          <Share2 size={14} className="mr-1" />
+                          WhatsApp
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-love-600 border-love-300 hover:bg-love-100"
+                          onClick={() => shareViaSMS(plan.empathy_prompts!.partner_b!)}
+                        >
+                          <Share2 size={14} className="mr-1" />
+                          SMS
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Card>
               )}
             </>
           )}

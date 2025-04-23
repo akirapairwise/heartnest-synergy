@@ -41,17 +41,21 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
     return <ProcessingState />;
   }
 
+  // Parse the content to ensure full display
+  const resolutionPlan = conflict.ai_resolution_plan;
+
   return (
     <div className="w-full">
-      <div className="rounded-md border bg-muted/10 p-4">
+      <div className="rounded-md border bg-muted/10 p-4 overflow-hidden">
         <div className="whitespace-pre-line space-y-6">
-          {conflict.ai_resolution_plan.split('\n\n').map((section, index) => {
-            // Highlight each block for clarity
+          {resolutionPlan.split('\n\n').map((section, index) => {
+            // Check for section headers with emojis
             const hasEmoji = section.includes('🧩') || section.includes('🛠️') || section.includes('💬');
+            
             return (
               <div
                 key={index}
-                className={`break-words ${index > 0 ? 'mt-4' : ''} ${hasEmoji ? 'font-semibold text-base sm:text-lg' : 'text-sm sm:text-base'} `}
+                className={`break-words ${index > 0 ? 'mt-4' : ''} ${hasEmoji ? 'font-semibold text-base sm:text-lg' : 'text-sm sm:text-base'}`}
                 style={{ wordBreak: 'break-word' }}
               >
                 {section}

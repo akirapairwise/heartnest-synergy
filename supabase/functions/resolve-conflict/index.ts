@@ -59,7 +59,13 @@ serve(async (req) => {
 
     // Format the improved prompt for OpenAI, using personalized names
     const prompt = `
-You are a wise and emotionally intelligent relationship coach. Your goal is to neutrally summarize both sides of a conflict between two partners and offer calm, healing suggestions. Use soft, non-blaming language. Encourage empathy and connection. 
+You are a compassionate relationship AI. Given the conflict perspectives, do the following:
+
+1. Summarize the issue neutrally.
+2. Offer 2–3 resolution tips.
+3. Write one empathy statement for each partner.
+
+Here are the perspectives:
 
 ${initiatorName}'s perspective:
 ${initiator_statement}
@@ -67,18 +73,15 @@ ${initiator_statement}
 ${responderName}'s perspective:
 ${responder_statement}
 
-Instructions:
-1. First, provide a neutral summary of the conflict (2-3 sentences).
-2. Then, provide 2-3 practical, actionable tips for resolving the conflict.
-3. Finally, suggest one empathy-based statement that each partner could say to reconnect. Make these statements personal by referring to each person by name.
-
-Return the result in the following JSON format:
+Return the result in this JSON format:
 
 {
-  "summary": "Brief neutral summary of the conflict...",
-  "resolution_tips": "A list of 2–3 actionable tips for resolving the conflict.",
-  "empathy_prompts": "Two empathy-based statements, one from each partner to reconnect."
-}`;
+  "summary": "Brief neutral summary of the conflict (2-3 sentences)",
+  "resolution_tips": "2-3 actionable tips for resolving the conflict",
+  "empathy_prompts": "Two empathy-based statements, one from each partner to reconnect"
+}
+
+Please finish all fields completely and ensure the response is properly formatted JSON.`;
 
     console.log('Sending request to OpenAI');
 
@@ -97,7 +100,7 @@ Return the result in the following JSON format:
         ],
         temperature: 0.6,
         response_format: { type: "json_object" },
-        max_tokens: 2500, // Increased to ensure we get the full response
+        max_tokens: 3000, // Increased to ensure we get the full response
       }),
     });
 

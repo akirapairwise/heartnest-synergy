@@ -25,7 +25,7 @@ serve(async (req) => {
 
   try {
     console.log('Edge function called with method:', req.method);
-    
+
     // Get OpenAI API key from environment variables
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
@@ -35,8 +35,6 @@ serve(async (req) => {
 
     // Parse the request body
     const requestData = await req.text();
-    console.log('Raw request data:', requestData);
-    
     let parsedData;
     try {
       parsedData = JSON.parse(requestData);
@@ -44,42 +42,46 @@ serve(async (req) => {
       console.error('Error parsing JSON:', e);
       throw new Error('Invalid JSON in request body');
     }
-    
-    const { initiator_statement, responder_statement, conflict_id } = parsedData;
 
-    console.log('Received data:', { 
-      conflict_id, 
-      initiator_statement_length: initiator_statement?.length, 
-      responder_statement_length: responder_statement?.length 
-    });
+    const { initiator_statement, responder_statement, conflict_id } = parsedData;
 
     if (!initiator_statement || !responder_statement || !conflict_id) {
       console.error('Missing required parameters');
       throw new Error('Missing required parameters');
     }
 
-    console.log(`Processing conflict resolution for conflict ID: ${conflict_id}`);
-
-    // Format the prompt for OpenAI
+    // Format the improved prompt for OpenAI, following user instructions
     const prompt = `
-As a relationship coach and conflict mediator, analyze the following statements from two partners in a conflict:
+You are a wise and emotionally intelligent relationship coach. Your goal is to neutrally summarize both sides of a conflict between two partners and offer calm, healing suggestions. Use soft, non-blaming language. Encourage empathy and connection. 
 
-PARTNER 1's PERSPECTIVE:
+Partner A's perspective:
 ${initiator_statement}
 
-PARTNER 2's PERSPECTIVE:
+Partner B's perspective:
 ${responder_statement}
 
-Based on these perspectives, provide:
-1. A brief, neutral summary of the core issue (2-3 sentences)
-2. A thoughtful reflection about underlying dynamics or patterns (2-3 sentences)
-3. A practical 3-step action plan to help resolve this conflict
+Instructions:
+1. Summarize the conflict using a neutral, warm tone. Begin the section with "🧩 Summary:" (use emoji).
+2. Write 2-3 practical, numbered resolution tips for both partners to try, title the section "🛠️ Resolution Tips:" (use emoji).
+3. Write one empathy phrase each partner could say to reconnect, in a section called "💬 Empathy Prompts:" (use emoji). 
+- For empathy prompts, prefix each line with either "Partner A:" or "Partner B:"
+- Keep the language soft, non-blaming, and encouraging.
 
-Format your response using JSON with these keys: "summary", "reflection", and "plan".
-`;
+Example output:
+🧩 Summary:
+One partner feels neglected because they are usually the one initiating activities. The other partner is dealing with work stress and didn’t notice the imbalance.
 
-    console.log('Calling OpenAI API...');
-    
+🛠️ Resolution Tips:
+1. Schedule a weekly check-in to talk about emotional needs.
+2. Alternate who plans the weekly date or activity.
+3. Create a shared calendar to visualize together time.
+
+💬 Empathy Prompts:
+Partner A: “I didn’t realize how much that affected you. I want us to feel balanced.”
+Partner B: “Thank you for telling me. I’ll try to be more mindful of our connection.”
+
+Now, analyze the perspectives above and generate output in that format, using friendly and compassionate wording. Output everything as readable text.`;
+
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -90,10 +92,10 @@ Format your response using JSON with these keys: "summary", "reflection", and "p
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are a skilled relationship coach and mediator.' },
+          { role: 'system', content: 'You are a wise, emotionally intelligent relationship coach.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
+        temperature: 0.6,
       }),
     });
 
@@ -104,45 +106,21 @@ Format your response using JSON with these keys: "summary", "reflection", and "p
     }
 
     const data = await response.json();
-    console.log('OpenAI response received:', data);
-    
-    const aiResponse = data.choices[0].message.content;
-    
-    console.log('AI response content:', aiResponse);
-    
-    // Parse the JSON response
-    let parsedResponse;
-    try {
-      // Extract JSON from the response if it's not already in JSON format
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      const jsonString = jsonMatch ? jsonMatch[0] : aiResponse;
-      parsedResponse = JSON.parse(jsonString);
-      
-      console.log('Successfully parsed AI response:', parsedResponse);
-    } catch (error) {
-      console.error('Error parsing AI response as JSON:', error);
-      console.log('Raw AI response:', aiResponse);
-      
-      // If JSON parsing fails, try to extract sections manually
-      const summary = aiResponse.match(/summary[:\s]+(.*?)(?=reflection|plan|$)/is)?.[1]?.trim() || 
-                    "The AI couldn't generate a properly formatted response.";
-                    
-      const reflection = aiResponse.match(/reflection[:\s]+(.*?)(?=plan|$)/is)?.[1]?.trim() || 
-                       "Please review both perspectives and consider underlying patterns.";
-                       
-      const plan = aiResponse.match(/plan[:\s]+(.*?)(?=$)/is)?.[1]?.trim() || 
-                 "1. Have a calm discussion\n2. Listen actively to each other\n3. Work together on a solution";
-      
-      parsedResponse = { summary, reflection, plan };
-      console.log('Manually extracted response:', parsedResponse);
+    const aiResponse = data.choices?.[0]?.message?.content?.trim();
+
+    if (!aiResponse) {
+      throw new Error('No response from OpenAI.');
     }
 
-    console.log('Sending successful response back to client');
-    
+    // Send generated text as ai_resolution_plan and leave ai_summary/ai_reflection blank
     return new Response(
       JSON.stringify({
         success: true,
-        data: parsedResponse
+        data: {
+          summary: "", // deprecated
+          reflection: "", // deprecated
+          plan: aiResponse // main formatted output, ready to render as markdown or plain text
+        }
       }),
       {
         headers: {
@@ -154,7 +132,7 @@ Format your response using JSON with these keys: "summary", "reflection", and "p
     );
   } catch (error) {
     console.error('Error in resolve-conflict function:', error);
-    
+
     return new Response(
       JSON.stringify({
         success: false,

@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,18 +8,30 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Sparkles, AlertCircle, Loader2, RotateCcw } from "lucide-react";
+import { Sparkles, AlertCircle, Loader2, ChevronsDown, ChevronsUp, RotateCcw } from "lucide-react";
 import { useWeeklyAISummary } from "@/hooks/useWeeklyAISummary";
 import { Button } from "@/components/ui/button";
 
+const MAX_PREVIEW_LENGTH = 180;
+
 const WeeklyAISummary = () => {
   const { status, summary, error, fetchSummary } = useWeeklyAISummary();
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    // Fetch insight on mount
     fetchSummary();
     // eslint-disable-next-line
   }, []);
+
+  // A helper to condense the summary to a short preview
+  function getSummaryPreview(text: string) {
+    if (!text) return "";
+    if (text.length <= MAX_PREVIEW_LENGTH) return text;
+    // Cut at last sentence end before MAX_PREVIEW_LENGTH if possible
+    const trimmed = text.slice(0, MAX_PREVIEW_LENGTH);
+    const lastPeriod = trimmed.lastIndexOf(".");
+    return lastPeriod > 60 ? trimmed.slice(0, lastPeriod + 1).trim() : trimmed.trim() + "...";
+  }
 
   let content;
   if (status === "loading") {
@@ -36,7 +48,7 @@ const WeeklyAISummary = () => {
         <AlertTitle>Something went wrong</AlertTitle>
         <AlertDescription>{error}</AlertDescription>
         <div className="flex justify-end mt-3">
-          <Button size="sm" variant="outline" onClick={fetchSummary}>
+          <Button size="sm" variant="outline" onClick={fetchSummary} className="text-harmony-700 border-harmony-300">
             <RotateCcw className="h-4 w-4 mr-1" />
             Try Again
           </Button>
@@ -44,14 +56,35 @@ const WeeklyAISummary = () => {
       </Alert>
     );
   } else if (summary) {
+    const shouldTruncate = summary.length > MAX_PREVIEW_LENGTH && !expanded;
     content = (
       <div className="bg-white p-4 rounded-lg border border-harmony-100">
-        <p className="text-sm whitespace-pre-line">{summary}</p>
-        <div className="flex justify-end mt-2">
-          <Button variant="ghost" size="sm" onClick={fetchSummary}>
+        <p className="text-sm whitespace-pre-line text-harmony-900">
+          {shouldTruncate ? getSummaryPreview(summary) : summary}
+        </p>
+        <div className="flex justify-between mt-2">
+          <Button variant="ghost" size="sm" onClick={fetchSummary} className="text-harmony-700">
             <RotateCcw className="h-4 w-4 mr-1" />
             Refresh
           </Button>
+          {summary.length > MAX_PREVIEW_LENGTH && (
+            <Button
+              onClick={() => setExpanded(x => !x)}
+              size="sm"
+              variant="outline"
+              className="border-harmony-200 text-harmony-700"
+            >
+              {expanded ? (
+                <>
+                  Collapse <ChevronsUp className="h-4 w-4 ml-1" />
+                </>
+              ) : (
+                <>
+                  Read Full <ChevronsDown className="h-4 w-4 ml-1" />
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -60,7 +93,7 @@ const WeeklyAISummary = () => {
       <div className="text-center py-6 text-muted-foreground text-sm">
         <p>Complete your weekly check-in to receive your AI insight summary.</p>
         <div className="flex justify-center mt-4">
-          <Button size="sm" variant="outline" onClick={fetchSummary}>
+          <Button size="sm" variant="outline" onClick={fetchSummary} className="text-harmony-700 border-harmony-300">
             <RotateCcw className="h-4 w-4 mr-1" />
             Get Insight
           </Button>
@@ -70,15 +103,13 @@ const WeeklyAISummary = () => {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-harmony-50 to-calm-50">
+    <Card className="bg-gradient-to-br from-harmony-50 to-calm-50 border-harmony-200 shadow-md">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-harmony-500" />
-            <CardTitle className="text-md">💡 Weekly AI Insight</CardTitle>
-          </div>
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="h-6 w-6 text-harmony-500" />
+          <CardTitle className="text-lg font-semibold text-harmony-800">Weekly AI Insight</CardTitle>
         </div>
-        <CardDescription>Based on your moods, goals & shared moments</CardDescription>
+        <CardDescription className="font-medium text-harmony-600">Based on your moods, goals & shared moments</CardDescription>
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>

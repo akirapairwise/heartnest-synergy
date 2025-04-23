@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MessageCircleHeart } from "lucide-react";
+import { HandsHeart } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 type ResolutionSummaryProps = {
@@ -8,14 +8,16 @@ type ResolutionSummaryProps = {
 };
 
 const ResolutionSummary: React.FC<ResolutionSummaryProps> = ({ summary }) => (
-  <Card className="p-5 rounded-xl border card-gradient-love animate-fade-in">
-    <div className="flex flex-row gap-3 items-start">
-      <MessageCircleHeart className="text-love-500 mr-2 mt-1" size={26} />
+  <Card className="p-6 rounded-xl border shadow-md bg-gradient-to-br from-harmony-50 to-calm-50 animate-fade-in">
+    <div className="flex flex-row gap-4 items-start">
+      <div className="rounded-full bg-harmony-200 p-2 mr-2 shadow">
+        <HandsHeart className="text-love-600" size={32} />
+      </div>
       <div className="flex-1">
-        <div className="font-extrabold text-lg sm:text-xl text-love-600 mb-2 uppercase tracking-wider">
-          🌈 Shared Understanding
+        <div className="font-bold text-xl sm:text-2xl text-harmony-700 mb-2 tracking-wide flex items-center gap-2 uppercase">
+          🌟 Summary
         </div>
-        <div className="text-justify text-muted-foreground leading-relaxed whitespace-pre-line text-base sm:text-base">
+        <div className="text-justify text-calm-900 leading-relaxed whitespace-pre-line text-base sm:text-lg">
           {summary}
         </div>
       </div>

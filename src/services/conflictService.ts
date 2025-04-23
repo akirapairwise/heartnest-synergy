@@ -40,7 +40,11 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
     // First, fetch the conflict to get both statements
     const { data: conflict, error: fetchError } = await supabase
       .from('conflicts')
-      .select('*, initiator:initiator_id(full_name), responder:responder_id(full_name)')
+      .select(`
+        *,
+        initiator:user_profiles!initiator_id(full_name),
+        responder:user_profiles!responder_id(full_name)
+      `)
       .eq('id', conflictId)
       .single();
     
@@ -66,9 +70,13 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
     
     console.log('Making request to edge function with conflict ID:', conflictId);
     
-    // Extract partner names
-    const initiatorName = conflict.initiator?.full_name || "Initiator";
-    const responderName = conflict.responder?.full_name || "Responder";
+    // Extract partner names with proper type checks
+    // Use type assertion to tell TypeScript that these properties exist
+    const initiatorProfile = conflict.initiator as { full_name: string | null } | null;
+    const responderProfile = conflict.responder as { full_name: string | null } | null;
+    
+    const initiatorName = initiatorProfile?.full_name || "Initiator";
+    const responderName = responderProfile?.full_name || "Responder";
     
     // Direct API call to the resolve-conflict edge function with proper headers
     const response = await fetch('https://itmegnklwvtitwknyvkm.functions.supabase.co/resolve-conflict', {

@@ -11,6 +11,8 @@ export type Conflict = {
   ai_resolution_plan: string | null;
   resolved_at: string | null;
   created_at: string;
+  // Local property for archiving in UI (not persisted)
+  archived?: boolean;
 };
 
 export type ConflictStatus = 'pending_response' | 'pending_ai' | 'resolved' | 'active';
@@ -20,3 +22,4 @@ export type ConflictFormData = {
   description: string;
   partner_id: string;
 };
+

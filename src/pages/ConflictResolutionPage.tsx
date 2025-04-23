@@ -11,6 +11,7 @@ import EmpathyMessages from "@/components/conflicts/resolution/EmpathyMessages";
 import JournalNote from "@/components/conflicts/resolution/JournalNote";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { HandHeart, Puzzle, MessageSquare } from "lucide-react";
 
 type Plan = {
   summary?: string;
@@ -89,7 +90,7 @@ const ConflictResolutionPage = () => {
       {/* Conflict Summary Section */}
       <section className="rounded-xl shadow card-gradient-harmony p-6 border border-harmony-100">
         <h2 className="font-bold text-xl flex items-center gap-2 text-harmony-700 mb-3">
-          <span role="img" aria-label="Summary">🧩</span>
+          <HandHeart className="text-love-500" size={24} />
           Conflict Summary
         </h2>
         <ResolutionSummary summary={plan.summary || plan.raw || ""} />
@@ -99,7 +100,7 @@ const ConflictResolutionPage = () => {
       {isJson && (
         <section className="rounded-xl shadow card-gradient-love p-6 border border-love-100">
           <h2 className="font-bold text-xl flex items-center gap-2 text-love-700 mb-3">
-            <span role="img" aria-label="Tips">🛠️</span>
+            <Puzzle className="text-love-500" size={24} />
             Resolution Tips
           </h2>
           <ResolutionTips tips={plan.resolution_tips || ""} />
@@ -108,7 +109,13 @@ const ConflictResolutionPage = () => {
 
       {/* Empathy Messages Section */}
       {isJson && (
-        <EmpathyMessages empathy_prompts={plan.empathy_prompts || {}} />
+        <section className="rounded-xl shadow card-gradient-calm p-6 border border-calm-100">
+          <h2 className="font-bold text-xl flex items-center gap-2 text-calm-700 mb-3">
+            <MessageSquare className="text-calm-500" size={24} />
+            Nurturing Connection
+          </h2>
+          <EmpathyMessages empathy_prompts={plan.empathy_prompts || {}} />
+        </section>
       )}
 
       {/* Journal Section */}

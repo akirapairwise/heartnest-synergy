@@ -1,6 +1,5 @@
-
 import React from "react";
-import { MessageCircle, Flower } from "lucide-react";
+import { MessageSquare, Flower } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
@@ -13,7 +12,7 @@ const promptConfig = [
   {
     direction: "a",
     label: "Compassionate Words to Your Partner",
-    icon: <Flower className="text-love-500 mt-1" size={22} />,
+    icon: <MessageSquare className="text-love-500 mt-1" size={22} />,
     promptKey: "partner_a",
     instructions: "Share this message with your partner when you feel ready.",
     color: "love",
@@ -23,7 +22,7 @@ const promptConfig = [
   {
     direction: "b",
     label: "Your Partner's Heartfelt Message",
-    icon: <MessageCircle className="text-calm-500 mt-1" size={22} />,
+    icon: <MessageSquare className="text-calm-500 mt-1" size={22} />,
     promptKey: "partner_b",
     instructions: "Your partner's message of understanding and care.",
     color: "calm",
@@ -46,7 +45,7 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({ empathy_prompts }) =>
   return (
     <section className="mt-2">
       <h2 className="font-bold text-lg sm:text-xl mb-4 text-love-700 flex items-center gap-2">
-        <Flower role="img" aria-label="Empathy" size={24} className="text-love-500" /> 
+        <MessageSquare className="text-love-500" size={24} />
         Nurturing Connection
       </h2>
       <div className="flex flex-col gap-5">

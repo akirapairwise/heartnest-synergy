@@ -1,37 +1,73 @@
 
-import React, { useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, AlertCircle, Loader2 } from "lucide-react";
-import { useWeeklyAISummary } from '@/hooks/useWeeklyAISummary';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import React, { useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Sparkles, AlertCircle, Loader2, RotateCcw } from "lucide-react";
+import { useWeeklyAISummary } from "@/hooks/useWeeklyAISummary";
+import { Button } from "@/components/ui/button";
 
 const WeeklyAISummary = () => {
-  const { insight, isLoading, error, fetchWeeklyAISummary } = useWeeklyAISummary();
+  const { status, summary, error, fetchSummary } = useWeeklyAISummary();
 
   useEffect(() => {
-    // Check local storage for cached insight
-    const cachedInsight = localStorage.getItem('weeklyAIInsight');
-    const cachedTimestamp = localStorage.getItem('weeklyAIInsightTimestamp');
-    
-    // Only use cache if it's less than 24 hours old
-    const useCachedInsight = cachedInsight && cachedTimestamp && 
-      (Date.now() - Number(cachedTimestamp) < 24 * 60 * 60 * 1000);
-    
-    if (!useCachedInsight) {
-      fetchWeeklyAISummary();
-    }
+    // Fetch insight on mount
+    fetchSummary();
+    // eslint-disable-next-line
   }, []);
 
-  // Cache the insight when it changes
-  useEffect(() => {
-    if (insight) {
-      localStorage.setItem('weeklyAIInsight', insight);
-      localStorage.setItem('weeklyAIInsightTimestamp', Date.now().toString());
-    }
-  }, [insight]);
-
-  // Use cached insight if available and no fresh data
-  const displayInsight = insight || localStorage.getItem('weeklyAIInsight');
+  let content;
+  if (status === "loading") {
+    content = (
+      <div className="flex flex-col items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-harmony-500 mb-2" />
+        <span className="text-xs text-muted-foreground">Generating your weekly summary...</span>
+      </div>
+    );
+  } else if (status === "error") {
+    content = (
+      <Alert variant="destructive" className="mb-2">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Something went wrong</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+        <div className="flex justify-end mt-3">
+          <Button size="sm" variant="outline" onClick={fetchSummary}>
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Try Again
+          </Button>
+        </div>
+      </Alert>
+    );
+  } else if (summary) {
+    content = (
+      <div className="bg-white p-4 rounded-lg border border-harmony-100">
+        <p className="text-sm whitespace-pre-line">{summary}</p>
+        <div className="flex justify-end mt-2">
+          <Button variant="ghost" size="xs" onClick={fetchSummary}>
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+    );
+  } else {
+    content = (
+      <div className="text-center py-6 text-muted-foreground text-sm">
+        <p>Complete your weekly check-in to receive your AI insight summary.</p>
+        <div className="flex justify-center mt-4">
+          <Button size="sm" variant="outline" onClick={fetchSummary}>
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Get Insight
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="bg-gradient-to-br from-harmony-50 to-calm-50">
@@ -42,29 +78,9 @@ const WeeklyAISummary = () => {
             <CardTitle className="text-md">💡 Weekly AI Insight</CardTitle>
           </div>
         </div>
-        <CardDescription>Based on your moods and check-ins</CardDescription>
+        <CardDescription>Based on your moods, goals & shared moments</CardDescription>
       </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="h-8 w-8 text-harmony-500 animate-spin" />
-          </div>
-        ) : error ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Unable to load weekly summary</AlertTitle>
-            <AlertDescription>We'll try again next time you visit.</AlertDescription>
-          </Alert>
-        ) : displayInsight ? (
-          <div className="bg-white p-4 rounded-lg border border-harmony-100">
-            <p className="text-sm whitespace-pre-line">{displayInsight}</p>
-          </div>
-        ) : (
-          <div className="text-center py-6 text-muted-foreground">
-            <p>Complete your weekly check-in to receive AI insights.</p>
-          </div>
-        )}
-      </CardContent>
+      <CardContent>{content}</CardContent>
     </Card>
   );
 };

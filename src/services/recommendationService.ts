@@ -1,4 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
+import type { Profile } from '@/types/auth';
 
 export type Recommendation = {
   id: string;
@@ -86,18 +88,27 @@ export const generateAIRecommendation = async (userId: string, context?: string)
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const { data: profileData } = await supabase
-      .from('profiles')
+    const { data: profileData, error: profileError } = await supabase
+      .from('user_profiles')
       .select('*')
       .eq('id', userId)
       .single();
+      
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      throw profileError;
+    }
+
+    // Type-safe access to profile properties
+    const relationshipStatus = profileData?.relationship_status || 'Not specified';
+    const areasToImprove = profileData?.areas_to_improve || 'None specified';
 
     // Prepare context for AI generation
     const additionalContext = context || '';
     const fullContext = `
       Relationship Context:
-      - Relationship Status: ${profileData?.relationship_status || 'Not specified'}
-      - Areas to Improve: ${profileData?.areas_to_improve || 'None specified'}
+      - Relationship Status: ${relationshipStatus}
+      - Areas to Improve: ${areasToImprove}
       ${additionalContext}
     `;
 
@@ -114,3 +125,4 @@ export const generateAIRecommendation = async (userId: string, context?: string)
     throw error;
   }
 };
+

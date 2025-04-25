@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,7 +47,7 @@ const UpcomingEventsSection = () => {
           .from('partner_events_with_countdown')
           .select('*')
           .or(`creator_id.eq.${user.id}${profile?.partner_id ? `,and(creator_id.eq.${profile.partner_id},shared_with_partner.eq.true)` : ''}`)
-          .eq('is_archived', 'false')
+          .eq('is_archived', false)
           .order('event_date', { ascending: true });
         
         if (eventsError) throw eventsError;

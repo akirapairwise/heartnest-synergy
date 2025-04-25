@@ -12,6 +12,7 @@ import {
   Recommendation 
 } from '@/services/recommendationService';
 import { toast } from 'sonner';
+import RecommendationCard from '@/components/recommendations/RecommendationCard';
 
 const SuggestionsSection = () => {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -169,48 +170,14 @@ const SuggestionsSection = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {recommendations.map((recommendation) => (
-                <div 
-                  key={recommendation.id} 
-                  className={`border-l-4 ${getCategoryColors(recommendation.category)} rounded-lg p-4 bg-card shadow-sm`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      {getCategoryIcon(recommendation.category)}
-                      <h3 className="font-medium capitalize">{recommendation.category}</h3>
-                    </div>
-                    
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(recommendation.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  
-                  {recommendation.context && (
-                    <p className="text-xs text-muted-foreground mb-2">{recommendation.context}</p>
-                  )}
-                  
-                  <p className="text-sm mb-3">{recommendation.suggestion}</p>
-                  
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      variant={recommendation.is_liked === false ? "default" : "outline"} 
-                      size="sm" 
-                      className="h-8 px-2"
-                      onClick={() => handleFeedback(recommendation.id, false)}
-                    >
-                      <ThumbsDown className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant={recommendation.is_liked === true ? "default" : "outline"} 
-                      size="sm" 
-                      className="h-8 px-2"
-                      onClick={() => handleFeedback(recommendation.id, true)}
-                    >
-                      <ThumbsUp className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <RecommendationCard
+                  key={recommendation.id}
+                  category={recommendation.category}
+                  suggestion={recommendation.suggestion}
+                  className="animate-fade-in"
+                />
               ))}
             </div>
             

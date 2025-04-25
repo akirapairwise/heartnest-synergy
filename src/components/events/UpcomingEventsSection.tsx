@@ -1,5 +1,4 @@
-
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus } from 'lucide-react';
@@ -30,13 +29,14 @@ interface EventWithFeedback {
 }
 
 const UpcomingEventsSection = () => {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [eventsKey, setEventsKey] = useState(0); // To force refetch
   const fabRef = useRef<HTMLButtonElement>(null);
   const { user, profile } = useAuth();
   const isMobile = useIsMobile();
 
   const { data: events, isLoading, refetch } = useQuery({
-    queryKey: ['upcoming-events', user?.id, profile?.partner_id],
+    queryKey: ['upcoming-events', user?.id, profile?.partner_id, eventsKey],
     queryFn: async () => {
       if (!user) return [];
       
@@ -156,6 +156,11 @@ const UpcomingEventsSection = () => {
     />
   );
 
+  const handleEventArchived = () => {
+    // Force refetch of events by changing the query key
+    setEventsKey(prev => prev + 1);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -235,6 +240,7 @@ const UpcomingEventsSection = () => {
               feedback={event.feedback}
               hasFeedback={event.has_feedback}
               onEventUpdated={refetch}
+              onArchive={handleEventArchived} // Add archive handler
             />
           ))
         )}

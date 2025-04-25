@@ -1,13 +1,14 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, MapPin, Users, Heart, Film, Plane, Music, Gift, PartyPopper, Star, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, Heart, Film, Plane, Music, Gift, PartyPopper, Star, Clock, Archive } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 import { cn } from '@/lib/utils';
 import EventDetailsDialog from './EventDetailsDialog';
 import EditEventDialog from './EditEventDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { isEventPast } from './utils/eventStatus';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 interface EventCardProps {
   id: string;
@@ -21,6 +22,7 @@ interface EventCardProps {
   feedback?: string | null;
   hasFeedback?: boolean;
   onEventUpdated: () => void;
+  onArchive?: () => void;
 }
 
 const EventCard = ({
@@ -35,6 +37,7 @@ const EventCard = ({
   feedback,
   hasFeedback,
   onEventUpdated,
+  onArchive,
 }: EventCardProps) => {
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
@@ -91,6 +94,31 @@ const EventCard = ({
       return 'bg-gradient-to-br from-white to-amber-50/60 border-amber-100';
     } else {
       return 'bg-gradient-to-br from-white to-primary-50/30';
+    }
+  };
+
+  const handleArchiveEvent = async () => {
+    try {
+      const { error } = await supabase
+        .from('partner_events')
+        .update({ is_archived: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Event Archived",
+        description: "The event has been moved to archives.",
+      });
+
+      onArchive?.();
+    } catch (error) {
+      console.error('Error archiving event:', error);
+      toast({
+        title: "Error",
+        description: "Could not archive the event. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -175,6 +203,18 @@ const EventCard = ({
                   {Math.abs(daysToEvent)} days ago
                 </div>
               </div>
+            )}
+            {!isUpcoming && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleArchiveEvent();
+                }}
+                className="text-muted-foreground hover:text-primary transition-colors"
+                title="Archive Event"
+              >
+                <Archive className="h-4 w-4" />
+              </button>
             )}
           </div>
         </CardContent>

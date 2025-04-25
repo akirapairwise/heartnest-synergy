@@ -164,6 +164,10 @@ const UpcomingEventsSection = () => {
     setEventsKey(prev => prev + 1);
   };
 
+  const navigateToSuggestions = () => {
+    navigate('/event-suggestions');
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -209,8 +213,8 @@ const UpcomingEventsSection = () => {
         </h2>
         <div className="flex gap-2">
           <Button 
-            onClick={() => navigate('/event-suggestions')}
-            variant="outline"
+            onClick={navigateToSuggestions}
+            variant="gradient"
             className="gap-2"
           >
             <Sparkles className="h-4 w-4" />
@@ -230,13 +234,22 @@ const UpcomingEventsSection = () => {
         {events?.length === 0 ? (
           <Card className="p-6 text-center rounded-xl bg-muted/20">
             <p className="text-muted-foreground mb-3">No upcoming events</p>
-            <Button 
-              variant="gradient" 
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="mt-2"
-            >
-              Create your first event
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                variant="gradient" 
+                onClick={navigateToSuggestions}
+                className="gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Get AI Suggestions
+              </Button>
+              <Button 
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="mt-2 sm:mt-0"
+              >
+                Create Event Manually
+              </Button>
+            </div>
           </Card>
         ) : (
           events?.map((event) => (
@@ -265,14 +278,23 @@ const UpcomingEventsSection = () => {
         animate={{ opacity: 1, scale: 1 }}
         className="fixed right-6 bottom-6 z-10 md:hidden"
       >
-        <Button
-          ref={fabRef}
-          onClick={() => setIsCreateDialogOpen(true)}
-          size="lg"
-          className="rounded-full w-14 h-14 shadow-lg bg-gradient-to-r from-love-500 to-primary hover:shadow-xl transition-all duration-300"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+        <div className="flex flex-col gap-2 items-end">
+          <Button
+            onClick={navigateToSuggestions}
+            size="icon"
+            className="rounded-full w-12 h-12 shadow-lg bg-gradient-to-r from-purple-500 to-primary hover:shadow-xl transition-all duration-300"
+          >
+            <Sparkles className="h-5 w-5" />
+          </Button>
+          <Button
+            ref={fabRef}
+            onClick={() => setIsCreateDialogOpen(true)}
+            size="icon"
+            className="rounded-full w-14 h-14 shadow-lg bg-gradient-to-r from-love-500 to-primary hover:shadow-xl transition-all duration-300"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </div>
       </motion.div>
 
       {isMobile ? (

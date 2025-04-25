@@ -22,7 +22,7 @@ serve(async (req) => {
       throw new Error('OpenAI API key is not configured');
     }
 
-    console.log(`Generating event suggestions for user ${userId} in ${location}`);
+    console.log(`Generating event suggestions for user ${userId} in ${location || 'unspecified location'}`);
     
     // Construct the prompt for OpenAI
     const systemPrompt = `You are "Pairwise Planner," an AI-powered event assistant for couples. 
@@ -37,7 +37,7 @@ serve(async (req) => {
     - benefit (string): One sentence on why this will strengthen their relationship
     - event_link (string, optional): URL for more info (only include if it's a specific event)
     
-    Output ONLY a valid JSON array of suggestion objects. Include realistic, varied suggestions based on the provided context.`;
+    IMPORTANT: Return ONLY a valid JSON array with no markdown formatting.`;
 
     const userPrompt = `Generate personalized event suggestions based on these details:
     Location: ${location || 'Unknown'}
@@ -74,16 +74,31 @@ serve(async (req) => {
     const data = await response.json();
     const suggestionsText = data.choices[0].message.content.trim();
     
-    console.log('Successfully generated suggestions');
+    console.log('Raw OpenAI response:', suggestionsText);
     
-    // Parse the response as JSON (it should be a JSON array)
+    // Parse the response as JSON, handling possible markdown code blocks
     let suggestions;
     try {
+      // First attempt: try parsing directly
       suggestions = JSON.parse(suggestionsText);
     } catch (error) {
-      console.error('Error parsing OpenAI response as JSON:', error);
-      throw new Error('Failed to parse event suggestions');
+      // Second attempt: try to extract JSON from markdown code blocks if present
+      console.log('Direct JSON parsing failed, attempting to extract from markdown');
+      const jsonMatch = suggestionsText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch && jsonMatch[1]) {
+        try {
+          suggestions = JSON.parse(jsonMatch[1].trim());
+        } catch (innerError) {
+          console.error('Error parsing extracted content:', innerError);
+          throw new Error('Failed to parse event suggestions from markdown');
+        }
+      } else {
+        console.error('Error parsing OpenAI response as JSON:', error);
+        throw new Error('Failed to parse event suggestions');
+      }
     }
+    
+    console.log('Successfully parsed suggestions');
     
     // Save to Supabase if we have a service role key
     if (serviceRoleKey && userId) {

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Heart, ChevronRight, Sparkles, Target, MessageSquare, BarChart4, Calendar } from "lucide-react";
@@ -37,7 +38,6 @@ const Index = () => {
               size="lg" 
               className="px-6 py-6"
               onClick={() => {
-                // Scroll to features section
                 document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
               }}
             >
@@ -120,49 +120,70 @@ const Index = () => {
             </div>
           </Card>
           
-          <div className="heart-card">
-            <div className="flex justify-center mb-4">
-              <div className="bg-harmony-100 p-3 rounded-full">
-                <BarChart4 className="h-6 w-6 text-harmony-600" />
+          {/* Relationship Insights Card */}
+          <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 relative cursor-pointer"
+                onClick={() => navigate('/recommendations')}>
+            <div className="p-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-harmony-100 p-3 rounded-full group-hover:bg-harmony-200 transition-colors">
+                  <BarChart4 className="h-6 w-6 text-harmony-600" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-center mb-2">Relationship Insights</h3>
+              <p className="text-center text-muted-foreground">
+                Gain valuable insights into your relationship patterns and dynamics over time.
+              </p>
+              <div className="mt-4 flex justify-center">
+                <Button variant="ghost" size="sm" className="group-hover:bg-harmony-50">
+                  Try Now <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-center mb-2">Relationship Insights</h3>
-            <p className="text-center text-muted-foreground">
-              Gain valuable insights into your relationship patterns and dynamics over time.
-            </p>
-          </div>
+          </Card>
           
-          <div className="heart-card">
-            <div className="flex justify-center mb-4">
-              <div className="bg-love-100 p-3 rounded-full">
-                <Sparkles className="h-6 w-6 text-love-600" />
+          {/* AI Recommendations Card */}
+          <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 relative cursor-pointer"
+                onClick={() => navigate('/event-suggestions')}>
+            <div className="p-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-love-100 p-3 rounded-full group-hover:bg-love-200 transition-colors">
+                  <Sparkles className="h-6 w-6 text-love-600" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-center mb-2">AI Recommendations</h3>
+              <p className="text-center text-muted-foreground">
+                Discover personalized events and activities tailored to your relationship preferences.
+              </p>
+              <div className="mt-4 flex justify-center">
+                <Button variant="ghost" size="sm" className="group-hover:bg-love-50">
+                  Try Now <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-center mb-2">AI Recommendations</h3>
-            <p className="text-center text-muted-foreground">
-              Receive personalized recommendations and activities tailored to your relationship.
-            </p>
-          </div>
+          </Card>
           
-          <div className="heart-card relative overflow-hidden">
+          {/* Couples Therapy Card */}
+          <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 relative cursor-pointer">
             <div className="absolute -top-10 -right-10 bg-green-500 text-white text-xs transform rotate-45 py-1 px-10">
               <span className="font-medium">Coming Soon</span>
             </div>
-            <div className="flex justify-center mb-4">
-              <div className="bg-calm-100 p-3 rounded-full">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-calm-600">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                  <line x1="9" y1="9" x2="9.01" y2="9" />
-                  <line x1="15" y1="9" x2="15.01" y2="9" />
-                </svg>
+            <div className="p-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-calm-100 p-3 rounded-full group-hover:bg-calm-200 transition-colors">
+                  <MessageSquare className="h-6 w-6 text-calm-600" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-center mb-2">Couples Therapy</h3>
+              <p className="text-center text-muted-foreground">
+                Access guided therapy exercises and resources developed by relationship experts.
+              </p>
+              <div className="mt-4 flex justify-center">
+                <Button variant="ghost" size="sm" className="group-hover:bg-calm-50" disabled>
+                  Coming Soon <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-center mb-2">Couples Therapy</h3>
-            <p className="text-center text-muted-foreground">
-              Access guided therapy exercises and resources developed by relationship experts.
-            </p>
-          </div>
+          </Card>
         </div>
       </div>
       

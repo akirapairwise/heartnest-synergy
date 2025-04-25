@@ -15,6 +15,16 @@ serve(async (req) => {
   try {
     const { userId, context, category } = await req.json();
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://itmegnklwvtitwknyvkm.supabase.co';
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
+
+    if (!serviceRoleKey) {
+      throw new Error('Supabase service role key is not configured');
+    }
 
     // Define the system prompt based on category
     let systemPrompt = 'You are an AI relationship coach. Generate a personalized, actionable recommendation for improving a romantic relationship.';
@@ -29,6 +39,9 @@ serve(async (req) => {
     
     systemPrompt += ' Focus on practical, constructive advice that can help partners grow closer, communicate better, and understand each other. Always provide specific, implementable suggestions.';
 
+    console.log(`Generating AI recommendation with category: ${category}`);
+    
+    // Generate the recommendation using OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -59,13 +72,15 @@ serve(async (req) => {
 
     const data = await response.json();
     const recommendation = data.choices[0].message.content.trim();
+    
+    console.log('Successfully generated recommendation. Saving to database...');
 
-    // Insert recommendation into Supabase
-    const supabaseResponse = await fetch('https://itmegnklwvtitwknyvkm.supabase.co/rest/v1/ai_recommendations', {
+    // Insert recommendation into Supabase using SERVICE_ROLE key to bypass RLS
+    const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/ai_recommendations`, {
       method: 'POST',
       headers: {
-        'apikey': Deno.env.get('SUPABASE_ANON_KEY'),
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
@@ -79,10 +94,17 @@ serve(async (req) => {
 
     if (!supabaseResponse.ok) {
       const errorText = await supabaseResponse.text();
+      console.error('Supabase response status:', supabaseResponse.status);
+      console.error('Supabase error response:', errorText);
       throw new Error(`Supabase insert error: ${errorText}`);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    console.log('Successfully saved recommendation to database');
+    
+    return new Response(JSON.stringify({ 
+      success: true,
+      category: category || 'ai_generated'
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 

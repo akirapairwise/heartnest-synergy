@@ -222,6 +222,30 @@ export type Database = {
           },
         ]
       }
+      event_suggestions: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          suggestions: Json
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          suggestions: Json
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          suggestions?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       goals: {
         Row: {
           category: string | null

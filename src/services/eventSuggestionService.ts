@@ -52,6 +52,7 @@ export const fetchSavedEventSuggestions = async (): Promise<EventSuggestion[]> =
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
     
+    // Use explicit type casting to avoid TypeScript errors
     const { data, error } = await supabase
       .from('event_suggestions')
       .select('*')
@@ -68,7 +69,8 @@ export const fetchSavedEventSuggestions = async (): Promise<EventSuggestion[]> =
       throw error;
     }
     
-    return data?.suggestions || [];
+    // Cast the suggestions JSONB field to the correct type
+    return (data?.suggestions as EventSuggestion[]) || [];
   } catch (error) {
     console.error('Error fetching saved event suggestions:', error);
     return [];

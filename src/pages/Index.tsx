@@ -1,7 +1,8 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Heart, ChevronRight, Sparkles, Target, MessageSquare, BarChart4 } from "lucide-react";
+import { Heart, ChevronRight, Sparkles, Target, MessageSquare, BarChart4, Calendar } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -56,41 +57,68 @@ const Index = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div className="heart-card">
-            <div className="flex justify-center mb-4">
-              <div className="bg-love-100 p-3 rounded-full">
-                <Heart className="h-6 w-6 text-love-600" />
+          {/* Event Planning Card */}
+          <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 relative cursor-pointer"
+                onClick={() => navigate('/event-suggestions')}>
+            <div className="p-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-love-100 p-3 rounded-full group-hover:bg-love-200 transition-colors">
+                  <Calendar className="h-6 w-6 text-love-600" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-center mb-2">AI Event Planning</h3>
+              <p className="text-center text-muted-foreground">
+                Get personalized date ideas and event suggestions powered by AI.
+              </p>
+              <div className="mt-4 flex justify-center">
+                <Button variant="ghost" size="sm" className="group-hover:bg-love-50">
+                  Try Now <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-center mb-2">Emotional Tracking</h3>
-            <p className="text-center text-muted-foreground">
-              Track your relationship moods and emotions to identify patterns and growth opportunities.
-            </p>
-          </div>
-          
-          <div className="heart-card">
-            <div className="flex justify-center mb-4">
-              <div className="bg-harmony-100 p-3 rounded-full">
-                <Target className="h-6 w-6 text-harmony-600" />
+          </Card>
+
+          {/* Emotional Tracking Card */}
+          <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 relative cursor-pointer"
+                onClick={() => navigate('/moods')}>
+            <div className="p-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-harmony-100 p-3 rounded-full group-hover:bg-harmony-200 transition-colors">
+                  <Heart className="h-6 w-6 text-harmony-600" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-center mb-2">Mood Tracking</h3>
+              <p className="text-center text-muted-foreground">
+                Track your relationship moods and emotions to identify patterns.
+              </p>
+              <div className="mt-4 flex justify-center">
+                <Button variant="ghost" size="sm" className="group-hover:bg-harmony-50">
+                  Try Now <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-center mb-2">Relationship Goals</h3>
-            <p className="text-center text-muted-foreground">
-              Set and achieve meaningful goals to strengthen your connection and build a shared vision.
-            </p>
-          </div>
-          
-          <div className="heart-card">
-            <div className="flex justify-center mb-4">
-              <div className="bg-calm-100 p-3 rounded-full">
-                <MessageSquare className="h-6 w-6 text-calm-600" />
+          </Card>
+
+          {/* Goals Card */}
+          <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 relative cursor-pointer"
+                onClick={() => navigate('/goals')}>
+            <div className="p-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-calm-100 p-3 rounded-full group-hover:bg-calm-200 transition-colors">
+                  <Target className="h-6 w-6 text-calm-600" />
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-center mb-2">Relationship Goals</h3>
+              <p className="text-center text-muted-foreground">
+                Set and achieve meaningful goals together to strengthen your bond.
+              </p>
+              <div className="mt-4 flex justify-center">
+                <Button variant="ghost" size="sm" className="group-hover:bg-calm-50">
+                  Try Now <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-center mb-2">Conflict Resolution</h3>
-            <p className="text-center text-muted-foreground">
-              Navigate disagreements constructively with guided communication tools and strategies.
-            </p>
-          </div>
+          </Card>
           
           <div className="heart-card">
             <div className="flex justify-center mb-4">

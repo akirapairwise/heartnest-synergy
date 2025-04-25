@@ -1,8 +1,7 @@
-
 import React, { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -13,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { useNavigate } from 'react-router-dom';
 
 interface EventWithFeedback {
   id: string;
@@ -35,6 +35,7 @@ const UpcomingEventsSection = () => {
   const fabRef = useRef<HTMLButtonElement>(null);
   const { user, profile } = useAuth();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const { data: events, isLoading, refetch } = useQuery({
     queryKey: ['upcoming-events', user?.id, profile?.partner_id, eventsKey],
@@ -206,13 +207,23 @@ const UpcomingEventsSection = () => {
         <h2 className="text-2xl font-semibold font-heading text-primary">
           What are you both looking forward to?
         </h2>
-        <Button 
-          onClick={() => setIsCreateDialogOpen(true)}
-          className="gap-2 rounded-full bg-primary hover:bg-primary/90 transition-transform duration-300 hover:scale-105 shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Add Event</span>
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => navigate('/event-suggestions')}
+            variant="outline"
+            className="gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">Get AI Suggestions</span>
+          </Button>
+          <Button 
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="gap-2 rounded-full bg-primary hover:bg-primary/90 transition-transform duration-300 hover:scale-105 shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Add Event</span>
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-4 mt-6">

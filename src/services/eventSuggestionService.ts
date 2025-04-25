@@ -8,6 +8,8 @@ export type EventSuggestion = {
   duration: string;
   distance: string;
   benefit: string;
+  exact_location?: string;
+  map_coordinates?: { lat: number; lng: number };
   event_link?: string;
 };
 

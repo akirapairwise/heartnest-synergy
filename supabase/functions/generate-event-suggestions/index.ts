@@ -35,9 +35,15 @@ serve(async (req) => {
     - duration (string): Estimated time needed, e.g. "2 hours"
     - distance (string): Approximate distance, e.g. "3 km away" (if location provided)
     - benefit (string): One sentence on why this will strengthen their relationship
-    - event_link (string, optional): URL for more info (only include if it's a specific event)
+    - exact_location (string): Provide a specific venue name and address when possible (e.g. "Central Park, 59th St & 5th Ave, New York, NY")
+    - map_coordinates (object): Include latitude and longitude for mapping, e.g. {"lat": 40.7829, "lng": -73.9654} (for real venues)
+    - event_link (string, optional): URL for the official venue or direct booking page (ONLY include verified, working links)
     
-    IMPORTANT: Return ONLY a valid JSON array with no markdown formatting.`;
+    IMPORTANT: 
+    1. Return ONLY a valid JSON array with no markdown formatting
+    2. For event_link, only provide URLs for actual venues or booking pages that exist
+    3. When providing exact_location and map_coordinates, use real locations that exist in the specified area
+    4. If location isn't provided, use general suggestions with no specific addresses or coordinates`;
 
     const userPrompt = `Generate personalized event suggestions based on these details:
     Location: ${location || 'Unknown'}
@@ -61,7 +67,7 @@ serve(async (req) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        max_tokens: 1000,
+        max_tokens: 1500,
         temperature: 0.7
       }),
     });

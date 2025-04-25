@@ -304,6 +304,7 @@ export type Database = {
           description: string | null
           event_date: string
           id: string
+          is_archived: boolean | null
           location: string | null
           shared_with_partner: boolean
           title: string
@@ -315,6 +316,7 @@ export type Database = {
           description?: string | null
           event_date: string
           id?: string
+          is_archived?: boolean | null
           location?: string | null
           shared_with_partner?: boolean
           title: string
@@ -326,6 +328,7 @@ export type Database = {
           description?: string | null
           event_date?: string
           id?: string
+          is_archived?: boolean | null
           location?: string | null
           shared_with_partner?: boolean
           title?: string
@@ -574,6 +577,7 @@ export type Database = {
           description: string | null
           event_date: string | null
           id: string | null
+          is_archived: boolean | null
           location: string | null
           shared_with_partner: boolean | null
           title: string | null
@@ -586,6 +590,7 @@ export type Database = {
           description?: string | null
           event_date?: string | null
           id?: string | null
+          is_archived?: boolean | null
           location?: string | null
           shared_with_partner?: boolean | null
           title?: string | null
@@ -598,6 +603,7 @@ export type Database = {
           description?: string | null
           event_date?: string | null
           id?: string | null
+          is_archived?: boolean | null
           location?: string | null
           shared_with_partner?: boolean | null
           title?: string | null

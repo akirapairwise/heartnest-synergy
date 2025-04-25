@@ -104,7 +104,7 @@ const SuggestionsSection = () => {
     
     setIsGenerating(true);
     try {
-      await generateAIRecommendation(user.id);
+      await generateAIRecommendation(user.id, selectedCategory !== 'all' ? selectedCategory : undefined);
       toast.success('AI-powered recommendation generated!');
       fetchUserRecommendations();
     } catch (error) {

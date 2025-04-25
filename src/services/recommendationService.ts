@@ -83,7 +83,7 @@ export const generateRecommendation = async (userId: string, category: string): 
   if (error) throw error;
 };
 
-export const generateAIRecommendation = async (userId: string, context?: string): Promise<void> => {
+export const generateAIRecommendation = async (userId: string, category?: string, context?: string): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
@@ -115,7 +115,8 @@ export const generateAIRecommendation = async (userId: string, context?: string)
     const { error } = await supabase.functions.invoke('generate-ai-recommendation', {
       body: JSON.stringify({ 
         userId, 
-        context: fullContext 
+        context: fullContext,
+        category: category || 'ai_generated'
       })
     });
 
@@ -125,4 +126,3 @@ export const generateAIRecommendation = async (userId: string, context?: string)
     throw error;
   }
 };
-

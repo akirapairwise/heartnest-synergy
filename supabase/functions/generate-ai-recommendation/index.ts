@@ -13,8 +13,21 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, context } = await req.json();
+    const { userId, context, category } = await req.json();
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+
+    // Define the system prompt based on category
+    let systemPrompt = 'You are an AI relationship coach. Generate a personalized, actionable recommendation for improving a romantic relationship.';
+    
+    if (category === 'books') {
+      systemPrompt = 'You are an AI relationship coach specializing in book recommendations. Suggest a specific book that would help this relationship grow, including the author name and a brief explanation of why it would be beneficial.';
+    } else if (category === 'activities') {
+      systemPrompt = 'You are an AI relationship coach specializing in activities. Suggest a specific activity that this couple could do together to strengthen their bond, with practical steps to implement it.';
+    } else if (category === 'date_ideas') {
+      systemPrompt = 'You are an AI relationship coach specializing in date ideas. Suggest a creative date idea tailored to this couple\'s relationship context, with specific details on how to plan it.';
+    }
+    
+    systemPrompt += ' Focus on practical, constructive advice that can help partners grow closer, communicate better, and understand each other. Always provide specific, implementable suggestions.';
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -27,9 +40,7 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: `You are an AI relationship coach. Generate a personalized, actionable recommendation for improving a romantic relationship. 
-            Focus on practical, constructive advice that can help partners grow closer, communicate better, and understand each other.
-            Always provide specific, implementable suggestions.` 
+            content: systemPrompt
           },
           { 
             role: 'user', 
@@ -60,7 +71,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         user_id: userId,
-        category: 'ai_generated',
+        category: category || 'ai_generated',
         suggestion: recommendation,
         context: context
       })

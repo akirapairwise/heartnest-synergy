@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 import AppLayout from "./components/layout/AppLayout";
 import InvitePage from "./pages/InvitePage";
 import ConflictResolutionPage from "./pages/ConflictResolutionPage";
+import EventSuggestionsPage from "./pages/EventSuggestionsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +52,7 @@ const App = () => (
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/check-ins" element={<CheckInsPage />} />
             <Route path="/recommendations" element={<RecommendationsPage />} />
+            <Route path="/event-suggestions" element={<EventSuggestionsPage />} />
             <Route path="/profile" element={<Navigate to="/profile/settings" replace />} />
             <Route path="/profile/settings" element={<ProfileSettingsPage />} />
           </Route>

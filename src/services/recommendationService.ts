@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type Recommendation = {
@@ -80,4 +79,38 @@ export const generateRecommendation = async (userId: string, category: string): 
     });
     
   if (error) throw error;
+};
+
+export const generateAIRecommendation = async (userId: string, context?: string): Promise<void> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    // Prepare context for AI generation
+    const additionalContext = context || '';
+    const fullContext = `
+      Relationship Context:
+      - Relationship Status: ${profileData?.relationship_status || 'Not specified'}
+      - Areas to Improve: ${profileData?.areas_to_improve || 'None specified'}
+      ${additionalContext}
+    `;
+
+    const { error } = await supabase.functions.invoke('generate-ai-recommendation', {
+      body: JSON.stringify({ 
+        userId, 
+        context: fullContext 
+      })
+    });
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error generating AI recommendation:', error);
+    throw error;
+  }
 };

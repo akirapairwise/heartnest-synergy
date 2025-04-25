@@ -1,11 +1,16 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, ThumbsUp, ThumbsDown, BookOpen, Activity, Calendar } from "lucide-react";
+import { Sparkles, ThumbsUp, ThumbsDown, BookOpen, Activity, Calendar, Brain } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchRecommendations, generateRecommendation, updateRecommendationFeedback, Recommendation } from '@/services/recommendationService';
+import { 
+  fetchRecommendations, 
+  generateRecommendation, 
+  generateAIRecommendation,
+  updateRecommendationFeedback, 
+  Recommendation 
+} from '@/services/recommendationService';
 import { toast } from 'sonner';
 
 const SuggestionsSection = () => {
@@ -93,6 +98,22 @@ const SuggestionsSection = () => {
         return 'border-l-amber-500';
     }
   };
+
+  const handleGenerateAIRecommendation = async () => {
+    if (!user) return;
+    
+    setIsGenerating(true);
+    try {
+      await generateAIRecommendation(user.id);
+      toast.success('AI-powered recommendation generated!');
+      fetchUserRecommendations();
+    } catch (error) {
+      console.error('Error generating AI recommendation:', error);
+      toast.error('Failed to generate AI recommendation');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
   
   return (
     <Card>
@@ -120,6 +141,17 @@ const SuggestionsSection = () => {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleGenerateAIRecommendation}
+            disabled={isGenerating}
+          >
+            <Brain className="mr-2 h-4 w-4 text-purple-500" />
+            {isGenerating ? 'Generating AI Suggestion...' : 'Generate AI Suggestion'}
+          </Button>
         </div>
       </CardHeader>
       <CardContent>

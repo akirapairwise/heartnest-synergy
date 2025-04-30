@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { startOfWeek, isAfter, nextSunday, isSameWeek, addDays } from 'date-fns';
+import { startOfWeek, isAfter, nextSunday, isSameDay, addDays, isSunday } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,15 +20,11 @@ export const useWeeklyCheckInReminder = () => {
       try {
         setIsLoading(true);
         
-        // Get the start of the current week (Sunday)
-        const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
-        
-        // Check if a weekly check-in exists for the current week
+        // Get the most recent check-in
         const { data, error } = await supabase
           .from('weekly_check_ins')
           .select('checkin_date')
           .eq('user_id', user.id)
-          .gte('checkin_date', currentWeekStart.toISOString().split('T')[0])
           .order('checkin_date', { ascending: false })
           .limit(1);
           
@@ -36,30 +32,40 @@ export const useWeeklyCheckInReminder = () => {
           console.error('Error checking weekly check-in:', error);
           return;
         }
+
+        const today = new Date();
         
-        // If no data or empty array, user hasn't checked in this week
-        const hasCheckedInThisWeek = data.length > 0;
+        // Calculate when the next check-in reminder should show
+        let shouldShowReminder = false;
         
-        // Get the last reminder shown timestamp from localStorage
-        const lastReminderShown = localStorage.getItem('lastCheckInReminderShown');
-        
-        // By default, show the reminder if they haven't checked in this week
-        let shouldShowReminder = !hasCheckedInThisWeek;
-        
-        // If we have shown a reminder this week already, don't show again
-        if (shouldShowReminder && lastReminderShown) {
-          const lastReminderDate = new Date(lastReminderShown);
+        // If no previous check-ins, show reminder only on Sunday
+        if (data.length === 0) {
+          shouldShowReminder = isSunday(today);
+        } else {
+          // Get the date of the most recent check-in
+          const lastCheckInDate = new Date(data[0].checkin_date);
           
-          // Check if the last reminder was shown in this week
-          // If it was shown this week, don't show again
-          if (isSameWeek(lastReminderDate, new Date(), { weekStartsOn: 0 })) {
-            shouldShowReminder = false;
+          // Calculate the next Sunday after the last check-in
+          const nextReminderDate = nextSunday(lastCheckInDate);
+          
+          // Show reminder if today is the next Sunday after the last check-in
+          shouldShowReminder = isSunday(today) && isAfter(today, nextReminderDate);
+        }
+        
+        // Check if we've already shown the reminder today (to prevent showing on every login)
+        if (shouldShowReminder) {
+          const lastReminderShown = localStorage.getItem('lastCheckInReminderShown');
+          
+          if (lastReminderShown) {
+            const lastReminderDate = new Date(lastReminderShown);
+            
+            // If we've already shown a reminder today, don't show again
+            if (isSameDay(lastReminderDate, today)) {
+              shouldShowReminder = false;
+            }
           }
         }
         
-        // If they checked in in a previous week (not this one),
-        // and the last reminder is from a previous week,
-        // then we should show the reminder
         setShowReminder(shouldShowReminder);
       } catch (error) {
         console.error('Error in check-in reminder:', error);
@@ -74,7 +80,7 @@ export const useWeeklyCheckInReminder = () => {
   // Function to dismiss the reminder
   const dismissReminder = () => {
     setShowReminder(false);
-    // Save the current timestamp to localStorage to prevent showing again this week
+    // Save the current timestamp to localStorage to prevent showing again today
     localStorage.setItem('lastCheckInReminderShown', new Date().toISOString());
   };
   

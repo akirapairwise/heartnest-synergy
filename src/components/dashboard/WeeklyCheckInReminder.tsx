@@ -18,7 +18,7 @@ const WeeklyCheckInReminder = () => {
   }
   
   const handleCheckInClick = () => {
-    // Save the current timestamp to localStorage to prevent showing again this week
+    // Save the current timestamp to localStorage to prevent showing again today
     localStorage.setItem('lastCheckInReminderShown', new Date().toISOString());
     // Navigate to the check-ins page
     navigate('/check-ins');
@@ -30,9 +30,9 @@ const WeeklyCheckInReminder = () => {
         <div className="flex items-center">
           <CalendarCheck className="h-5 w-5 text-harmony-500 mr-2" />
           <div>
-            <AlertTitle>Don't forget your weekly check-in</AlertTitle>
+            <AlertTitle>It's time for your weekly check-in</AlertTitle>
             <AlertDescription className="mr-4">
-              Keep track of your relationship progress by completing your weekly check-in.
+              Keep track of your relationship progress with your Sunday check-in. Your next reminder will appear in a week.
             </AlertDescription>
           </div>
         </div>

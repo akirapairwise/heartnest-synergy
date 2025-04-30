@@ -185,13 +185,13 @@ const WeeklyCheckInInsights: React.FC = () => {
               />
             </TabsContent>
             
-            <TabsContent value="ai-summary" className="min-h-[300px]">
+            <TabsContent value="ai-summary" className="min-h-[300px] w-full">
               {summaryStatus === 'loading' ? (
                 <div className="flex justify-center items-center h-[300px]">
                   <Skeleton className="w-full h-[300px]" />
                 </div>
               ) : summary ? (
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-full mx-auto">
                   <ResolutionSummary summary={summary} />
                 </div>
               ) : (

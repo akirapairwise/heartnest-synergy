@@ -71,7 +71,7 @@ const CheckInsPage = () => {
         
         <TabsContent value="insights" className="mt-4">
           <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
               <div className="flex items-center gap-2 mb-6">
                 <BarChart className="h-5 w-5 text-primary" />
                 <h2 className="text-2xl font-bold">Relationship Insights</h2>
@@ -82,7 +82,7 @@ const CheckInsPage = () => {
         </TabsContent>
         
         <TabsContent value="calendar" className="mt-4">
-          <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
             <div className="flex items-center gap-2 mb-6">
               <Calendar className="h-5 w-5 text-primary" />
               <h2 className="text-2xl font-bold">Check-In Calendar</h2>

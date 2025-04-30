@@ -65,7 +65,7 @@ const WeeklyAISummary = () => {
     if (!hasEmotionalJourney && !hasRelationshipGrowth && !hasSuggestedFocus) {
       // If we don't have standard sections, just return the text formatted nicely
       return (
-        <div className="prose prose-sm max-w-none text-harmony-700 whitespace-pre-line">
+        <div className="prose prose-sm max-w-none text-harmony-700 whitespace-pre-line px-1">
           {text}
         </div>
       );
@@ -118,12 +118,12 @@ const WeeklyAISummary = () => {
       <Target className="h-5 w-5 text-calm-500" />
     );
     
-    // Render the sections
+    // Render the sections with improved formatting
     return (
       <div className="space-y-6">
         {sections.map((section, index) => (
           <div key={index} className="animate-fade-in" style={{animationDelay: `${index * 150}ms`}}>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <div className="p-1.5 rounded-full bg-gradient-to-br from-white to-gray-100 shadow-sm">
                 {section.icon}
               </div>
@@ -132,8 +132,37 @@ const WeeklyAISummary = () => {
               </h3>
             </div>
             <div className="pl-2 border-l-2 border-harmony-100">
-              <div className="prose prose-sm max-w-none text-harmony-700 pl-3">
-                {section.content}
+              <div className="prose prose-sm max-w-none text-harmony-700 pl-3 space-y-2">
+                {/* Format content by splitting paragraphs and adding proper spacing */}
+                {section.content.split('\n').map((paragraph, i) => {
+                  // Process bullet points and numbered lists for better formatting
+                  if (paragraph.trim().startsWith('-') || paragraph.trim().match(/^\d+\./)) {
+                    const items = section.content.split('\n')
+                      .filter(line => line.trim().startsWith('-') || line.trim().match(/^\d+\./))
+                      .map(line => line.trim().replace(/^-\s*/, '').replace(/^\d+\.\s*/, ''));
+                    
+                    return (
+                      <ul key={`list-${index}-${i}`} className="space-y-2 list-disc pl-4 my-3">
+                        {items.map((item, itemIndex) => (
+                          <li key={`item-${index}-${i}-${itemIndex}`} className="text-harmony-700">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  }
+                  
+                  // Regular paragraphs with proper spacing
+                  if (paragraph.trim()) {
+                    return (
+                      <p key={`para-${index}-${i}`} className="text-sm sm:text-base leading-relaxed text-harmony-700 my-2">
+                        {paragraph}
+                      </p>
+                    );
+                  }
+                  
+                  return null;
+                })}
               </div>
             </div>
           </div>
@@ -176,10 +205,10 @@ const WeeklyAISummary = () => {
     content = (
       <div className={cn(
         "bg-white rounded-lg border border-harmony-100 shadow-sm transition-all duration-300",
-        expanded ? "p-6" : "p-4"
+        expanded ? "p-4 sm:p-6" : "p-3 sm:p-4"
       )}>
         {shouldTruncate ? (
-          <div className="prose prose-sm max-w-none text-sm whitespace-pre-line text-harmony-700">
+          <div className="prose prose-sm max-w-none text-sm whitespace-pre-line text-harmony-700 px-1">
             {getSummaryPreview(summary)}
           </div>
         ) : (

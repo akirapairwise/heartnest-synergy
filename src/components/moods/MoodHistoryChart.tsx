@@ -88,14 +88,22 @@ const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({
               width={70}
             />
             <Tooltip
-              content={(props) => {
-                return <ChartTooltipContent
-                  {...props}
-                  formatter={(value) => [
-                    `${moodLabels[Number(value) as keyof typeof moodLabels] || value}`,
-                    "Mood"
-                  ]}
-                />
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  const value = payload[0].value as number;
+                  return (
+                    <ChartTooltipContent
+                      active={active}
+                      payload={payload}
+                      label={label}
+                      formatter={(val) => [
+                        `${moodLabels[Number(val) as keyof typeof moodLabels] || val}`,
+                        "Mood"
+                      ]}
+                    />
+                  );
+                }
+                return null;
               }}
             />
             <Line

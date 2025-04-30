@@ -62,6 +62,15 @@ const fetchCheckInData = async (userId: string) => {
       
     if (conflictError) throw conflictError;
     
+    // 5. Fetch user profile for relationship goals and context
+    const { data: profileData, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('relationship_status, relationship_goals, areas_to_improve, shared_goals')
+      .eq('id', userId)
+      .single();
+      
+    if (profileError) throw profileError;
+    
     // Format the data for the AI
     const mood_logs = moodData?.map(mood => 
       `${mood.mood_date}: Mood level ${mood.mood_value}/5${mood.note ? ` - Note: "${mood.note}"` : ''}`
@@ -91,10 +100,23 @@ const fetchCheckInData = async (userId: string) => {
       });
     }
     
+    // Include relationship context
+    const relationship_context = {
+      status: profileData?.relationship_status || 'Not specified',
+      goals: profileData?.relationship_goals || 'Not specified',
+      areas_to_improve: Array.isArray(profileData?.areas_to_improve) 
+        ? profileData?.areas_to_improve.join(', ') 
+        : 'Not specified',
+      shared_goals: Array.isArray(profileData?.shared_goals) 
+        ? profileData?.shared_goals.join(', ') 
+        : 'Not specified'
+    };
+    
     return {
       mood_logs,
       goal_updates,
-      shared_moments
+      shared_moments,
+      relationship_context
     };
   } catch (error) {
     console.error('Error fetching check-in data:', error);

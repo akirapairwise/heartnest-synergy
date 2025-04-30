@@ -16,7 +16,7 @@ serve(async (req) => {
   }
   
   try {
-    const { mood_logs, goal_updates, shared_moments } = await req.json();
+    const { mood_logs, goal_updates, shared_moments, relationship_context = {} } = await req.json();
 
     // Handle edge case: missing data
     if (!mood_logs?.length && !goal_updates?.length && !shared_moments?.length) {
@@ -29,6 +29,12 @@ serve(async (req) => {
     // Build the system prompt with more detailed instructions
     const prompt = `
 You are a compassionate relationship wellness coach helping a couple track their emotional journey. You're analyzing this week's data to create a personalized summary.
+
+Relationship Context:
+- Relationship Status: ${relationship_context.status || 'Not specified'}
+- Relationship Goals: ${relationship_context.goals || 'Not specified'}
+- Areas to Improve: ${relationship_context.areas_to_improve || 'Not specified'}
+- Shared Goals: ${relationship_context.shared_goals || 'Not specified'}
 
 This week's mood logs:
 ${mood_logs?.length ? mood_logs.map((m, i) => `${i+1}. ${m}`).join("\n") : "None recorded this week."}

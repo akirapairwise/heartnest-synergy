@@ -99,16 +99,20 @@ export const generateAIRecommendation = async (userId: string, category?: string
       throw profileError;
     }
 
-    // Type-safe access to profile properties
+    // Type-safe access to profile properties - Now including relationship goals
     const relationshipStatus = profileData?.relationship_status || 'Not specified';
     const areasToImprove = profileData?.areas_to_improve || 'None specified';
+    const relationshipGoals = profileData?.relationship_goals || 'None specified';
+    const sharedGoals = profileData?.shared_goals || [];
 
-    // Prepare context for AI generation
+    // Prepare context for AI generation with relationship goals
     const additionalContext = context || '';
     const fullContext = `
       Relationship Context:
       - Relationship Status: ${relationshipStatus}
       - Areas to Improve: ${areasToImprove}
+      - Relationship Goals: ${relationshipGoals}
+      - Shared Goals: ${sharedGoals.join(', ')}
       ${additionalContext}
     `;
 

@@ -11,36 +11,39 @@ import { format } from 'date-fns';
 import WeeklyCheckInChart from './WeeklyCheckInChart';
 import ResolutionSummary from '../conflicts/resolution/ResolutionSummary';
 import { useWeeklyAISummary } from '@/hooks/useWeeklyAISummary';
+import { Button } from '@/components/ui/button';
+import WeeklyCheckInForm from './WeeklyCheckInForm';
 
 const WeeklyCheckInInsights: React.FC = () => {
   const [checkIns, setCheckIns] = useState<WeeklyCheckIn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const { user } = useAuth();
   
   const { summary, status: summaryStatus, fetchSummary } = useWeeklyAISummary();
   
-  useEffect(() => {
-    const fetchCheckIns = async () => {
-      if (!user) return;
-      
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('weekly_check_ins')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('checkin_date', { ascending: false })
-          .limit(8);
-          
-        if (error) throw error;
-        setCheckIns(data as WeeklyCheckIn[]);
-      } catch (error) {
-        console.error('Error fetching weekly check-ins:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchCheckIns = async () => {
+    if (!user) return;
     
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('weekly_check_ins')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('checkin_date', { ascending: false })
+        .limit(8);
+        
+      if (error) throw error;
+      setCheckIns(data as WeeklyCheckIn[]);
+    } catch (error) {
+      console.error('Error fetching weekly check-ins:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchCheckIns();
   }, [user]);
   
@@ -58,6 +61,12 @@ const WeeklyCheckInInsights: React.FC = () => {
       connection: parseFloat((sum.connection / checkIns.length).toFixed(1)),
       communication: parseFloat((sum.communication / checkIns.length).toFixed(1))
     };
+  };
+  
+  const handleCheckInComplete = () => {
+    fetchCheckIns();
+    fetchSummary();
+    setIsFormOpen(false);
   };
   
   const averages = getAverageMetrics();
@@ -152,20 +161,28 @@ const WeeklyCheckInInsights: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                  <p>No weekly check-ins recorded yet</p>
-                  <p className="text-sm mt-1">Complete your first check-in to see insights</p>
+                <div className="py-10 text-center">
+                  <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                  <h3 className="text-lg font-medium mb-2">No check-ins recorded yet</h3>
+                  <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                    Weekly check-ins help you track your relationship progress and receive personalized insights
+                  </p>
+                  <Button 
+                    onClick={() => setIsFormOpen(true)}
+                    className="bg-gradient-to-r from-love-500 to-harmony-500 text-white"
+                  >
+                    Complete Your First Check-in
+                  </Button>
                 </div>
               )}
             </TabsContent>
             
             <TabsContent value="charts">
-              {isLoading ? (
-                <Skeleton className="w-full h-[300px]" />
-              ) : (
-                <WeeklyCheckInChart checkIns={checkIns} isLoading={isLoading} />
-              )}
+              <WeeklyCheckInChart 
+                checkIns={checkIns} 
+                isLoading={isLoading}
+                onStartCheckIn={() => setIsFormOpen(true)}
+              />
             </TabsContent>
             
             <TabsContent value="ai-summary" className="min-h-[300px]">
@@ -177,14 +194,29 @@ const WeeklyCheckInInsights: React.FC = () => {
                 <ResolutionSummary summary={summary} />
               ) : (
                 <div className="h-[300px] flex flex-col items-center justify-center">
-                  <Sparkles className="h-10 w-10 text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground">No AI summary available yet</p>
+                  <Sparkles className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No AI insights available yet</h3>
+                  <p className="text-muted-foreground mb-6 text-center max-w-sm">
+                    Complete at least one weekly check-in to receive personalized AI insights about your relationship
+                  </p>
+                  <Button 
+                    onClick={() => setIsFormOpen(true)}
+                    className="bg-gradient-to-r from-harmony-500 to-love-500 text-white"
+                  >
+                    Start Weekly Check-in
+                  </Button>
                 </div>
               )}
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+      
+      <WeeklyCheckInForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onCheckInComplete={handleCheckInComplete}
+      />
     </div>
   );
 };

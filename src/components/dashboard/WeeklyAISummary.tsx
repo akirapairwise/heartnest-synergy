@@ -11,12 +11,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Sparkles, AlertCircle, Loader2, ChevronsDown, ChevronsUp, RotateCcw } from "lucide-react";
 import { useWeeklyAISummary } from "@/hooks/useWeeklyAISummary";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const MAX_PREVIEW_LENGTH = 180;
 
 const WeeklyAISummary = () => {
   const { status, summary, error, fetchSummary } = useWeeklyAISummary();
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchSummary();
@@ -32,6 +34,10 @@ const WeeklyAISummary = () => {
     const lastPeriod = trimmed.lastIndexOf(".");
     return lastPeriod > 60 ? trimmed.slice(0, lastPeriod + 1).trim() : trimmed.trim() + "...";
   }
+
+  const handleCompleteSummary = () => {
+    navigate('/check-ins');
+  };
 
   let content;
   if (status === "loading") {
@@ -119,14 +125,19 @@ const WeeklyAISummary = () => {
     );
   } else {
     content = (
-      <div className="text-center py-6 text-muted-foreground text-sm">
-        <p>Complete your weekly check-in to receive your AI insight summary.</p>
-        <div className="flex justify-center mt-4">
-          <Button size="sm" variant="outline" onClick={fetchSummary} className="text-harmony-700 border-harmony-300">
-            <RotateCcw className="h-4 w-4 mr-1" />
-            Get Insight
-          </Button>
-        </div>
+      <div className="text-center py-8 text-muted-foreground">
+        <Sparkles className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+        <h3 className="text-lg font-medium mb-2 text-gray-700">Get Weekly Relationship Insights</h3>
+        <p className="text-sm mb-4 max-w-xs mx-auto">
+          Complete your weekly check-in to receive AI-powered insights about your relationship
+        </p>
+        <Button 
+          onClick={handleCompleteSummary} 
+          size="sm" 
+          className="bg-gradient-to-r from-harmony-500 to-love-500 text-white"
+        >
+          Complete Weekly Check-in
+        </Button>
       </div>
     );
   }

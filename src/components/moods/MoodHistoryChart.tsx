@@ -5,17 +5,21 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { MoodEntry } from '@/types/check-ins';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Heart, PlusCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface MoodHistoryChartProps {
   moodHistory: MoodEntry[];
   isLoading: boolean;
   daysToShow?: number;
+  onAddMood?: () => void;
 }
 
 const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({ 
   moodHistory, 
   isLoading,
-  daysToShow = 7
+  daysToShow = 7,
+  onAddMood
 }) => {
   const chartData = useMemo(() => {
     // Create an array for the last X days
@@ -62,6 +66,30 @@ const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({
 
   if (isLoading) {
     return <Skeleton className="w-full h-[200px]" />;
+  }
+  
+  // Check if there's no meaningful mood data
+  const hasMoodData = moodHistory.length > 0;
+  
+  if (!hasMoodData) {
+    return (
+      <div className="w-full h-[200px] bg-white p-4 rounded-lg border border-gray-200 flex flex-col items-center justify-center">
+        <Heart className="h-8 w-8 text-love-300 mb-2" />
+        <h3 className="text-base font-medium text-gray-700 mb-1">No mood data yet</h3>
+        <p className="text-sm text-gray-500 mb-3 text-center">Track your mood daily to see patterns over time</p>
+        {onAddMood && (
+          <Button 
+            onClick={onAddMood}
+            variant="outline" 
+            size="sm"
+            className="bg-love-50 text-love-600 border-love-200 hover:bg-love-100"
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
+            Log Today's Mood
+          </Button>
+        )}
+      </div>
+    );
   }
   
   return (

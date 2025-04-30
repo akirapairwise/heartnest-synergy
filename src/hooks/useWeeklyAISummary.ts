@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -169,7 +169,7 @@ export const useWeeklyAISummary = () => {
   });
 
   // Set the state based on query/mutation status
-  React.useEffect(() => {
+  useEffect(() => {
     if (cachedSummaryQuery.isSuccess) {
       setState({ status: 'success', summary: cachedSummaryQuery.data, error: null });
     } else if (summaryMutation.isSuccess) {

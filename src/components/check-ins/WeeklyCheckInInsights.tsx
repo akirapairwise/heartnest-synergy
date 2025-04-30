@@ -6,7 +6,7 @@ import { WeeklyCheckIn } from '@/types/check-ins';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChartBarIcon, FileBarChart, Calendar } from 'lucide-react';
+import { ChartBarIcon, FileBarChart, Calendar, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import WeeklyCheckInChart from './WeeklyCheckInChart';
 import ResolutionSummary from '../conflicts/resolution/ResolutionSummary';

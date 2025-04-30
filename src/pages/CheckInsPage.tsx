@@ -30,12 +30,12 @@ const CheckInsPage = () => {
             <p className="text-muted-foreground">Track your relationship's daily and weekly progress</p>
           </div>
           
-          <div className="flex gap-2">
-            <TabsList>
-              <TabsTrigger value="daily">Daily</TabsTrigger>
-              <TabsTrigger value="weekly">Weekly</TabsTrigger>
-              <TabsTrigger value="insights">Insights</TabsTrigger>
-              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          <div className="flex w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="daily" className="text-xs sm:text-sm">Daily</TabsTrigger>
+              <TabsTrigger value="weekly" className="text-xs sm:text-sm">Weekly</TabsTrigger>
+              <TabsTrigger value="insights" className="text-xs sm:text-sm">Insights</TabsTrigger>
+              <TabsTrigger value="calendar" className="text-xs sm:text-sm">Calendar</TabsTrigger>
             </TabsList>
           </div>
         </div>
@@ -72,9 +72,9 @@ const CheckInsPage = () => {
         <TabsContent value="insights" className="mt-4">
           <div className="space-y-6">
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-              <div className="flex items-center gap-2 mb-6">
+              <div className="flex items-center gap-2 mb-4 sm:mb-6">
                 <BarChart className="h-5 w-5 text-primary" />
-                <h2 className="text-2xl font-bold">Relationship Insights</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">Relationship Insights</h2>
               </div>
               <WeeklyCheckInInsights />
             </div>
@@ -83,9 +83,9 @@ const CheckInsPage = () => {
         
         <TabsContent value="calendar" className="mt-4">
           <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-4 sm:mb-6">
               <Calendar className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl font-bold">Check-In Calendar</h2>
+              <h2 className="text-xl sm:text-2xl font-bold">Check-In Calendar</h2>
             </div>
             <CheckInsByDate />
           </div>

@@ -22,16 +22,12 @@ const Navbar = () => {
   // Get avatar URL or use null
   const avatarUrl = profile?.avatar_url || null;
   
-  console.log('Profile in Navbar:', profile);
-  console.log('Avatar URL:', avatarUrl);
-  console.log('Initials:', initials);
-  
   const navItems = [
     { path: "/dashboard", icon: <Home className="h-4 w-4" />, label: "Dashboard" },
     { path: "/moods", icon: <Heart className="h-4 w-4" />, label: "Moods" },
     { path: "/goals", icon: <Target className="h-4 w-4" />, label: "Goals" },
     { path: "/check-ins", icon: <MessageSquare className="h-4 w-4" />, label: "Check-Ins" },
-    { path: "/recommendations", icon: <Sparkles className="h-4 w-4" />, label: "Recommendations" },
+    { path: "/recommendations", icon: <Sparkles className="h-4 w-4" />, label: "Suggestions" },
   ];
   
   const handleNavigation = (path: string) => {
@@ -41,14 +37,14 @@ const Navbar = () => {
   
   return (
     <div className="border-b sticky top-0 z-50 w-full bg-background/80 backdrop-blur-sm">
-      <div className="flex h-16 items-center px-4">
-        <div className="flex items-center gap-2 mr-4">
+      <div className="flex h-14 sm:h-16 items-center px-3 sm:px-4">
+        <div className="flex items-center gap-1 sm:gap-2 mr-2 sm:mr-4">
           <Heart 
-            className="h-6 w-6 text-love-500 cursor-pointer" 
+            className="h-5 w-5 sm:h-6 sm:w-6 text-love-500 cursor-pointer" 
             onClick={() => handleNavigation('/dashboard')}
           />
           <span 
-            className="text-xl font-heading font-bold gradient-heading hidden sm:inline-block cursor-pointer"
+            className="text-lg sm:text-xl font-heading font-bold gradient-heading hidden sm:inline-block cursor-pointer"
             onClick={() => handleNavigation('/dashboard')}
           >
             HeartNest
@@ -56,13 +52,13 @@ const Navbar = () => {
         </div>
         
         <div className="flex-1 justify-center hidden md:flex">
-          <nav className="flex space-x-4">
+          <nav className="flex space-x-2 sm:space-x-4">
             {navItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  "flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-md transition-colors",
+                  "flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1.5 sm:py-2 rounded-md transition-colors",
                   location.pathname === item.path
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -75,15 +71,15 @@ const Navbar = () => {
           </nav>
         </div>
         
-        <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9">
+            <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="absolute top-0.5 right-0.5 flex h-2 w-2 rounded-full bg-love-500"></span>
           </Button>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Avatar 
-              className="h-8 w-8 cursor-pointer" 
+              className="h-7 w-7 sm:h-8 sm:w-8 cursor-pointer" 
               onClick={() => handleNavigation('/profile/settings')}
             >
               {avatarUrl ? (
@@ -94,7 +90,12 @@ const Navbar = () => {
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             
-            <Button variant="ghost" size="sm" onClick={signOut} className="text-xs sm:text-sm">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={signOut} 
+              className="text-xs hidden sm:inline-flex"
+            >
               Sign Out
             </Button>
           </div>
@@ -109,14 +110,14 @@ const Navbar = () => {
               key={item.path}
               onClick={() => handleNavigation(item.path)}
               className={cn(
-                "flex flex-1 flex-col items-center gap-1 py-2 text-xs",
+                "flex flex-1 flex-col items-center gap-1 py-2 text-[10px] sm:text-xs",
                 location.pathname === item.path
                   ? "text-foreground"
                   : "text-muted-foreground"
               )}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span className="truncate max-w-[60px] text-center">{item.label}</span>
             </button>
           ))}
         </nav>

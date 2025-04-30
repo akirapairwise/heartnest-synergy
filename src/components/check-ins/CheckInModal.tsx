@@ -23,7 +23,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Check-In Details</DialogTitle>
             <DialogDescription>
@@ -41,19 +41,19 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent className="max-h-[85vh]">
         <DrawerHeader className="text-left">
           <DrawerTitle>Check-In Details</DrawerTitle>
           <DrawerDescription>
             Detailed view of your emotional check-in
           </DrawerDescription>
         </DrawerHeader>
-        <div className="px-4">
+        <div className="px-4 overflow-y-auto">
           <CheckInDetails checkIn={selectedCheckIn} />
         </div>
         <DrawerFooter className="pt-2">
           <DrawerClose asChild>
-            <Button variant="outline">Close</Button>
+            <Button variant="outline" className="w-full">Close</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>

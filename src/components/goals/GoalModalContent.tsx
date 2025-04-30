@@ -27,7 +27,7 @@ export function GoalModalContent({
   // The parent component will handle the Dialog/Drawer wrapping
   if (isDesktop) {
     return (
-      <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl">
+      <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-xl font-semibold">{goal ? 'Edit Goal' : 'Create New Goal'}</DialogTitle>
           <DialogDescription className="text-sm md:text-base text-muted-foreground">
@@ -49,7 +49,7 @@ export function GoalModalContent({
   
   // Mobile drawer version
   return (
-    <DrawerContent className="h-[85vh]">
+    <DrawerContent className="max-h-[85vh] overflow-y-auto">
       <DrawerHeader className="pb-4">
         <DrawerTitle className="text-xl font-semibold">{goal ? 'Edit Goal' : 'Create New Goal'}</DrawerTitle>
         <DrawerDescription className="text-sm md:text-base text-muted-foreground">
@@ -59,7 +59,7 @@ export function GoalModalContent({
         </DrawerDescription>
       </DrawerHeader>
       
-      <div className="px-4">
+      <div className="px-4 pb-16">
         <GoalForm 
           goal={goal}
           onSubmit={onSubmit}

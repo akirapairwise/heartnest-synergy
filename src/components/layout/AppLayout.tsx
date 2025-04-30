@@ -84,7 +84,7 @@ const AppLayout = () => {
   if (isLoading && !isPageReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
+        <div className="text-center px-4">
           <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading your experience...</p>
         </div>
@@ -95,7 +95,7 @@ const AppLayout = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <main className="flex-1 p-4 sm:p-6 overflow-auto">
+      <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
         <Outlet />
       </main>
     </div>

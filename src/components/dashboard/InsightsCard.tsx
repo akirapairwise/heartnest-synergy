@@ -19,7 +19,7 @@ const InsightsCard = () => {
           <CardDescription>Personalized recommendations for your relationship</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-4 max-w-full">
             <WeeklyAISummary />
           </div>
         </CardContent>

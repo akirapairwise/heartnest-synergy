@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/contexts/AuthContext';
@@ -103,7 +104,8 @@ const DashboardPage = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              {/* Make the insights card take more width */}
+              <div className="grid grid-cols-1 gap-4 sm:gap-6">
                 <InsightsCard />
                 <div className="hidden sm:block lg:hidden">
                   <PartnerCard />
@@ -171,8 +173,7 @@ const DashboardSkeleton = () => (
       <Skeleton className="h-[150px] w-full rounded-xl" />
     </div>
     
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-      <Skeleton className="h-[220px] w-full rounded-xl" />
+    <div className="grid grid-cols-1 gap-4 sm:gap-6">
       <Skeleton className="h-[220px] w-full rounded-xl" />
     </div>
   </div>

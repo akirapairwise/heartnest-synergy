@@ -191,7 +191,9 @@ const WeeklyCheckInInsights: React.FC = () => {
                   <Skeleton className="w-full h-[300px]" />
                 </div>
               ) : summary ? (
-                <ResolutionSummary summary={summary} />
+                <div className="max-w-4xl mx-auto">
+                  <ResolutionSummary summary={summary} />
+                </div>
               ) : (
                 <div className="h-[300px] flex flex-col items-center justify-center">
                   <Sparkles className="h-12 w-12 text-muted-foreground/50 mb-4" />

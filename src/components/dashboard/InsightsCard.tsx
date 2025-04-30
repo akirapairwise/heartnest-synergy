@@ -8,7 +8,7 @@ import SuggestedActivitiesCard from './SuggestedActivitiesCard';
 const InsightsCard = () => {
   return (
     <div className="space-y-6">
-      <Card className="heart-card bg-gradient-to-br from-white via-calm-50/30 to-love-50/30 border-calm-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+      <Card className="heart-card bg-gradient-to-br from-white via-calm-50/30 to-love-50/30 border-calm-100 shadow-lg hover:shadow-xl transition-all duration-300">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

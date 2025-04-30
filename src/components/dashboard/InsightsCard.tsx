@@ -13,7 +13,7 @@ const InsightsCard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-calm-500" />
-              <CardTitle className="text-md">AI Insights</CardTitle>
+              <CardTitle className="text-md">AI Insights & Suggestions</CardTitle>
             </div>
           </div>
           <CardDescription>Personalized recommendations for your relationship</CardDescription>

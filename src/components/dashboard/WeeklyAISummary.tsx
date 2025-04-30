@@ -8,7 +8,17 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Sparkles, AlertCircle, Loader2, ChevronsDown, ChevronsUp, RotateCcw } from "lucide-react";
+import { 
+  Sparkles, 
+  AlertCircle, 
+  Loader2, 
+  ChevronsDown, 
+  ChevronsUp, 
+  RotateCcw,
+  Trophy,
+  Heart,
+  Target
+} from "lucide-react";
 import { useWeeklyAISummary } from "@/hooks/useWeeklyAISummary";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -38,6 +48,98 @@ const WeeklyAISummary = () => {
 
   const handleCompleteSummary = () => {
     navigate('/check-ins');
+  };
+
+  // Helper function to parse and style sections
+  const renderStyledSections = (text: string) => {
+    if (!text) return null;
+
+    // Check if we have the standard sections
+    const hasEmotionalJourney = text.includes("Weekly Emotional Journey") || 
+                                text.includes("1. Weekly Emotional Journey");
+    const hasRelationshipGrowth = text.includes("Relationship Growth Insights") || 
+                                 text.includes("2. Relationship Growth Insights");
+    const hasSuggestedFocus = text.includes("Suggested Focus for Next Week") ||
+                              text.includes("3. Suggested Focus for Next Week");
+                              
+    if (!hasEmotionalJourney && !hasRelationshipGrowth && !hasSuggestedFocus) {
+      // If we don't have standard sections, just return the text formatted nicely
+      return (
+        <div className="prose prose-sm max-w-none text-harmony-700 whitespace-pre-line">
+          {text}
+        </div>
+      );
+    }
+
+    // Extract the sections
+    let sections: {title: string; content: string; icon: React.ReactNode}[] = [];
+    
+    const processSection = (sectionTitle: string, nextSectionTitle: string | null, iconComponent: React.ReactNode) => {
+      const startPattern = new RegExp(`(?:###\\s*${sectionTitle}|\\d+\\.\\s*${sectionTitle})`, 'i');
+      const startMatch = text.match(startPattern);
+      
+      if (startMatch && startMatch.index !== undefined) {
+        const startIdx = startMatch.index + startMatch[0].length;
+        let endIdx = text.length;
+        
+        if (nextSectionTitle) {
+          const endPattern = new RegExp(`(?:###\\s*${nextSectionTitle}|\\d+\\.\\s*${nextSectionTitle})`, 'i');
+          const endMatch = text.match(endPattern);
+          if (endMatch && endMatch.index !== undefined) {
+            endIdx = endMatch.index;
+          }
+        }
+        
+        const content = text.substring(startIdx, endIdx).trim();
+        sections.push({
+          title: sectionTitle,
+          content,
+          icon: iconComponent
+        });
+      }
+    };
+    
+    // Process each section
+    processSection(
+      "Weekly Emotional Journey", 
+      "Relationship Growth Insights", 
+      <Heart className="h-5 w-5 text-love-500" />
+    );
+    
+    processSection(
+      "Relationship Growth Insights", 
+      "Suggested Focus for Next Week", 
+      <Trophy className="h-5 w-5 text-harmony-500" />
+    );
+    
+    processSection(
+      "Suggested Focus for Next Week", 
+      null, 
+      <Target className="h-5 w-5 text-calm-500" />
+    );
+    
+    // Render the sections
+    return (
+      <div className="space-y-6">
+        {sections.map((section, index) => (
+          <div key={index} className="animate-fade-in" style={{animationDelay: `${index * 150}ms`}}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1.5 rounded-full bg-gradient-to-br from-white to-gray-100 shadow-sm">
+                {section.icon}
+              </div>
+              <h3 className="font-semibold text-lg text-harmony-800">
+                {section.title}
+              </h3>
+            </div>
+            <div className="pl-2 border-l-2 border-harmony-100">
+              <div className="prose prose-sm max-w-none text-harmony-700 pl-3">
+                {section.content}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   let content;
@@ -71,56 +173,18 @@ const WeeklyAISummary = () => {
   } else if (summary) {
     const shouldTruncate = summary.length > MAX_PREVIEW_LENGTH && !expanded;
     
-    // Parse sections from the summary (assuming format: "1. Section title", "2. Section title", etc.)
-    const renderFormattedSummary = () => {
-      const text = shouldTruncate ? getSummaryPreview(summary) : summary;
-      
-      // Split by number + period pattern (1., 2., 3., etc.)
-      const parts = text.split(/(\d+\.)\s/g);
-      if (parts.length <= 1) return <p className="text-harmony-800">{text}</p>;
-      
-      return (
-        <>
-          {parts.map((part, index) => {
-            if (part.match(/^\d+\.$/)) {
-              // This is a section number
-              return (
-                <div key={index} className="flex items-center mt-4 first:mt-0">
-                  <div className="h-6 w-6 rounded-full bg-harmony-100 flex items-center justify-center mr-2">
-                    <span className="text-xs font-semibold text-harmony-700">{part.replace('.', '')}</span>
-                  </div>
-                  <h4 className="font-semibold text-harmony-800">
-                    {index + 1 < parts.length && parts[index + 1].split(':')[0]}
-                  </h4>
-                </div>
-              );
-            } else if (index > 0 && parts[index-1].match(/^\d+\.$/)) {
-              // This is section content that follows a number
-              const titleAndContent = part.split(':');
-              return (
-                <div key={index} className="mb-4 pl-8">
-                  {titleAndContent.length > 1 ? (
-                    <p className="text-harmony-700 mt-1">{titleAndContent.slice(1).join(':')}</p>
-                  ) : (
-                    <p className="text-harmony-700 mt-1">{part}</p>
-                  )}
-                </div>
-              );
-            }
-            return part; // Regular text
-          })}
-        </>
-      );
-    };
-    
     content = (
       <div className={cn(
         "bg-white rounded-lg border border-harmony-100 shadow-sm transition-all duration-300",
         expanded ? "p-6" : "p-4"
       )}>
-        <div className="prose prose-sm max-w-none text-sm whitespace-pre-line">
-          {renderFormattedSummary()}
-        </div>
+        {shouldTruncate ? (
+          <div className="prose prose-sm max-w-none text-sm whitespace-pre-line text-harmony-700">
+            {getSummaryPreview(summary)}
+          </div>
+        ) : (
+          renderStyledSections(summary)
+        )}
         <div className="flex justify-between mt-4 pt-3 border-t border-harmony-100">
           <Button 
             variant="ghost" 

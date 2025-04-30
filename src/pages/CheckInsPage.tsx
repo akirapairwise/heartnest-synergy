@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CheckInsByDate from '@/components/check-ins/CheckInsByDate';
 import RecentCheckIns from '@/components/check-ins/RecentCheckIns';
 import CheckInForm from '@/components/check-ins/CheckInForm';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, BarChart } from 'lucide-react';
+import { Plus, Calendar, BarChart, X } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import WeeklyCheckInsSection from '@/components/check-ins/WeeklyCheckInsSection';
 import WeeklyCheckInInsights from '@/components/check-ins/WeeklyCheckInInsights';
@@ -46,6 +45,7 @@ const CheckInsPage = () => {
             <Button 
               onClick={() => setIsCheckInFormOpen(true)}
               className="w-full sm:w-auto bg-gradient-to-r from-love-500 to-harmony-500 text-white"
+              disabled={isCheckInFormOpen}
             >
               <Plus className="mr-2 h-4 w-4" />
               New Check-in
@@ -53,10 +53,19 @@ const CheckInsPage = () => {
           </div>
           
           {isCheckInFormOpen && (
-            <div className="w-full">
-              <CheckInForm 
-                onCheckInSaved={handleCheckInSaved}
-              />
+            <div className="relative w-full pb-4">
+              <div className="flex justify-end mb-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIsCheckInFormOpen(false)}
+                  className="h-8 w-8 p-0 rounded-full"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </div>
+              <CheckInForm onCheckInSaved={handleCheckInSaved} />
             </div>
           )}
           

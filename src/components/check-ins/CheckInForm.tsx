@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
@@ -108,13 +108,13 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">New Check-In</CardTitle>
+    <Card className="w-full max-w-2xl mx-auto border-harmony-200 shadow-sm">
+      <CardHeader className="space-y-1 pb-3 border-b">
+        <CardTitle className="text-xl">New Check-In</CardTitle>
         <CardDescription>How are you feeling today?</CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <CardContent className="pt-4">
+        <form id="check-in-form" onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-4">
             <div>
               <Label className="mb-2 block">Select your mood</Label>
@@ -123,7 +123,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
                   <button
                     key={option.value}
                     type="button"
-                    className={`flex flex-col items-center p-3 sm:p-4 rounded-lg border transition-all ${
+                    className={`flex items-center gap-2 p-2 sm:p-3 rounded-lg border transition-all ${
                       mood === option.value 
                         ? `border-primary bg-primary/10 ${option.color}` 
                         : 'border-muted hover:border-muted-foreground/50'
@@ -133,7 +133,7 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
                     <div className={mood === option.value ? option.color : "text-muted-foreground"}>
                       {option.icon}
                     </div>
-                    <span className="mt-2 text-sm font-medium">{option.label}</span>
+                    <span className="text-sm font-medium">{option.label}</span>
                   </button>
                 ))}
               </div>
@@ -162,8 +162,8 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
                 placeholder="What's on your mind? How are you feeling?"
                 value={reflection}
                 onChange={(e) => setReflection(e.target.value)}
-                rows={4}
-                className="resize-none min-h-[100px]"
+                rows={3}
+                className="resize-none min-h-[80px]"
               />
             </div>
             
@@ -190,26 +190,29 @@ const CheckInForm: React.FC<CheckInFormProps> = ({ onCheckInSaved, defaultMood }
               </div>
             )}
           </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full sm:w-auto btn-primary-gradient" 
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                <span className="sm:inline">Saving...</span>
-              </>
-            ) : (
-              <>
-                <span className="sm:inline">Save Check-In</span>
-                <Send className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
         </form>
       </CardContent>
+      <CardFooter className="flex justify-end border-t pt-4 pb-4">
+        <Button 
+          type="submit" 
+          form="check-in-form"
+          variant="gradient"
+          disabled={isLoading}
+          className="w-full sm:w-auto"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <span>Save Check-In</span>
+              <Send className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

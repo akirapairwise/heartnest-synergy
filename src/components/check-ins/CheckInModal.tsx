@@ -24,14 +24,16 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Check-In Details</DialogTitle>
+          <DialogHeader className="mb-2">
+            <DialogTitle className="text-xl">Check-In Details</DialogTitle>
             <DialogDescription>
               Detailed view of your emotional check-in
             </DialogDescription>
           </DialogHeader>
-          <CheckInDetails checkIn={selectedCheckIn} />
-          <DialogFooter>
+          <div className="overflow-y-auto pr-1">
+            <CheckInDetails checkIn={selectedCheckIn} />
+          </div>
+          <DialogFooter className="mt-4 pt-2 border-t">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
@@ -43,15 +45,15 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85vh]">
         <DrawerHeader className="text-left">
-          <DrawerTitle>Check-In Details</DrawerTitle>
+          <DrawerTitle className="text-lg">Check-In Details</DrawerTitle>
           <DrawerDescription>
             Detailed view of your emotional check-in
           </DrawerDescription>
         </DrawerHeader>
-        <div className="px-4 overflow-y-auto">
+        <div className="px-4 overflow-y-auto pb-16">
           <CheckInDetails checkIn={selectedCheckIn} />
         </div>
-        <DrawerFooter className="pt-2">
+        <DrawerFooter className="pt-2 border-t">
           <DrawerClose asChild>
             <Button variant="outline" className="w-full">Close</Button>
           </DrawerClose>

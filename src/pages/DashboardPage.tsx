@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +10,7 @@ import CheckInsSection from '@/components/dashboard/CheckInsSection';
 import ConflictsSection from '@/components/dashboard/ConflictsSection';
 import SuggestionsSection from '@/components/dashboard/SuggestionsSection';
 import WeeklyCheckInReminder from '@/components/dashboard/WeeklyCheckInReminder';
+import DailyCheckInReminder from '@/components/dashboard/DailyCheckInReminder'; // Add import
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -76,7 +76,10 @@ const DashboardPage = () => {
             )}
           </div>
           
-          {/* Add Weekly Check-In Reminder */}
+          {/* Add Daily Check-In Reminder */}
+          <DailyCheckInReminder />
+          
+          {/* Keep existing Weekly Check-In Reminder */}
           <WeeklyCheckInReminder />
           
           <Tabs 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import UpcomingEventsSection from '@/components/events/UpcomingEventsSection';
+import SuggestedActivitiesCard from '@/components/dashboard/SuggestedActivitiesCard';
 
 const DashboardPage = () => {
   const { profile, isLoading } = useAuth();
@@ -103,12 +103,14 @@ const DashboardPage = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <InsightsCard />
                 <div className="hidden sm:block lg:hidden">
                   <PartnerCard />
                 </div>
               </div>
+              
+              <SuggestedActivitiesCard />
               
               <UpcomingEventsSection />
               
@@ -125,6 +127,7 @@ const DashboardPage = () => {
               )}
             </TabsContent>
             
+            {/* Other tab content */}
             <TabsContent value="events">
               <div className="max-w-4xl mx-auto">
                 <UpcomingEventsSection />

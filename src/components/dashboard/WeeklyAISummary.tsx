@@ -57,12 +57,41 @@ const WeeklyAISummary = () => {
     );
   } else if (summary) {
     const shouldTruncate = summary.length > MAX_PREVIEW_LENGTH && !expanded;
+    
+    // Parse sections from the summary (assuming format: "1. Section title", "2. Section title", etc.)
+    const renderFormattedSummary = () => {
+      const text = shouldTruncate ? getSummaryPreview(summary) : summary;
+      
+      // Split by number + period pattern (1., 2., 3., etc.)
+      const parts = text.split(/(\d+\.)\s/g);
+      if (parts.length <= 1) return text;
+      
+      return (
+        <>
+          {parts.map((part, index) => {
+            if (part.match(/^\d+\.$/)) {
+              // This is a section number
+              return <span key={index} className="font-semibold text-harmony-600">{part} </span>;
+            } else if (index > 0 && parts[index-1].match(/^\d+\.$/)) {
+              // This is section content that follows a number
+              return (
+                <div key={index} className="mb-2">
+                  <span>{part}</span>
+                </div>
+              );
+            }
+            return part; // Regular text
+          })}
+        </>
+      );
+    };
+    
     content = (
-      <div className="bg-white p-4 rounded-lg border border-harmony-100">
-        <p className="text-sm whitespace-pre-line text-harmony-900">
-          {shouldTruncate ? getSummaryPreview(summary) : summary}
-        </p>
-        <div className="flex justify-between mt-2">
+      <div className="bg-white p-4 rounded-lg border border-harmony-100 shadow-sm">
+        <div className="prose prose-sm max-w-none text-sm whitespace-pre-line text-harmony-900">
+          {renderFormattedSummary()}
+        </div>
+        <div className="flex justify-between mt-3 pt-2 border-t border-harmony-100">
           <Button variant="ghost" size="sm" onClick={fetchSummary} className="text-harmony-700">
             <RotateCcw className="h-4 w-4 mr-1" />
             Refresh

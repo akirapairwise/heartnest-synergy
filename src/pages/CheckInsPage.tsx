@@ -1,20 +1,24 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CheckInsByDate from '@/components/check-ins/CheckInsByDate';
 import RecentCheckIns from '@/components/check-ins/RecentCheckIns';
 import CheckInForm from '@/components/check-ins/CheckInForm';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, BarChart } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import WeeklyCheckInsSection from '@/components/check-ins/WeeklyCheckInsSection';
+import WeeklyCheckInInsights from '@/components/check-ins/WeeklyCheckInInsights';
+import { useMoodHistory } from '@/hooks/useMoodHistory';
+import MoodHistoryChart from '@/components/moods/MoodHistoryChart';
 
 const CheckInsPage = () => {
   useDocumentTitle('Check-Ins | HeartNest');
   const [isCheckInFormOpen, setIsCheckInFormOpen] = useState(false);
+  const { moodHistory, isFetchingHistory } = useMoodHistory();
   
   const handleCheckInSaved = () => {
     setIsCheckInFormOpen(false);
-    // Optionally, you can add logic to refresh the check-ins list
   };
   
   return (
@@ -30,6 +34,7 @@ const CheckInsPage = () => {
             <TabsList>
               <TabsTrigger value="daily">Daily</TabsTrigger>
               <TabsTrigger value="weekly">Weekly</TabsTrigger>
+              <TabsTrigger value="insights">Insights</TabsTrigger>
               <TabsTrigger value="calendar">Calendar</TabsTrigger>
             </TabsList>
           </div>
@@ -55,11 +60,25 @@ const CheckInsPage = () => {
             </div>
           )}
           
+          <MoodHistoryChart moodHistory={moodHistory} isLoading={isFetchingHistory} />
+          
           <RecentCheckIns />
         </TabsContent>
         
         <TabsContent value="weekly" className="mt-4">
           <WeeklyCheckInsSection />
+        </TabsContent>
+        
+        <TabsContent value="insights" className="mt-4">
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center gap-2 mb-6">
+                <BarChart className="h-5 w-5 text-primary" />
+                <h2 className="text-2xl font-bold">Relationship Insights</h2>
+              </div>
+              <WeeklyCheckInInsights />
+            </div>
+          </div>
         </TabsContent>
         
         <TabsContent value="calendar" className="mt-4">

@@ -36,3 +36,23 @@ export type WeeklyCheckIn = {
   is_visible_to_partner: boolean;
   checkin_date: string;
 };
+
+// Add mood chart types for visualization
+export type MoodChartData = {
+  date: string;
+  formattedDate: string;
+  mood: number | null;
+};
+
+export type RelationshipMetric = {
+  connection: number;
+  communication: number;
+  mood: number;
+  date: string;
+};
+
+export type WeeklyInsightSummary = {
+  emotionalJourney: string;
+  growthInsights: string;
+  suggestedFocus: string;
+};

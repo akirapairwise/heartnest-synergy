@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -25,7 +24,7 @@ serve(async (req) => {
     console.log(`Generating event suggestions for user ${userId} in ${location || 'unspecified location'}`);
     
     // Construct the prompt for OpenAI
-    const systemPrompt = `You are "Pairwise Planner," an AI-powered event assistant for couples. 
+    const systemPrompt = `You are "Usora Planner," an AI-powered event assistant for couples. 
     Based on the following inputs, generate 4-6 personalized, nearby date or relationship-building activity suggestions.
     
     Format each suggestion in a JSON object with these fields:

@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -22,13 +21,13 @@ serve(async (req) => {
     if (!mood_logs?.length && !goal_updates?.length && !shared_moments?.length) {
       return new Response(
         JSON.stringify({ error: "Insufficient data to generate a meaningful summary." }),
-        { status: 200, headers: corsHeaders }  // Changed from 400 to 200 to not trigger error state
+        { status: 200, headers: corsHeaders }
       );
     }
 
     // Build the system prompt with more detailed instructions
     const prompt = `
-You are a compassionate relationship wellness coach helping a couple track their emotional journey. You're analyzing this week's data to create a personalized summary.
+You are a compassionate relationship wellness coach helping a couple track their emotional journey for the Usora app. You're analyzing this week's data to create a personalized summary.
 
 Relationship Context:
 - Relationship Status: ${relationship_context.status || 'Not specified'}

@@ -218,7 +218,7 @@ const UpcomingEventsSection = () => {
             className="gap-2"
           >
             <Sparkles className="h-4 w-4" />
-            <span className="hidden sm:inline">Get AI Suggestions</span>
+            <span className="hidden sm:inline">Get Suggestions</span>
           </Button>
           <Button 
             onClick={() => setIsCreateDialogOpen(true)}
@@ -241,13 +241,12 @@ const UpcomingEventsSection = () => {
                 className="gap-2"
               >
                 <Sparkles className="h-4 w-4" />
-                Get AI Suggestions
+                Get Suggestions
               </Button>
               <Button 
                 onClick={() => setIsCreateDialogOpen(true)}
-                className="mt-2 sm:mt-0"
               >
-                Create Event Manually
+                Create Event
               </Button>
             </div>
           </Card>

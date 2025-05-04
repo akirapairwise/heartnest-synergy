@@ -6,7 +6,7 @@ import { ArrowRight, UserCog } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 
 interface TransitionPromptProps {
-  onContinue: () => void;
+  onContinue: (e: React.FormEvent) => void;
   onSkip: () => void;
 }
 
@@ -17,8 +17,9 @@ const TransitionPrompt: React.FC<TransitionPromptProps> = ({ onContinue, onSkip 
     onSkip();
   };
   
-  const handleGoToSettings = () => {
-    onContinue();
+  const handleGoToSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    onContinue(e);
     // The navigate will happen in the handleCompleteBasic function after profile update
   };
 

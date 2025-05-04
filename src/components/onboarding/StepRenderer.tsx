@@ -44,7 +44,7 @@ const StepRenderer: React.FC<StepRendererProps> = ({
     case 7:
       return (
         <TransitionPrompt 
-          onContinue={() => skipToComplete(new Event('submit') as React.FormEvent)} 
+          onContinue={(e: React.FormEvent) => skipToComplete(e)} 
           onSkip={completeBasic} 
         />
       );

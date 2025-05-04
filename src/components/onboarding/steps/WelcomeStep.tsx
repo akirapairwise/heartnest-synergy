@@ -26,7 +26,7 @@ const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext }) => {
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.5 }}
               >
-                Welcome to Pairwise 💜
+                Welcome to Usora 💜
               </motion.h2>
               <p className="text-lg text-gray-600">
                 A space to grow stronger together, one check-in at a time.

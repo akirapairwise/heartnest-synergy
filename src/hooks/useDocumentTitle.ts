@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 export const useDocumentTitle = (title: string) => {
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = `${title} | HeartHive`;
+    document.title = `${title} | Usora`;
     
     return () => {
       document.title = previousTitle;

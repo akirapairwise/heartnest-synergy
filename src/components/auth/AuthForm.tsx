@@ -29,7 +29,7 @@ const AuthForm = () => {
         <div className="flex justify-center mb-2">
           <Heart className="h-10 w-10 text-love-500 animate-pulse-soft" />
         </div>
-        <CardTitle className="text-2xl font-bold text-gray-800">Welcome to HeartNest</CardTitle>
+        <CardTitle className="text-2xl font-bold text-gray-800">Welcome to Usora</CardTitle>
         <CardDescription className="text-gray-600">
           Build deeper connections and grow together
         </CardDescription>

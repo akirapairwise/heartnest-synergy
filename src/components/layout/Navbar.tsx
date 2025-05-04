@@ -49,7 +49,7 @@ const Navbar = () => {
             className="text-lg sm:text-xl font-heading font-bold gradient-heading hidden sm:inline-block cursor-pointer"
             onClick={() => handleNavigation('/dashboard')}
           >
-            HeartNest
+            Usora
           </span>
         </div>
         

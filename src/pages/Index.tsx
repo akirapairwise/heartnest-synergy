@@ -18,7 +18,7 @@ const Index = () => {
           </div>
           
           <h1 className="text-4xl md:text-5xl font-bold gradient-heading mb-6 font-heading">
-            HeartNest: Nurture Your Relationship
+            Usora: Nurture Your Relationship
           </h1>
           
           <p className="text-xl mb-8 max-w-3xl mx-auto text-muted-foreground">
@@ -52,7 +52,7 @@ const Index = () => {
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold mb-4">Features Designed for Deeper Connections</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            HeartNest provides the tools you need to nurture and grow your relationship
+            Usora provides the tools you need to nurture and grow your relationship
           </p>
         </div>
         
@@ -192,7 +192,7 @@ const Index = () => {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Strengthen Your Relationship?</h2>
           <p className="text-white/90 mb-8 max-w-2xl mx-auto">
-            Join thousands of couples who are using HeartNest to build deeper, more meaningful connections.
+            Join thousands of couples who are using Usora to build deeper, more meaningful connections.
           </p>
           <Button 
             variant="secondary" 
@@ -210,7 +210,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row justify-between items-center mb-8">
             <div className="flex items-center mb-4 md:mb-0">
               <Heart className="h-6 w-6 text-love-500 mr-2" />
-              <span className="text-xl font-bold gradient-heading">HeartNest</span>
+              <span className="text-xl font-bold gradient-heading">Usora</span>
             </div>
             <div className="flex space-x-6">
               <a href="#" className="text-muted-foreground hover:text-foreground">About</a>
@@ -220,7 +220,7 @@ const Index = () => {
             </div>
           </div>
           <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} HeartNest. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Usora. All rights reserved.</p>
           </div>
         </div>
       </footer>

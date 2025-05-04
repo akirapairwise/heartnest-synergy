@@ -121,7 +121,7 @@ const SidebarContent = () => {
       </div>
       <div className="mt-auto p-4">
         <p className="text-xs text-muted-foreground text-center">
-          &copy; {new Date().getFullYear()} HeartNest
+          &copy; {new Date().getFullYear()} Usora
         </p>
       </div>
     </div>

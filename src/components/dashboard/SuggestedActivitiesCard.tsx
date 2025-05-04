@@ -134,9 +134,9 @@ const SuggestedActivitiesCard = () => {
                   Get Recommendations
                 </Link>
               </Button>
-              <Button size="sm" asChild>
+              <Button size="sm" className="bg-gradient-to-r from-purple-500 to-blue-500 text-white" asChild>
                 <Link to="/event-suggestions">
-                  Get Event Suggestions
+                  Find Events
                 </Link>
               </Button>
             </div>

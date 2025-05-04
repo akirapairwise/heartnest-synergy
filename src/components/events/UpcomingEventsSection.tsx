@@ -214,7 +214,7 @@ const UpcomingEventsSection = () => {
         <div className="flex gap-2">
           <Button 
             onClick={navigateToSuggestions}
-            variant="outline"
+            variant="gradient"
             className="gap-2"
           >
             <Sparkles className="h-4 w-4" />
@@ -222,10 +222,10 @@ const UpcomingEventsSection = () => {
           </Button>
           <Button 
             onClick={() => setIsCreateDialogOpen(true)}
-            className="gap-2"
+            className="gap-2 rounded-full bg-primary hover:bg-primary/90 transition-transform duration-300 hover:scale-105 shadow-sm"
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Create Event</span>
+            <span className="hidden sm:inline">Add Event</span>
           </Button>
         </div>
       </div>
@@ -236,7 +236,7 @@ const UpcomingEventsSection = () => {
             <p className="text-muted-foreground mb-3">No upcoming events</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button 
-                variant="outline" 
+                variant="gradient" 
                 onClick={navigateToSuggestions}
                 className="gap-2"
               >
@@ -245,9 +245,7 @@ const UpcomingEventsSection = () => {
               </Button>
               <Button 
                 onClick={() => setIsCreateDialogOpen(true)}
-                className="gap-2"
               >
-                <Plus className="h-4 w-4" />
                 Create Event
               </Button>
             </div>
@@ -273,7 +271,7 @@ const UpcomingEventsSection = () => {
         )}
       </div>
 
-      {/* Floating Action Button for mobile - simplified to just 2 buttons */}
+      {/* Floating Action Button for mobile */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -283,8 +281,7 @@ const UpcomingEventsSection = () => {
           <Button
             onClick={navigateToSuggestions}
             size="icon"
-            variant="outline"
-            className="rounded-full w-12 h-12 shadow-lg"
+            className="rounded-full w-12 h-12 shadow-lg bg-gradient-to-r from-purple-500 to-primary hover:shadow-xl transition-all duration-300"
           >
             <Sparkles className="h-5 w-5" />
           </Button>
@@ -292,7 +289,7 @@ const UpcomingEventsSection = () => {
             ref={fabRef}
             onClick={() => setIsCreateDialogOpen(true)}
             size="icon"
-            className="rounded-full w-14 h-14 shadow-lg"
+            className="rounded-full w-14 h-14 shadow-lg bg-gradient-to-r from-love-500 to-primary hover:shadow-xl transition-all duration-300"
           >
             <Plus className="h-6 w-6" />
           </Button>

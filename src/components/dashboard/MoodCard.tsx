@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, TrendingUp, SmilePlus, History, Loader2 } from "lucide-react";
@@ -53,18 +54,25 @@ const MoodCard = () => {
     }
   };
   
-  // Fallback to mock data if no real data is available
-  const moodEntries = recentMoods.length > 0 ? recentMoods : [
-    { id: "1", date: "2025-04-09", mood: 4, note: "Had a wonderful dinner date" },
-    { id: "2", date: "2025-04-08", mood: 3, note: "Good conversation about future plans" },
-    { id: "3", date: "2025-04-07", mood: 2, note: "Some miscommunication today" },
-    { id: "4", date: "2025-04-06", mood: 4, note: "Morning walk together" },
-    { id: "5", date: "2025-04-05", mood: 3, note: "Quiet day at home" },
-  ];
-  
-  const avgMood = moodEntries.length > 0 
-    ? Math.round(moodEntries.reduce((sum, entry) => sum + entry.mood, 0) / moodEntries.length)
+  // Calculate average mood if data exists
+  const avgMood = recentMoods.length > 0 
+    ? Math.round(recentMoods.reduce((sum, entry) => sum + entry.mood, 0) / recentMoods.length)
     : 3; // Default to neutral if no mood data
+  
+  // Empty state component
+  const EmptyMoodState = () => (
+    <div className="flex flex-col items-center justify-center py-4 text-center">
+      <Heart className="h-10 w-10 text-gray-300 mb-2" />
+      <p className="text-muted-foreground mb-1">No mood entries yet</p>
+      <button 
+        onClick={() => navigate('/moods')} 
+        className="text-sm text-harmony-600 hover:text-harmony-700 mt-2 inline-flex items-center"
+      >
+        <SmilePlus className="h-4 w-4 mr-1" />
+        Add your first mood
+      </button>
+    </div>
+  );
   
   return (
     <Card className="heart-card">
@@ -91,56 +99,66 @@ const MoodCard = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Current mood:</p>
-              <div className="flex items-center">
-                <span className={`font-medium ${moodColors[avgMood-1]}`}>{moodLabels[avgMood-1]}</span>
-                <div className="flex ml-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Heart
-                      key={star}
-                      className={`h-4 w-4 ${star <= avgMood ? moodColors[avgMood-1] : 'text-gray-200'}`}
-                      fill={star <= avgMood ? 'currentColor' : 'none'}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Recent entries</span>
-                <span className="text-muted-foreground">{moodEntries.length} entries</span>
-              </div>
-              
-              {isLoading ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {moodEntries.slice(0, 3).map((entry, index) => (
-                    <div key={index} className="flex items-start justify-between border-b pb-2">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{entry.note}</p>
-                      </div>
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Heart
-                            key={star}
-                            className={`h-3 w-3 ${star <= entry.mood ? moodColors[entry.mood-1] : 'text-gray-200'}`}
-                            fill={star <= entry.mood ? 'currentColor' : 'none'}
-                          />
-                        ))}
-                      </div>
+            {recentMoods.length > 0 ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">Current mood:</p>
+                  <div className="flex items-center">
+                    <span className={`font-medium ${moodColors[avgMood-1]}`}>{moodLabels[avgMood-1]}</span>
+                    <div className="flex ml-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Heart
+                          key={star}
+                          className={`h-4 w-4 ${star <= avgMood ? moodColors[avgMood-1] : 'text-gray-200'}`}
+                          fill={star <= avgMood ? 'currentColor' : 'none'}
+                        />
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Recent entries</span>
+                    <span className="text-muted-foreground">{recentMoods.length} entries</span>
+                  </div>
+                  
+                  {isLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {recentMoods.slice(0, 3).map((entry, index) => (
+                        <div key={index} className="flex items-start justify-between border-b pb-2">
+                          <div>
+                            <p className="text-sm font-medium">
+                              {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </p>
+                            <p className="text-xs text-muted-foreground line-clamp-1">{entry.note}</p>
+                          </div>
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Heart
+                                key={star}
+                                className={`h-3 w-3 ${star <= entry.mood ? moodColors[entry.mood-1] : 'text-gray-200'}`}
+                                fill={star <= entry.mood ? 'currentColor' : 'none'}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : !isLoading ? (
+              <EmptyMoodState />
+            ) : (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            )}
             
             <div className="flex items-center justify-between">
               <button 

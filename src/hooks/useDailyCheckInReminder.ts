@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDailyMood } from './useDailyMood';
-import { startOfDay, isAfter, addHours } from 'date-fns';
+import { startOfDay, isAfter } from 'date-fns';
 
 export const useDailyCheckInReminder = () => {
   const [showReminder, setShowReminder] = useState(false);

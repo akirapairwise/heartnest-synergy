@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Notification } from "@/types/notifications";
+import { Notification, NotificationType } from "@/types/notifications";
 
 export const fetchNotifications = async (userId: string): Promise<Notification[]> => {
   const { data, error } = await supabase
@@ -18,7 +18,7 @@ export const fetchNotifications = async (userId: string): Promise<Notification[]
   return data.map((notification): Notification => ({
     id: notification.id,
     userId: notification.user_id,
-    type: notification.type,
+    type: notification.type as NotificationType, // Add type assertion here
     title: notification.title,
     message: notification.message,
     relatedId: notification.related_id,

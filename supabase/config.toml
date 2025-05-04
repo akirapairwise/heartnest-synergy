@@ -1,5 +1,1 @@
-
 project_id = "itmegnklwvtitwknyvkm"
-
-[functions.weekly-ai-summary]
-verify_jwt = true

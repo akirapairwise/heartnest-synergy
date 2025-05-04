@@ -115,7 +115,7 @@ const DashboardPage = () => {
                 </div>
               </div>
               
-              <SuggestedActivitiesCard />
+              {/* Removed the duplicate SuggestedActivitiesCard here */}
               
               <UpcomingEventsSection />
               

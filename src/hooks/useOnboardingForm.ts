@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
@@ -208,56 +207,12 @@ export const useOnboardingForm = (totalSteps: number) => {
       
       // Show success toast with longer duration
       toast.success("Profile completed!", {
-        description: "Your profile has been set up. Redirecting to your dashboard...",
+        description: "Your profile has been set up. Redirecting to settings page for further personalization...",
         duration: 3000
       });
       
-      // Refetch the user profile to confirm the update
-      if (user) {
-        try {
-          await fetchUserProfile(user.id);
-          
-          // Verify that is_onboarding_complete is actually true after fetching
-          const { data: profileCheck, error: profileCheckError } = await supabase
-            .from('user_profiles')
-            .select('is_onboarding_complete')
-            .eq('id', user.id)
-            .single();
-            
-          if (profileCheckError) {
-            console.error('Error verifying profile update:', profileCheckError);
-            // Even if verification fails, still redirect to dashboard
-            navigate('/dashboard', { replace: true });
-          } else if (!profileCheck?.is_onboarding_complete) {
-            console.warn('Profile update may not have been saved correctly');
-            // Still redirect to dashboard but update the profile again
-            const retryUpdate = await supabase
-              .from('user_profiles')
-              .update({ is_onboarding_complete: true })
-              .eq('id', user.id);
-              
-            if (retryUpdate.error) {
-              console.error('Error on retry update:', retryUpdate.error);
-            }
-            
-            navigate('/dashboard', { replace: true });
-          } else {
-            // Normal successful path
-            navigate('/dashboard', { replace: true });
-          }
-        } catch (fetchError) {
-          console.error('Error refetching profile after update:', fetchError);
-          // Even if verification fails, still redirect to dashboard but show a warning
-          toast.warning("Profile updated", { 
-            description: "Redirecting to dashboard, but please refresh if you encounter any issues.",
-            duration: 4000
-          });
-          navigate('/dashboard', { replace: true });
-        }
-      } else {
-        // Fallback if user is not available
-        navigate('/dashboard', { replace: true });
-      }
+      // Instead of redirecting to dashboard, redirect to profile settings
+      navigate('/profile/settings', { replace: true });
     } catch (error) {
       console.error('Error updating profile:', error);
       useToastHook({
@@ -312,11 +267,11 @@ export const useOnboardingForm = (totalSteps: number) => {
       
       // Show success toast with longer duration
       toast.success("Profile basics completed!", {
-        description: "Your profile has been set up. You can complete personalization later in profile settings.",
+        description: "Your profile has been set up. Redirecting to dashboard.",
         duration: 3000
       });
       
-      // Navigate to dashboard
+      // Navigate to dashboard (this is unchanged but kept for clarity)
       navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Error updating profile:', error);

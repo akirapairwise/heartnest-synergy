@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -214,7 +213,7 @@ const EventSuggestionsSection = () => {
                 ) : (
                   <>
                     <PartyPopper className="mr-2 h-4 w-4" />
-                    Generate Event Suggestions
+                    Generate Suggestions
                   </>
                 )}
               </Button>

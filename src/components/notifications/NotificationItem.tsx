@@ -105,13 +105,13 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       <Button 
         variant="ghost" 
         size="icon" 
-        className="h-6 w-6 flex-shrink-0"
+        className="h-8 w-8 flex-shrink-0 touch-manipulation"
         onClick={(e) => {
           e.stopPropagation();
           onDelete(notification.id);
         }}
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-4 w-4" />
         <span className="sr-only">Delete</span>
       </Button>
     </div>

@@ -4,7 +4,10 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#f9fafb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>HeartNest - Nurture Your Relationship</title>
     <meta name="description" content="Track, understand, and strengthen your relationship with intuitive tools and personalized insights." />
     <!-- Google Fonts for rounded text -->
@@ -12,6 +15,15 @@
     <style>
       :root {
         --font-rounded: 'Quicksand', system-ui, sans-serif;
+      }
+      /* Prevent pull-to-refresh on mobile */
+      html, body {
+        overscroll-behavior-y: contain;
+        touch-action: pan-x pan-y;
+      }
+      /* Remove tap highlight on mobile */
+      * {
+        -webkit-tap-highlight-color: transparent;
       }
     </style>
   </head>

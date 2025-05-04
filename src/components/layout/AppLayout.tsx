@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const AppLayout = () => {
   const { user, isLoading, refreshSession } = useAuth();
@@ -14,6 +15,7 @@ const AppLayout = () => {
   const [isPageReady, setIsPageReady] = useState(false);
   const [hasAttemptedRefresh, setHasAttemptedRefresh] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const isMobile = useIsMobile();
   
   // Set up a maximum loading time of 5 seconds
   useEffect(() => {
@@ -84,10 +86,11 @@ const AppLayout = () => {
                 (payload) => {
                   console.log('New notification received:', payload);
                   
-                  // Show a toast for the new notification
+                  // Show a toast for the new notification with mobile-friendly positioning
                   if (payload.new) {
                     toast.message(payload.new.title, {
                       description: payload.new.message,
+                      position: isMobile ? "bottom-center" : "top-right",
                       action: {
                         label: "View",
                         onClick: () => {
@@ -132,7 +135,7 @@ const AppLayout = () => {
     };
     
     checkAuth();
-  }, [user, isLoading, navigate, location.pathname, refreshSession, hasAttemptedRefresh]);
+  }, [user, isLoading, navigate, location.pathname, refreshSession, hasAttemptedRefresh, isMobile]);
 
   // Show loading when authenticating, but not indefinitely
   if (isLoading && !isPageReady) {
@@ -149,7 +152,7 @@ const AppLayout = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
+      <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-16 md:pb-6 safe-bottom">
         <Outlet />
       </main>
     </div>

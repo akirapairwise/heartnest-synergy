@@ -225,6 +225,10 @@
   touch-action: none;
 }
 
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
 .overscroll-none {
   overscroll-behavior: none;
 }
@@ -234,4 +238,25 @@
   .min-h-screen {
     min-height: -webkit-fill-available;
   }
+}
+
+/* Safe area insets for notches and home indicators */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Improved tap targets for mobile */
+.touch-target {
+  @apply relative;
+}
+
+.touch-target::after {
+  content: '';
+  @apply absolute inset-0 -m-2;
 }

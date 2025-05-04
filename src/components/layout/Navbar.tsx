@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { useNavigate, NavLink, useLocation } from 'react-router-dom';
@@ -7,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import NotificationsDropdown from '@/components/notifications/NotificationsDropdown';
+import { motion } from 'framer-motion';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -36,11 +38,11 @@ const Navbar = () => {
   };
   
   return (
-    <div className="border-b sticky top-0 z-50 w-full bg-background/80 backdrop-blur-sm">
+    <div className="border-b sticky top-0 z-50 w-full bg-background/80 backdrop-blur-sm safe-top">
       <div className="flex h-14 sm:h-16 items-center px-3 sm:px-4">
         <div className="flex items-center gap-1 sm:gap-2 mr-2 sm:mr-4">
           <Heart 
-            className="h-5 w-5 sm:h-6 sm:w-6 text-love-500 cursor-pointer" 
+            className="h-5 w-5 sm:h-6 sm:w-6 text-love-500 cursor-pointer touch-manipulation" 
             onClick={() => handleNavigation('/dashboard')}
           />
           <span 
@@ -58,7 +60,7 @@ const Navbar = () => {
                 key={item.path}
                 onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  "flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1.5 sm:py-2 rounded-md transition-colors",
+                  "flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 rounded-md transition-colors touch-manipulation",
                   location.pathname === item.path
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -72,12 +74,12 @@ const Navbar = () => {
         </div>
         
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          {/* Replace Bell button with NotificationsDropdown */}
-          <NotificationsDropdown className="h-8 w-8 sm:h-9 sm:w-9" />
+          {/* Notifications dropdown with improved mobile support */}
+          <NotificationsDropdown className="h-10 w-10 sm:h-9 sm:w-9" />
           
           <div className="flex items-center gap-1 sm:gap-2">
             <Avatar 
-              className="h-7 w-7 sm:h-8 sm:w-8 cursor-pointer" 
+              className="h-8 w-8 sm:h-8 sm:w-8 cursor-pointer touch-manipulation" 
               onClick={() => handleNavigation('/profile/settings')}
             >
               {avatarUrl ? (
@@ -100,26 +102,39 @@ const Navbar = () => {
         </div>
       </div>
       
-      {/* Mobile navigation */}
-      <div className="md:hidden border-t">
+      {/* Mobile navigation - with motion animation for smooth transitions */}
+      <motion.div 
+        className="md:hidden border-t"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         <nav className="flex justify-between">
           {navItems.map((item) => (
             <button
               key={item.path}
               onClick={() => handleNavigation(item.path)}
               className={cn(
-                "flex flex-1 flex-col items-center gap-1 py-2 text-[10px] sm:text-xs",
+                "flex flex-1 flex-col items-center gap-1 py-3 text-[10px] sm:text-xs touch-manipulation",
                 location.pathname === item.path
                   ? "text-foreground"
                   : "text-muted-foreground"
               )}
             >
-              {item.icon}
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className={cn(
+                  "p-1 rounded-full",
+                  location.pathname === item.path ? "bg-secondary/30" : ""
+                )}
+              >
+                {item.icon}
+              </motion.div>
               <span className="truncate max-w-[60px] text-center">{item.label}</span>
             </button>
           ))}
         </nav>
-      </div>
+      </motion.div>
     </div>
   );
 };

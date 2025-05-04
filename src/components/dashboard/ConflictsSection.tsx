@@ -9,6 +9,7 @@ import ConflictFormDialog from '../conflicts/ConflictFormDialog';
 import ConflictCard from '../conflicts/ConflictCard';
 import LoadingState from '../conflicts/LoadingState';
 import EmptyConflictState from '../conflicts/EmptyConflictState';
+import { createNotification } from '@/services/notificationsService';
 
 const ConflictsSection = () => {
   const { user, profile } = useAuth();
@@ -55,6 +56,30 @@ const ConflictsSection = () => {
     }
   };
 
+  const handleConflictSuccess = async (conflictId?: string) => {
+    await loadConflicts();
+    
+    // Create notification for new conflict
+    if (conflictId && user) {
+      const newConflict = conflicts.find(c => c.id === conflictId);
+      if (newConflict && newConflict.responder_id && newConflict.responder_id !== user.id) {
+        // This notification is redundant as we already have a database trigger,
+        // but included here as an example of manual notification creation
+        try {
+          await createNotification({
+            userId: newConflict.responder_id,
+            type: 'new_conflict',
+            title: 'New Conflict Discussion',
+            message: `Your partner has started a conflict discussion about: ${newConflict.topic || 'a relationship issue'}`,
+            relatedId: conflictId
+          });
+        } catch (error) {
+          console.error('Failed to create notification:', error);
+        }
+      }
+    }
+  };
+
   // Split conflicts into active (unresolved, unarchived), resolved, and archived
   const activeAndPending = conflicts
     .filter(c => !c.resolved_at && !archivedIds.includes(c.id))
@@ -82,7 +107,7 @@ const ConflictsSection = () => {
           {user && (
             <ConflictFormDialog 
               partnerId={profile?.partner_id || mockPartnerId} 
-              onSuccess={loadConflicts} 
+              onSuccess={handleConflictSuccess} 
             />
           )}
         </div>
@@ -106,7 +131,7 @@ const ConflictsSection = () => {
                         conflict={conflict}
                         status={status}
                         userId={user?.id || ''}
-                        onSuccess={loadConflicts}
+                        onSuccess={handleConflictSuccess}
                         onArchive={handleArchive}
                         isArchived={false}
                       />
@@ -128,7 +153,7 @@ const ConflictsSection = () => {
                         conflict={conflict}
                         status={status}
                         userId={user?.id || ''}
-                        onSuccess={loadConflicts}
+                        onSuccess={handleConflictSuccess}
                         onArchive={handleArchive}
                         isArchived={false}
                       />
@@ -151,7 +176,7 @@ const ConflictsSection = () => {
                           conflict={conflict}
                           status={status}
                           userId={user?.id || ''}
-                          onSuccess={loadConflicts}
+                          onSuccess={handleConflictSuccess}
                           onArchive={() => {}} // already archived
                           isArchived={true}
                         />

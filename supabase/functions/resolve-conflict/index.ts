@@ -43,7 +43,7 @@ serve(async (req) => {
       throw new Error('Invalid JSON in request body');
     }
 
-    const { initiator_statement, responder_statement, conflict_id, initiator_name, responder_name } = parsedData;
+    const { initiator_statement, responder_statement, conflict_id, initiator_name, responder_name, initiator_id } = parsedData;
 
     // Add proper validation for required fields
     if (!initiator_statement || !responder_statement || !conflict_id) {
@@ -153,6 +153,33 @@ Ensure all fields are complete and thoroughly filled out. Do not abbreviate or c
       throw new Error('Invalid format in OpenAI response');
     }
 
+    // If initiator_id is provided, create a notification about the conflict resolution
+    if (initiator_id) {
+      try {
+        // Set up Supabase client using env variables
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        
+        if (supabaseUrl && supabaseKey) {
+          const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+          
+          // Create notification for the initiator that the conflict has been resolved
+          await supabaseAdmin.from('notifications').insert({
+            user_id: initiator_id,
+            type: 'conflict_resolution',
+            title: 'Conflict Resolution Available',
+            message: `The AI has provided resolution guidance for your conflict about "${parsedData.topic || 'your recent discussion'}"`,
+            related_id: conflict_id
+          });
+          
+          console.log('Created notification for conflict resolution');
+        }
+      } catch (error) {
+        console.error('Failed to create notification:', error);
+        // Continue with the function even if notification creation fails
+      }
+    }
+
     // Return the parsed AI-generated content
     return new Response(
       JSON.stringify({
@@ -185,3 +212,6 @@ Ensure all fields are complete and thoroughly filled out. Do not abbreviate or c
     );
   }
 });
+
+// Import at the top of the file
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';

@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import WeeklyCheckInForm from '@/components/check-ins/WeeklyCheckInForm';
 import { format, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { createNotification } from '@/services/notificationsService';
 
 const WeeklyCheckInCard = () => {
   const { user } = useAuth();
@@ -57,6 +58,20 @@ const WeeklyCheckInCard = () => {
   };
   
   const completedThisWeek = isCheckInCompletedThisWeek();
+  
+  const handleCheckInComplete = async () => {
+    await fetchLastCheckIn();
+    
+    // Create success notification
+    if (user) {
+      createNotification({
+        userId: user.id,
+        type: 'system_message',
+        title: 'Weekly Check-in Complete',
+        message: 'Your weekly relationship check-in has been recorded. Great job staying connected!'
+      }).catch(error => console.error('Failed to create notification:', error));
+    }
+  };
   
   return (
     <>
@@ -110,7 +125,7 @@ const WeeklyCheckInCard = () => {
       <WeeklyCheckInForm
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
-        onCheckInComplete={fetchLastCheckIn}
+        onCheckInComplete={handleCheckInComplete}
       />
     </>
   );

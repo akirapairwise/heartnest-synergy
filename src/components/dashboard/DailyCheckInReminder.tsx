@@ -10,6 +10,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } f
 import { useMediaQuery } from '@/hooks/use-media-query';
 import MoodTracker from '@/components/moods/MoodTracker';
 import { useDailyMood } from '@/hooks/useDailyMood';
+import { createNotification } from '@/services/notificationsService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DailyCheckInReminder = () => {
   const navigate = useNavigate();
@@ -17,6 +19,7 @@ const DailyCheckInReminder = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { dailyMood, fetchDailyMood } = useDailyMood();
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { user } = useAuth();
   
   if (!showReminder) {
     return null;
@@ -30,6 +33,16 @@ const DailyCheckInReminder = () => {
     setIsModalOpen(false);
     dismissReminder();
     fetchDailyMood();
+    
+    // Create success notification after mood is saved
+    if (user) {
+      createNotification({
+        userId: user.id,
+        type: 'system_message',
+        title: 'Mood Recorded',
+        message: 'Your daily mood has been successfully recorded. Keep up the good work!'
+      }).catch(error => console.error('Failed to create notification:', error));
+    }
   };
   
   return (

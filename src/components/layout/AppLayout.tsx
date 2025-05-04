@@ -70,6 +70,60 @@ const AppLayout = () => {
               console.log('Realtime subscription status:', status);
             });
             
+          // Set up realtime listeners for notifications
+          if (user) {
+            const notificationsChannel = supabase
+              .channel('notifications-channel')
+              .on('postgres_changes', 
+                { 
+                  event: 'INSERT', 
+                  schema: 'public', 
+                  table: 'notifications',
+                  filter: `user_id=eq.${user.id}` 
+                }, 
+                (payload) => {
+                  console.log('New notification received:', payload);
+                  
+                  // Show a toast for the new notification
+                  if (payload.new) {
+                    toast.message(payload.new.title, {
+                      description: payload.new.message,
+                      action: {
+                        label: "View",
+                        onClick: () => {
+                          // Navigate based on notification type
+                          switch(payload.new.type) {
+                            case 'daily_mood_reminder':
+                              navigate('/moods');
+                              break;
+                            case 'weekly_checkin_reminder':
+                              navigate('/check-ins');
+                              break;
+                            case 'new_conflict':
+                              if (payload.new.related_id) {
+                                navigate(`/conflicts/${payload.new.related_id}`);
+                              } else {
+                                navigate('/dashboard');
+                              }
+                              break;
+                            default:
+                              // Default to dashboard
+                              break;
+                          }
+                        }
+                      }
+                    });
+                  }
+                }
+              )
+              .subscribe();
+              
+            return () => {
+              supabase.removeChannel(channel);
+              supabase.removeChannel(notificationsChannel);
+            };
+          }
+          
           return () => {
             supabase.removeChannel(channel);
           };

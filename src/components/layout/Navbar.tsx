@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { useNavigate, NavLink, useLocation } from 'react-router-dom';
-import { Bell, MessageSquare, UserCircle, Heart, Home, Target, Sparkles } from "lucide-react";
+import { MessageSquare, UserCircle, Heart, Home, Target, Sparkles } from "lucide-react";
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import NotificationsDropdown from '@/components/notifications/NotificationsDropdown';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -72,10 +72,8 @@ const Navbar = () => {
         </div>
         
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9">
-            <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="absolute top-0.5 right-0.5 flex h-2 w-2 rounded-full bg-love-500"></span>
-          </Button>
+          {/* Replace Bell button with NotificationsDropdown */}
+          <NotificationsDropdown className="h-8 w-8 sm:h-9 sm:w-9" />
           
           <div className="flex items-center gap-1 sm:gap-2">
             <Avatar 

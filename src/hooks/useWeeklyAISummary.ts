@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,8 @@ type SummaryState =
   | { status: 'idle', summary: null, error: null }
   | { status: 'loading', summary: null, error: null }
   | { status: 'success', summary: string, error: null }
-  | { status: 'error', summary: null, error: string };
+  | { status: 'error', summary: null, error: string }
+  | { status: 'insufficient_data', summary: null, error: null }; // Added new state type
 
 // Helper to fetch all the data needed for the summary
 const fetchCheckInData = async (userId: string) => {
@@ -164,6 +164,14 @@ export const useWeeklyAISummary = () => {
 
       // 1. Collect data
       const data = await fetchCheckInData(user.id);
+      
+      // Check if there's sufficient data before calling the edge function
+      const hasData = data.mood_logs.length > 0 || data.goal_updates.length > 0 || data.shared_moments.length > 0;
+      
+      if (!hasData) {
+        // Instead of throwing an error, return a special value to indicate insufficient data
+        return { insufficient_data: true };
+      }
 
       // 2. Call Edge Function
       const resp = await fetch(
@@ -195,15 +203,26 @@ export const useWeeklyAISummary = () => {
     if (cachedSummaryQuery.isSuccess) {
       setState({ status: 'success', summary: cachedSummaryQuery.data, error: null });
     } else if (summaryMutation.isSuccess) {
-      setState({ status: 'success', summary: summaryMutation.data, error: null });
+      // Check if we got the insufficient_data flag
+      if (summaryMutation.data && typeof summaryMutation.data === 'object' && 'insufficient_data' in summaryMutation.data) {
+        setState({ status: 'insufficient_data', summary: null, error: null });
+      } else {
+        setState({ status: 'success', summary: summaryMutation.data as string, error: null });
+      }
     } else if (summaryMutation.isPending) {
       setState({ status: 'loading', summary: null, error: null });
     } else if (summaryMutation.isError) {
-      setState({ 
-        status: 'error', 
-        summary: null, 
-        error: summaryMutation.error?.message || 'Error talking to OpenAI.'
-      });
+      // Check if the error message indicates insufficient data
+      const errorMsg = summaryMutation.error?.message || '';
+      if (errorMsg.includes('Insufficient data')) {
+        setState({ status: 'insufficient_data', summary: null, error: null });
+      } else {
+        setState({ 
+          status: 'error', 
+          summary: null, 
+          error: errorMsg || 'Error talking to OpenAI.'
+        });
+      }
     }
   }, [
     cachedSummaryQuery.isSuccess, cachedSummaryQuery.data,

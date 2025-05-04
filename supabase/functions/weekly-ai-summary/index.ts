@@ -22,7 +22,7 @@ serve(async (req) => {
     if (!mood_logs?.length && !goal_updates?.length && !shared_moments?.length) {
       return new Response(
         JSON.stringify({ error: "Insufficient data to generate a meaningful summary." }),
-        { status: 400, headers: corsHeaders }
+        { status: 200, headers: corsHeaders }  // Changed from 400 to 200 to not trigger error state
       );
     }
 

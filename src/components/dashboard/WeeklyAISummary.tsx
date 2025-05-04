@@ -17,7 +17,8 @@ import {
   RotateCcw,
   Trophy,
   Heart,
-  Target
+  Target,
+  Calendar
 } from "lucide-react";
 import { useWeeklyAISummary } from "@/hooks/useWeeklyAISummary";
 import { Button } from "@/components/ui/button";
@@ -183,6 +184,33 @@ const WeeklyAISummary = () => {
         </div>
         <span className="text-sm text-harmony-600 font-medium mt-4">Generating your insights...</span>
         <span className="text-xs text-muted-foreground mt-1">Analyzing your relationship data</span>
+      </div>
+    );
+  } else if (status === "insufficient_data") {
+    content = (
+      <div className="text-center py-10 px-4">
+        <div className="bg-gradient-to-br from-harmony-50/80 to-calm-50/80 p-6 rounded-xl mb-4 mx-auto w-20 h-20 flex items-center justify-center">
+          <Calendar className="h-10 w-10 text-harmony-400" />
+        </div>
+        <h3 className="text-lg font-medium mb-2 text-harmony-800">Start Your Relationship Journey</h3>
+        <p className="text-sm mb-4 max-w-xs mx-auto text-harmony-600">
+          Complete daily mood logs and check-ins to receive personalized AI insights about your relationship
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Button
+            onClick={() => navigate('/moods')}
+            variant="outline"
+            className="border-harmony-200 text-harmony-700 hover:bg-harmony-50"
+          >
+            Log Your Mood
+          </Button>
+          <Button 
+            onClick={handleCompleteSummary} 
+            className="bg-gradient-to-r from-harmony-500 to-love-500 text-white hover:from-harmony-600 hover:to-love-600 shadow-sm hover:shadow transition-all duration-300"
+          >
+            Complete Weekly Check-in
+          </Button>
+        </div>
       </div>
     );
   } else if (status === "error") {

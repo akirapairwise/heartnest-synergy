@@ -234,15 +234,7 @@ const UpcomingEventsSection = () => {
         {events?.length === 0 ? (
           <Card className="p-6 text-center rounded-xl bg-muted/20">
             <p className="text-muted-foreground mb-3">No upcoming events</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button 
-                variant="gradient" 
-                onClick={navigateToSuggestions}
-                className="gap-2"
-              >
-                <Sparkles className="h-4 w-4" />
-                Get Suggestions
-              </Button>
+            <div className="sm:hidden flex justify-center">
               <Button 
                 onClick={() => setIsCreateDialogOpen(true)}
               >
@@ -271,7 +263,6 @@ const UpcomingEventsSection = () => {
         )}
       </div>
 
-      {/* Floating Action Button for mobile */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}

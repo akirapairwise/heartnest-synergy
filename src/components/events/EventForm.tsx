@@ -31,8 +31,8 @@ const formSchema = z.object({
   event_time: z.string().optional(),
   location: z.string().optional(),
   locationCoords: z.object({
-    lat: z.number(),
-    lng: z.number()
+    lat: z.number().optional(),
+    lng: z.number().optional()
   }).optional().nullable(),
   shared_with_partner: z.boolean().default(false),
 });
@@ -48,7 +48,7 @@ interface EventFormProps {
     event_date: Date;
     event_time?: string | null;
     location?: string | null;
-    locationCoords?: { lat: number; lng: number } | null;
+    locationCoords?: { lat?: number; lng?: number } | null;
     shared_with_partner: boolean;
   };
 }

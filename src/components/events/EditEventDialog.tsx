@@ -34,7 +34,7 @@ const EditEventDialog = ({
       const { event_time, locationCoords, ...restFormData } = formData;
       
       // Prepare location data if available
-      const locationData = locationCoords ? {
+      const locationData = locationCoords && locationCoords.lat && locationCoords.lng ? {
         location_lat: locationCoords.lat,
         location_lng: locationCoords.lng
       } : {};

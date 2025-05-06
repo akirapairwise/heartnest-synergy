@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -22,6 +23,7 @@ import LocationSearch from './LocationSearch';
 import { GeocodingResult } from '@/utils/googleMapsUtils';
 import LocationMapPreview from './LocationMapPreview';
 
+// Update the schema to make lat and lng optional to match the component usage
 const formSchema = z.object({
   title: z.string().min(2, { message: 'Title must be at least 2 characters' }),
   description: z.string().optional(),
@@ -31,7 +33,7 @@ const formSchema = z.object({
   locationCoords: z.object({
     lat: z.number(),
     lng: z.number()
-  }).optional(),
+  }).optional().nullable(),
   shared_with_partner: z.boolean().default(false),
 });
 
@@ -63,7 +65,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
       event_date: defaultValues?.event_date ?? new Date(),
       event_time: defaultValues?.event_time ?? undefined,
       location: defaultValues?.location ?? '',
-      locationCoords: defaultValues?.locationCoords ?? undefined,
+      locationCoords: defaultValues?.locationCoords ?? null,
       shared_with_partner: defaultValues?.shared_with_partner ?? false,
     },
   });
@@ -80,7 +82,7 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
       });
     } else {
       form.setValue('location', '');
-      form.setValue('locationCoords', undefined);
+      form.setValue('locationCoords', null);
     }
   };
 

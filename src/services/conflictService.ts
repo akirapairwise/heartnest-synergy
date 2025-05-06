@@ -94,7 +94,8 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
         initiator_statement: conflict.initiator_statement,
         responder_statement: conflict.responder_statement,
         initiator_name: initiatorName,
-        responder_name: responderName
+        responder_name: responderName,
+        initiator_id: conflict.initiator_id
       })
     });
     
@@ -112,17 +113,8 @@ export const generateAIResolution = async (conflictId: string): Promise<void> =>
       throw new Error(data?.error || 'Failed to generate AI resolution: Invalid response format');
     }
     
-    // Use the formatted plan or extract the structured data from the response
-    const aiResolutionPlan = data.data.formatted_plan || `
-🧩 Summary:
-${data.data.summary}
-
-🛠️ Resolution Tips:
-${data.data.resolution_tips}
-
-💬 Empathy Prompts:
-${data.data.empathy_prompts}
-`.trim();
+    // Store the AI response directly as JSON string to preserve structure
+    const aiResolutionPlan = JSON.stringify(data.data);
     
     // Update the conflict with the AI resolution plan
     const { error: updateError } = await supabase

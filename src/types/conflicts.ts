@@ -23,12 +23,12 @@ export type ConflictFormData = {
   partner_id: string;
 };
 
-// Add a structured type for the AI resolution plan format
+// Properly define the AIResolutionPlan type for JSON structure
 export type AIResolutionPlan = {
   summary: string;
   resolution_tips: string;
   empathy_prompts: {
-    partner_a: string; // Initiator's empathy message
-    partner_b: string; // Responder's empathy message
+    partner_a?: string; // Initiator's empathy message
+    partner_b?: string; // Responder's empathy message
   };
 };

@@ -5,7 +5,7 @@ import { getStaticMapUrl, getDirectionsUrl, loadGoogleMapsApi, geocodeAddress } 
 
 type LocationMapPreviewProps = {
   locationName: string;
-  coordinates?: { lat: number; lng: number };
+  coordinates?: { lat: number; lng: number } | null;
   className?: string;
 };
 
@@ -68,7 +68,7 @@ const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationName)}`;
   
   // Create a static map image URL if we have coordinates
-  const mapImageUrl = coordinates 
+  const mapImageUrl = coordinates && coordinates.lat && coordinates.lng
     ? getStaticMapUrl(coordinates.lat, coordinates.lng) 
     : '';
 
@@ -82,7 +82,7 @@ const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
       >
         <div className="relative overflow-hidden rounded-md bg-slate-100 h-40 flex items-center justify-center">
           {/* Static Map Image */}
-          {coordinates && mapLoaded && !isLoading && (
+          {coordinates && coordinates.lat && coordinates.lng && mapLoaded && !isLoading && (
             <img 
               src={mapImageUrl}
               alt={`Map of ${locationName}`}

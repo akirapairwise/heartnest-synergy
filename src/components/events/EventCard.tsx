@@ -1,14 +1,23 @@
-import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, MapPin, Users, Heart, Film, Plane, Music, Gift, PartyPopper, Star, Clock, Archive } from 'lucide-react';
-import { format, isPast } from 'date-fns';
-import { cn } from '@/lib/utils';
-import EventDetailsDialog from './EventDetailsDialog';
-import EditEventDialog from './EditEventDialog';
+
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import { Calendar, MapPin, MoreHorizontal, Heart, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { isEventPast } from './utils/eventStatus';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { isEventPast, getEventStatusColor } from './utils/eventStatus';
+import EditEventDialog from './EditEventDialog';
+import EventDetailsDialog from './EventDetailsDialog';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EventCardProps {
   id: string;
@@ -16,107 +25,58 @@ interface EventCardProps {
   description?: string | null;
   eventDate: Date;
   location?: string | null;
+  locationCoords?: { lat: number; lng: number } | null;
   daysToEvent: number;
-  isShared: boolean;
+  isShared?: boolean;
   creatorId: string;
+  onEventUpdated?: () => void;
+  onArchive?: () => void;
   feedback?: string | null;
   hasFeedback?: boolean;
-  onEventUpdated: () => void;
-  onArchive?: () => void;
 }
 
-const EventCard = ({
+const EventCard: React.FC<EventCardProps> = ({
   id,
   title,
   description,
   eventDate,
   location,
+  locationCoords,
   daysToEvent,
-  isShared,
+  isShared = false,
   creatorId,
-  feedback,
-  hasFeedback,
   onEventUpdated,
   onArchive,
-}: EventCardProps) => {
-  const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
-  const [isEditOpen, setIsEditOpen] = React.useState(false);
+  feedback,
+  hasFeedback
+}) => {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const { user } = useAuth();
-  const isUpcoming = !isEventPast(eventDate);
+  
   const isCreator = user?.id === creatorId;
-
-  const handleEditClick = () => {
-    setIsDetailsOpen(false);
-    setIsEditOpen(true);
-  };
-
-  const handleFeedbackSaved = () => {
-    onEventUpdated();
-  };
-
-  // Get appropriate event icon
-  const getEventIcon = () => {
-    // Simple logic to determine icon based on title keywords
-    const titleLower = title.toLowerCase();
-    
-    if (titleLower.includes('anniversary') || titleLower.includes('date') || titleLower.includes('romantic')) {
-      return <Heart className="h-5 w-5 text-love-500" />;
-    } else if (titleLower.includes('movie') || titleLower.includes('cinema') || titleLower.includes('film')) {
-      return <Film className="h-5 w-5 text-calm-500" />;
-    } else if (titleLower.includes('trip') || titleLower.includes('travel') || titleLower.includes('vacation')) {
-      return <Plane className="h-5 w-5 text-harmony-500" />;
-    } else if (titleLower.includes('concert') || titleLower.includes('music')) {
-      return <Music className="h-5 w-5 text-purple-500" />;
-    } else if (titleLower.includes('birthday') || titleLower.includes('gift')) {
-      return <Gift className="h-5 w-5 text-pink-500" />;
-    } else if (titleLower.includes('party') || titleLower.includes('celebration')) {
-      return <PartyPopper className="h-5 w-5 text-amber-500" />;
-    } else {
-      return <Star className="h-5 w-5 text-primary" />;
-    }
-  };
-
-  // Generate card gradient based on event type
-  const getCardStyle = () => {
-    const titleLower = title.toLowerCase();
-    
-    if (titleLower.includes('anniversary') || titleLower.includes('date') || titleLower.includes('romantic')) {
-      return 'bg-gradient-to-br from-white to-love-50/60 border-love-100';
-    } else if (titleLower.includes('movie') || titleLower.includes('cinema')) {
-      return 'bg-gradient-to-br from-white to-calm-50/60 border-calm-100';
-    } else if (titleLower.includes('trip') || titleLower.includes('travel')) {
-      return 'bg-gradient-to-br from-white to-harmony-50/60 border-harmony-100';
-    } else if (titleLower.includes('concert') || titleLower.includes('music')) {
-      return 'bg-gradient-to-br from-white to-purple-50/60 border-purple-100';
-    } else if (titleLower.includes('birthday') || titleLower.includes('gift')) {
-      return 'bg-gradient-to-br from-white to-pink-50/60 border-pink-100';
-    } else if (titleLower.includes('party') || titleLower.includes('celebration')) {
-      return 'bg-gradient-to-br from-white to-amber-50/60 border-amber-100';
-    } else {
-      return 'bg-gradient-to-br from-white to-primary-50/30';
-    }
-  };
-
-  const handleArchiveEvent = async () => {
+  const isPast = isEventPast(eventDate);
+  
+  const handleArchive = async () => {
     try {
       const { error } = await supabase
         .from('partner_events')
         .update({ is_archived: true })
         .eq('id', id);
-
+        
       if (error) throw error;
-
+      
       toast({
-        title: "Event Archived",
-        description: "The event has been moved to archives.",
+        title: "Event archived",
+        description: "The event has been moved to archives"
       });
-
-      onArchive?.();
+      
+      if (onArchive) onArchive();
     } catch (error) {
       console.error('Error archiving event:', error);
       toast({
         title: "Error",
-        description: "Could not archive the event. Please try again.",
+        description: "Failed to archive event",
         variant: "destructive"
       });
     }
@@ -126,128 +86,154 @@ const EventCard = ({
     <>
       <Card 
         className={cn(
-          "overflow-hidden transition-all hover:shadow-md cursor-pointer rounded-xl animate-fade-in",
-          getCardStyle(),
-          isUpcoming ? "" : "opacity-80"
+          "overflow-hidden transition-all duration-300 hover:shadow-md cursor-pointer border",
+          isPast ? "bg-muted/30 border-muted" : "bg-card"
         )}
-        onClick={() => setIsDetailsOpen(true)}
+        onClick={() => setIsDetailsDialogOpen(true)}
       >
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                {getEventIcon()}
-                <h3 className="font-medium leading-none text-lg">{title}</h3>
-                {isShared && (
-                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                    <Users className="h-3 w-3 mr-1" />
-                    Shared
-                  </span>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>{format(eventDate, 'PPP')}</span>
-                {!isUpcoming && (
-                  <span className="inline-flex items-center ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Past
-                  </span>
-                )}
-              </div>
-
-              {location && (
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span className="truncate">{location}</span>
-                </div>
+        <CardContent className="p-0">
+          <div className="flex items-start">
+            {/* Date indicator */}
+            <div 
+              className={cn(
+                "shrink-0 w-[80px] sm:w-24 py-3 px-2 flex flex-col items-center justify-center text-center border-r",
+                getEventStatusColor(daysToEvent)
               )}
-
-              {description && (
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {description}
-                </p>
-              )}
-              
-              {!isUpcoming && hasFeedback && (
-                <div className="text-xs text-muted-foreground italic mt-1">
-                  Has reflection
+            >
+              <div className="text-xl font-bold">{format(eventDate, 'd')}</div>
+              <div className="text-xs uppercase">{format(eventDate, 'MMM')}</div>
+              {!isPast && daysToEvent <= 3 && (
+                <div className="mt-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-white/50">
+                  {daysToEvent === 0 ? 'Today!' : daysToEvent === 1 ? 'Tomorrow' : `${daysToEvent} days`}
                 </div>
               )}
             </div>
-
-            {isUpcoming && (
-              <div className="text-right">
-                <div className={cn(
-                  "text-sm font-medium px-3 py-1 rounded-full",
-                  daysToEvent === 0 ? "bg-primary/10 text-primary" : 
-                  daysToEvent === 1 ? "bg-primary/15 text-primary" :
-                  daysToEvent <= 3 ? "bg-primary/20 text-primary" :
-                  "bg-muted text-muted-foreground"
-                )}>
-                  {daysToEvent === 0 ? (
-                    "Today!"
-                  ) : daysToEvent === 1 ? (
-                    "Tomorrow"
-                  ) : (
-                    `In ${daysToEvent} days`
+            
+            {/* Event details */}
+            <div className="flex-1 p-3 sm:p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-medium mb-1">{title}</h3>
+                  
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>
+                      {format(eventDate, 'h:mm a')}
+                    </span>
+                  </div>
+                  
+                  {location && (
+                    <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span className="truncate max-w-[200px]">{location}</span>
+                    </div>
                   )}
                 </div>
-              </div>
-            )}
-            
-            {!isUpcoming && (
-              <div className="text-right">
-                <div className="text-sm font-medium px-3 py-1 rounded-full bg-muted text-muted-foreground">
-                  {Math.abs(daysToEvent)} days ago
+                
+                <div className="flex items-center gap-1">
+                  {isPast && hasFeedback && (
+                    <span 
+                      className="text-xs inline-flex items-center gap-0.5 text-primary font-medium"
+                      title="Has feedback"
+                    >
+                      <CheckCircle2 className="h-3 w-3 text-primary" />
+                    </span>
+                  )}
+                  
+                  {isShared && (
+                    <span 
+                      className="text-xs inline-flex items-center gap-0.5 text-rose-500"
+                      title="Shared with partner"
+                    >
+                      <Heart className="h-3 w-3 text-rose-500" />
+                    </span>
+                  )}
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsDetailsDialogOpen(true);
+                        }}
+                      >
+                        View Details
+                      </DropdownMenuItem>
+                      
+                      {isCreator && (
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsEditDialogOpen(true);
+                          }}
+                        >
+                          Edit Event
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {isCreator && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleArchive();
+                            }}
+                          >
+                            Archive Event
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
-            )}
-            {!isUpcoming && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleArchiveEvent();
-                }}
-                className="text-muted-foreground hover:text-primary transition-colors"
-                title="Archive Event"
-              >
-                <Archive className="h-4 w-4" />
-              </button>
-            )}
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      <EventDetailsDialog
-        open={isDetailsOpen}
-        onClose={() => setIsDetailsOpen(false)}
-        title={title}
-        description={description}
-        eventDate={eventDate}
-        location={location}
-        daysToEvent={daysToEvent}
-        eventId={id}
-        onEditClick={handleEditClick}
-        isCreator={isCreator}
-        feedback={feedback}
-        hasFeedback={hasFeedback}
-        onFeedbackSaved={handleFeedbackSaved}
-      />
-
-      <EditEventDialog
-        open={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
+      
+      <EditEventDialog 
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
         eventId={id}
         defaultValues={{
           title,
           description,
           event_date: eventDate,
           location,
+          locationCoords: locationCoords || undefined,
           shared_with_partner: isShared
         }}
-        onEventUpdated={onEventUpdated}
+        onEventUpdated={() => {
+          if (onEventUpdated) onEventUpdated();
+        }}
+      />
+      
+      <EventDetailsDialog
+        open={isDetailsDialogOpen}
+        onClose={() => setIsDetailsDialogOpen(false)}
+        title={title}
+        description={description}
+        eventDate={eventDate}
+        location={location}
+        locationCoords={locationCoords}
+        daysToEvent={daysToEvent}
+        eventId={id}
+        onEditClick={() => {
+          setIsDetailsDialogOpen(false);
+          setIsEditDialogOpen(true);
+        }}
+        isCreator={isCreator}
+        feedback={feedback}
+        hasFeedback={hasFeedback}
+        onFeedbackSaved={onEventUpdated}
       />
     </>
   );

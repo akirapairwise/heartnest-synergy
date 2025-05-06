@@ -2,12 +2,13 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Edit, Heart, Clock } from 'lucide-react';
+import { Calendar, Edit, Heart, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { isEventPast } from './utils/eventStatus';
 import EventFeedback from './EventFeedback';
+import LocationMapPreview from './LocationMapPreview';
 
 interface EventDetailsDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface EventDetailsDialogProps {
   description?: string | null;
   eventDate: Date;
   location?: string | null;
+  locationCoords?: { lat: number; lng: number } | null;
   daysToEvent: number;
   eventId: string;
   onEditClick: () => void;
@@ -32,6 +34,7 @@ const EventDetailsDialog = ({
   description,
   eventDate,
   location,
+  locationCoords,
   daysToEvent,
   onEditClick,
   isCreator,
@@ -42,12 +45,6 @@ const EventDetailsDialog = ({
 }: EventDetailsDialogProps) => {
   const { user } = useAuth();
   const isPast = isEventPast(eventDate);
-
-  const handleOpenLocation = () => {
-    if (!location) return;
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
-    window.open(mapsUrl, '_blank');
-  };
 
   // Function to get tag class based on days remaining
   const getCountdownTagClass = () => {
@@ -113,18 +110,10 @@ const EventDetailsDialog = ({
             </div>
 
             {location && (
-              <div className="flex items-center gap-3">
-                <div className="bg-white rounded-full p-2 shadow-sm">
-                  <MapPin className="h-5 w-5 text-primary" />
-                </div>
-                <Button
-                  variant="link"
-                  className="p-0 h-auto text-foreground hover:text-primary font-medium underline-offset-4"
-                  onClick={handleOpenLocation}
-                >
-                  {location}
-                </Button>
-              </div>
+              <LocationMapPreview 
+                locationName={location}
+                coordinates={locationCoords || undefined}
+              />
             )}
 
             {description && (

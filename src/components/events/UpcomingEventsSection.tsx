@@ -20,6 +20,8 @@ interface EventWithFeedback {
   description: string | null;
   creator_id: string;
   location: string | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
   event_date: string;
   shared_with_partner: boolean;
   created_at: string;
@@ -102,13 +104,6 @@ const UpcomingEventsSection = () => {
         return;
       }
 
-      // Log the data we're about to save
-      console.log('Creating event with data:', {
-        ...formData,
-        creator_id: user.id,
-        event_date: formData.event_date instanceof Date ? formData.event_date.toISOString() : formData.event_date,
-      });
-
       // Make sure we have a valid date
       if (!(formData.event_date instanceof Date)) {
         toast({
@@ -119,12 +114,19 @@ const UpcomingEventsSection = () => {
         return;
       }
 
+      // Extract location coordinates if available
+      const locationData = formData.locationCoords ? {
+        location_lat: formData.locationCoords.lat,
+        location_lng: formData.locationCoords.lng
+      } : {};
+
       const { error } = await supabase
         .from('partner_events')
         .insert([{
           title: formData.title,
           description: formData.description || null,
           location: formData.location || null,
+          ...locationData,
           shared_with_partner: formData.shared_with_partner || false,
           creator_id: user.id,
           event_date: formData.event_date.toISOString(),
@@ -251,13 +253,17 @@ const UpcomingEventsSection = () => {
               description={event.description}
               eventDate={new Date(event.event_date)}
               location={event.location}
+              locationCoords={event.location_lat && event.location_lng ? {
+                lat: event.location_lat,
+                lng: event.location_lng
+              } : undefined}
               daysToEvent={event.days_to_event}
               isShared={event.shared_with_partner}
               creatorId={event.creator_id}
               feedback={event.feedback}
               hasFeedback={event.has_feedback}
               onEventUpdated={refetch}
-              onArchive={handleEventArchived} // Add archive handler
+              onArchive={handleEventArchived}
             />
           ))
         )}

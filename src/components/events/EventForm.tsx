@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +19,9 @@ import TimePickerField from './TimePickerField';
 import EventPreviewCard from './EventPreviewCard';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { DrawerContent, Drawer, DrawerTrigger } from '@/components/ui/drawer';
+import LocationSearch from './LocationSearch';
+import { GeocodingResult } from '@/utils/googleMapsUtils';
+import LocationMapPreview from './LocationMapPreview';
 
 const formSchema = z.object({
   title: z.string().min(2, { message: 'Title must be at least 2 characters' }),
@@ -26,6 +29,10 @@ const formSchema = z.object({
   event_date: z.date(),
   event_time: z.string().optional(),
   location: z.string().optional(),
+  locationCoords: z.object({
+    lat: z.number(),
+    lng: z.number()
+  }).optional(),
   shared_with_partner: z.boolean().default(false),
 });
 
@@ -40,12 +47,14 @@ interface EventFormProps {
     event_date: Date;
     event_time?: string | null;
     location?: string | null;
+    locationCoords?: { lat: number; lng: number } | null;
     shared_with_partner: boolean;
   };
 }
 
 const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
   const isMobile = useMediaQuery("(max-width: 640px)");
+  const [selectedLocation, setSelectedLocation] = useState<GeocodingResult | null>(null);
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -55,11 +64,23 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
       event_date: defaultValues?.event_date ?? new Date(),
       event_time: defaultValues?.event_time ?? undefined,
       location: defaultValues?.location ?? '',
+      locationCoords: defaultValues?.locationCoords ?? undefined,
       shared_with_partner: defaultValues?.shared_with_partner ?? false,
     },
   });
 
   const watchedFields = form.watch();
+
+  const handleLocationSelect = (location: GeocodingResult | null) => {
+    setSelectedLocation(location);
+    if (location) {
+      form.setValue('location', location.address);
+      form.setValue('locationCoords', location.coordinates);
+    } else {
+      form.setValue('location', '');
+      form.setValue('locationCoords', undefined);
+    }
+  };
 
   const handleSubmit = (data: FormData) => {
     if (data.event_time) {
@@ -197,14 +218,20 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
                 <FormItem>
                   <FormLabel className="text-base">Location (Optional)</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter location" 
-                      {...field} 
-                      value={field.value || ''} 
-                      className="rounded-lg focus:ring-primary focus:border-primary transition-all"
+                    <LocationSearch 
+                      value={field.value || ''}
+                      onLocationSelect={handleLocationSelect}
+                      placeholder="Search for a location"
                     />
                   </FormControl>
                   <FormMessage />
+                  {field.value && (
+                    <LocationMapPreview 
+                      locationName={field.value} 
+                      coordinates={form.getValues('locationCoords')}
+                      className="mt-2" 
+                    />
+                  )}
                 </FormItem>
               )}
             />

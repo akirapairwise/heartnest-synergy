@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface EditEventDialogProps {
   open: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   eventId: string;
   defaultValues: {
     title: string;
@@ -15,6 +15,7 @@ interface EditEventDialogProps {
     event_date: Date;
     event_time?: string | null;
     location?: string | null;
+    locationCoords?: { lat: number; lng: number };
     shared_with_partner: boolean;
   };
   onEventUpdated: () => void;
@@ -22,18 +23,25 @@ interface EditEventDialogProps {
 
 const EditEventDialog = ({ 
   open, 
-  onClose, 
+  onOpenChange, 
   eventId, 
   defaultValues,
   onEventUpdated 
 }: EditEventDialogProps) => {
   const handleSubmit = async (formData: any) => {
     try {
-      // Extract event_time before sending to database
-      const { event_time, ...restFormData } = formData;
+      // Extract event_time and locationCoords before sending to database
+      const { event_time, locationCoords, ...restFormData } = formData;
+      
+      // Prepare location data if available
+      const locationData = locationCoords ? {
+        location_lat: locationCoords.lat,
+        location_lng: locationCoords.lng
+      } : {};
       
       const finalData = {
         ...restFormData,
+        ...locationData,
         event_date: formData.event_date.toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -51,7 +59,7 @@ const EditEventDialog = ({
       });
       
       onEventUpdated();
-      onClose();
+      onOpenChange(false);
     } catch (error) {
       console.error('Error updating event:', error);
       toast({
@@ -63,7 +71,7 @@ const EditEventDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] rounded-xl overflow-hidden">
         <div className="bg-gradient-to-r from-harmony-50 to-calm-50 p-6 -m-6 mb-2">
           <DialogHeader>
@@ -72,7 +80,7 @@ const EditEventDialog = ({
         </div>
         <EventForm
           onSubmit={handleSubmit}
-          onCancel={onClose}
+          onCancel={() => onOpenChange(false)}
           defaultValues={defaultValues}
         />
       </DialogContent>

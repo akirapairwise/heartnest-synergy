@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -75,7 +74,10 @@ const EventForm = ({ onSubmit, onCancel, defaultValues }: EventFormProps) => {
     setSelectedLocation(location);
     if (location) {
       form.setValue('location', location.address);
-      form.setValue('locationCoords', location.coordinates);
+      form.setValue('locationCoords', {
+        lat: location.coordinates.lat,
+        lng: location.coordinates.lng
+      });
     } else {
       form.setValue('location', '');
       form.setValue('locationCoords', undefined);

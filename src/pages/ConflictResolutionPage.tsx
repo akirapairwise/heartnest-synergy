@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Conflict } from "@/types/conflicts";
+import { Conflict, AIResolutionPlan } from "@/types/conflicts";
 import ProcessingState from "@/components/conflicts/resolution/ProcessingState";
 import ResolutionSummary from "@/components/conflicts/resolution/ResolutionSummary";
 import ResolutionTips from "@/components/conflicts/resolution/ResolutionTips";
@@ -14,12 +15,7 @@ import { toast } from "sonner";
 import { BrainCircuit, Lightbulb, MessageCircle } from "lucide-react";
 
 // Helper to detect new JSON format
-function tryParseAIPlan(plan: string): {
-  summary?: string;
-  resolution_tips?: string;
-  empathy_prompts?: { partner_a?: string; partner_b?: string; };
-  raw?: string;
-} {
+function tryParseAIPlan(plan: string): AIResolutionPlan | { raw?: string } {
   try {
     const json = JSON.parse(plan);
     // New schema (with empathy_prompts as object)
@@ -28,7 +24,7 @@ function tryParseAIPlan(plan: string): {
       typeof json.resolution_tips === "string" &&
       typeof json.empathy_prompts === "object"
     ) {
-      return json;
+      return json as AIResolutionPlan;
     }
     // Legacy fallback
     return { raw: plan };
@@ -83,7 +79,7 @@ const ConflictResolutionPage = () => {
   const plan = conflict.ai_resolution_plan
     ? tryParseAIPlan(conflict.ai_resolution_plan)
     : { raw: "No resolution plan available." };
-  const isJson = !!plan.summary;
+  const isJson = 'summary' in plan;
 
   return (
     <div className="max-w-3xl mx-auto py-6 flex flex-col gap-7 w-full px-4 sm:px-6">
@@ -110,14 +106,18 @@ const ConflictResolutionPage = () => {
         )}
       </section>
 
-      {/* Empathy Messages Section */}
-      {isJson && (
+      {/* Personalized Empathy Messages Section */}
+      {isJson && user && (
         <section className="rounded-xl shadow card-gradient-love p-6 border border-love-100">
           <h2 className="font-bold text-xl flex items-center gap-2 text-love-700 mb-3">
             <MessageCircle className="text-love-500" size={24} />
-            Empathy Messages
+            Personalized Empathy Messages
           </h2>
-          <EmpathyMessages empathy_prompts={plan.empathy_prompts || {}} />
+          <EmpathyMessages 
+            empathy_prompts={plan.empathy_prompts || {}} 
+            currentUserId={user.id}
+            initiatorId={conflict.initiator_id}
+          />
         </section>
       )}
 

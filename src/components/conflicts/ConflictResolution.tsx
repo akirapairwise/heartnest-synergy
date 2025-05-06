@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Conflict } from '@/types/conflicts';
+import { Conflict, AIResolutionPlan } from '@/types/conflicts';
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { toast } from 'sonner';
@@ -11,15 +11,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import ResolutionSummary from './resolution/ResolutionSummary';
 import ResolutionTips from './resolution/ResolutionTips';
-import EmpathyPromptBlock from './resolution/EmpathyPromptBlock';
+import EmpathyMessages from './resolution/EmpathyMessages';
 
 // Helper to detect new JSON format
-function tryParseAIPlan(plan: string): {
-  summary?: string;
-  resolution_tips?: string;
-  empathy_prompts?: { partner_a?: string; partner_b?: string; };
-  raw?: string;
-} {
+function tryParseAIPlan(plan: string): AIResolutionPlan | { raw?: string } {
   try {
     const json = JSON.parse(plan);
     // New schema (with empathy_prompts as object)
@@ -28,7 +23,7 @@ function tryParseAIPlan(plan: string): {
       typeof json.resolution_tips === "string" &&
       typeof json.empathy_prompts === "object"
     ) {
-      return json;
+      return json as AIResolutionPlan;
     }
     // Legacy fallback
     return { raw: plan };
@@ -71,7 +66,7 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
 
   // Handle new JSON or old string format
   const plan = tryParseAIPlan(conflict.ai_resolution_plan);
-  const isJson = !!plan.summary;
+  const isJson = 'summary' in plan;
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -91,13 +86,14 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
               <ResolutionSummary summary={plan.summary || ""} />
               <ResolutionTips tips={plan.resolution_tips || ""} />
               <div className="font-semibold text-base sm:text-lg mb-3 text-gray-700">
-                💬 Empathy Prompts
+                💬 Personalized Empathy Messages
               </div>
-              {plan.empathy_prompts?.partner_a && (
-                <EmpathyPromptBlock direction="a" prompt={plan.empathy_prompts.partner_a} />
-              )}
-              {plan.empathy_prompts?.partner_b && (
-                <EmpathyPromptBlock direction="b" prompt={plan.empathy_prompts.partner_b} />
+              {user && (
+                <EmpathyMessages 
+                  empathy_prompts={plan.empathy_prompts || {}} 
+                  currentUserId={user.id}
+                  initiatorId={conflict.initiator_id}
+                />
               )}
             </>
           )}

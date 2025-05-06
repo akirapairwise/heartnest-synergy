@@ -7,8 +7,8 @@ import { toast } from "sonner";
 
 type EmpathyMessagesProps = {
   empathy_prompts: { partner_a?: string; partner_b?: string };
-  currentUserId: string; // Added to determine which message to show
-  initiatorId: string;   // Added to match messages to correct user
+  currentUserId: string;
+  initiatorId: string;
 };
 
 const handleCopy = (txt: string) => {

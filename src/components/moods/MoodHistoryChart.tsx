@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { format, subDays, parseISO, isValid } from "date-fns";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, Area } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
 import { MoodEntry } from '@/types/check-ins';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,17 +20,16 @@ interface MoodHistoryChartProps {
 const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({ 
   moodHistory, 
   isLoading,
-  daysToShow = 7,
+  daysToShow = 30,
   onAddMood
 }) => {
-  const [timeRange, setTimeRange] = useState<'7d' | '14d' | '30d'>('7d');
-  const [chartType, setChartType] = useState<'line' | 'area'>('line');
+  const [timeRange, setTimeRange] = useState<'7d' | '14d' | '30d'>('30d');
   
   const getDaysToShow = (): number => {
     switch (timeRange) {
+      case '7d': return 7;
       case '14d': return 14;
-      case '30d': return 30;
-      default: return 7;
+      default: return 30;
     }
   };
   
@@ -170,15 +169,8 @@ const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({
           <TrendingUp className="h-5 w-5 text-love-500" />
           <h3 className="font-medium text-gray-800">Mood Trends</h3>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Tabs defaultValue="line" className="w-full sm:w-auto" onValueChange={(v) => setChartType(v as 'line' | 'area')}>
-            <TabsList className="w-full sm:w-auto grid grid-cols-2">
-              <TabsTrigger value="line">Line</TabsTrigger>
-              <TabsTrigger value="area">Area</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          
-          <Tabs defaultValue="7d" className="w-full sm:w-auto" onValueChange={(v) => setTimeRange(v as '7d' | '14d' | '30d')}>
+        <div>
+          <Tabs defaultValue="30d" className="w-full sm:w-auto" onValueChange={(v) => setTimeRange(v as '7d' | '14d' | '30d')}>
             <TabsList className="w-full sm:w-auto grid grid-cols-3">
               <TabsTrigger value="7d">Week</TabsTrigger>
               <TabsTrigger value="14d">2 Weeks</TabsTrigger>
@@ -221,27 +213,15 @@ const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({
                 />
               ))}
               
-              {chartType === 'area' ? (
-                <Area
-                  type="monotone"
-                  dataKey="mood"
-                  stroke="#fb7185"
-                  strokeWidth={2}
-                  fill="url(#moodColorGradient)"
-                  connectNulls={true}
-                  activeDot={<CustomActiveDot />}
-                />
-              ) : (
-                <Line
-                  type="monotone"
-                  dataKey="mood"
-                  stroke="#fb7185"
-                  strokeWidth={2.5}
-                  dot={{ fill: "#fb7185", strokeWidth: 2, r: 4 }}
-                  activeDot={<CustomActiveDot />}
-                  connectNulls={true}
-                />
-              )}
+              <Line
+                type="monotone"
+                dataKey="mood"
+                stroke="#fb7185"
+                strokeWidth={2.5}
+                dot={{ fill: "#fb7185", strokeWidth: 2, r: 4 }}
+                activeDot={<CustomActiveDot />}
+                connectNulls={true}
+              />
             </LineChart>
           </ResponsiveContainer>
         </ChartContainer>

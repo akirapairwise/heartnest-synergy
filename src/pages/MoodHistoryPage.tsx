@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import MoodHistory from '@/components/moods/MoodHistory';
 import MoodHistoryChart from '@/components/moods/MoodHistoryChart';
 import { useMoodHistory } from '@/hooks/useMoodHistory';
-import { Loader2, Heart, Calendar, PlusCircle, ChartBarIcon } from 'lucide-react';
+import { Loader2, Heart, Calendar, PlusCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -75,11 +75,10 @@ const MoodHistoryPage = () => {
           <Tabs defaultValue="chart" className="w-full">
             <div className="px-6 pt-6">
               <TabsList className="w-full">
-                <TabsTrigger value="chart" className="flex items-center gap-1.5">
-                  <ChartBarIcon className="h-4 w-4" />
+                <TabsTrigger value="chart" className="flex items-center gap-1.5 flex-1">
                   Chart View
                 </TabsTrigger>
-                <TabsTrigger value="list" className="flex items-center gap-1.5">
+                <TabsTrigger value="list" className="flex items-center gap-1.5 flex-1">
                   <Calendar className="h-4 w-4" />
                   List View
                 </TabsTrigger>

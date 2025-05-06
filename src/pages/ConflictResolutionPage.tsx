@@ -106,12 +106,12 @@ const ConflictResolutionPage = () => {
         )}
       </section>
 
-      {/* Personalized Empathy Messages Section */}
+      {/* Personalized Empathy Message Section */}
       {isJson && user && (
         <section className="rounded-xl shadow card-gradient-love p-6 border border-love-100">
           <h2 className="font-bold text-xl flex items-center gap-2 text-love-700 mb-3">
             <MessageCircle className="text-love-500" size={24} />
-            Personalized Empathy Messages
+            Your Empathy Message
           </h2>
           <EmpathyMessages 
             empathy_prompts={plan.empathy_prompts || {}} 

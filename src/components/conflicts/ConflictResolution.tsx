@@ -86,7 +86,7 @@ const ConflictResolution = ({ conflict, onUpdate }: ConflictResolutionProps) => 
               <ResolutionSummary summary={plan.summary || ""} />
               <ResolutionTips tips={plan.resolution_tips || ""} />
               <div className="font-semibold text-base sm:text-lg mb-3 text-gray-700">
-                💬 Personalized Empathy Messages
+                💬 Your Empathy Message
               </div>
               {user && (
                 <EmpathyMessages 

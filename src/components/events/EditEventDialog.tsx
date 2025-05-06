@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import EventForm from './EventForm';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { EventFormData } from './form/EventFormSchema';
 
 interface EditEventDialogProps {
   open: boolean;
@@ -28,7 +29,7 @@ const EditEventDialog = ({
   defaultValues,
   onEventUpdated 
 }: EditEventDialogProps) => {
-  const handleSubmit = async (formData: any) => {
+  const handleSubmit = async (formData: EventFormData) => {
     try {
       // Extract event_time and locationCoords before sending to database
       const { event_time, locationCoords, ...restFormData } = formData;

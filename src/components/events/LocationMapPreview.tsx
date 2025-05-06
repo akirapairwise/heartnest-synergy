@@ -5,7 +5,7 @@ import { getStaticMapUrl, getDirectionsUrl, loadGoogleMapsApi, geocodeAddress } 
 
 type LocationMapPreviewProps = {
   locationName: string;
-  coordinates?: { lat: number; lng: number } | null;
+  coordinates?: { lat?: number; lng?: number } | null;
   className?: string;
 };
 
@@ -21,7 +21,7 @@ const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   // If coordinates aren't provided but we have a location name, try to geocode it
   useEffect(() => {
     const getCoordinates = async () => {
-      if (!initialCoordinates && locationName) {
+      if ((!initialCoordinates || !initialCoordinates.lat || !initialCoordinates.lng) && locationName) {
         setIsLoading(true);
         try {
           const result = await geocodeAddress(locationName);
@@ -53,7 +53,7 @@ const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
     initMap();
   }, []);
 
-  if (!locationName && !coordinates) {
+  if (!locationName && (!coordinates || !coordinates.lat || !coordinates.lng)) {
     return (
       <div className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
         <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -63,7 +63,7 @@ const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   }
 
   // If we have coordinates, create a Google Maps URL
-  const googleMapsUrl = coordinates 
+  const googleMapsUrl = coordinates && coordinates.lat && coordinates.lng
     ? getDirectionsUrl(coordinates.lat, coordinates.lng, locationName)
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationName)}`;
   

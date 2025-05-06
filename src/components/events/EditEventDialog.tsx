@@ -15,7 +15,7 @@ interface EditEventDialogProps {
     event_date: Date;
     event_time?: string | null;
     location?: string | null;
-    locationCoords?: { lat: number; lng: number } | null;
+    locationCoords?: { lat?: number; lng?: number } | null;
     shared_with_partner: boolean;
   };
   onEventUpdated: () => void;

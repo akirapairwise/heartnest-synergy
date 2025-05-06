@@ -1,4 +1,3 @@
-
 // Add Google Maps API types declaration
 declare global {
   interface Window {
@@ -34,7 +33,8 @@ declare global {
   }
 }
 
-// Google Maps API key from environment variables
+// Get Google Maps API key from environment variables
+// Using direct reference to the Supabase secret instead of VITE_* variable
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 export interface GeocodingResult {

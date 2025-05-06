@@ -1,12 +1,14 @@
 
-import React, { useMemo } from 'react';
-import { format, subDays } from "date-fns";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import React, { useMemo, useState } from 'react';
+import { format, subDays, parseISO, isValid } from "date-fns";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, Area } from "recharts";
 import { MoodEntry } from '@/types/check-ins';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, PlusCircle } from 'lucide-react';
+import { Heart, PlusCircle, Calendar, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { moodEmojis } from '@/components/dashboard/mood/MoodUtils';
 
 interface MoodHistoryChartProps {
   moodHistory: MoodEntry[];
@@ -21,40 +23,65 @@ const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({
   daysToShow = 7,
   onAddMood
 }) => {
+  const [timeRange, setTimeRange] = useState<'7d' | '14d' | '30d'>('7d');
+  const [chartType, setChartType] = useState<'line' | 'area'>('line');
+  
+  const getDaysToShow = (): number => {
+    switch (timeRange) {
+      case '14d': return 14;
+      case '30d': return 30;
+      default: return 7;
+    }
+  };
+  
   const chartData = useMemo(() => {
     // Create an array for the last X days
     const today = new Date();
-    const data: Array<{ date: string; formattedDate: string; mood: number | null }> = [];
+    const data: Array<{ date: string; formattedDate: string; mood: number | null; emoji: string }> = [];
+    const days = getDaysToShow();
     
     // Initialize data array with the last X days
-    for (let i = daysToShow - 1; i >= 0; i--) {
+    for (let i = days - 1; i >= 0; i--) {
       const date = subDays(today, i);
       const dateStr = format(date, "yyyy-MM-dd");
       data.push({
         date: dateStr,
         formattedDate: format(date, "MMM d"),
-        mood: null
+        mood: null,
+        emoji: "❓"
       });
     }
     
     // Fill in mood data where available
     moodHistory.forEach(entry => {
-      const entryDate = entry.date.split('T')[0]; // Get just the date part
-      const dataEntry = data.find(d => d.date === entryDate);
-      if (dataEntry) {
-        dataEntry.mood = entry.mood;
+      // Ensure date is valid before processing
+      const entryDate = typeof entry.date === 'string' ? entry.date.split('T')[0] : null;
+      if (entryDate) {
+        const dataEntry = data.find(d => d.date === entryDate);
+        if (dataEntry) {
+          dataEntry.mood = entry.mood;
+          dataEntry.emoji = moodEmojis[entry.mood as keyof typeof moodEmojis]?.emoji || "❓";
+        }
       }
     });
     
     return data;
-  }, [moodHistory, daysToShow]);
+  }, [moodHistory, timeRange]);
   
   const moodLabels = {
-    1: "Very Low",
-    2: "Low",
+    1: "Struggling",
+    2: "Disconnected",
     3: "Neutral",
-    4: "Good",
-    5: "Excellent"
+    4: "Connected",
+    5: "Thriving"
+  };
+
+  const moodColors = {
+    1: "#ef4444", // red
+    2: "#f97316", // orange
+    3: "#eab308", // yellow
+    4: "#84cc16", // green
+    5: "#22c55e"  // darker green
   };
   
   const config = {
@@ -65,7 +92,7 @@ const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({
   };
 
   if (isLoading) {
-    return <Skeleton className="w-full h-[200px]" />;
+    return <Skeleton className="w-full h-[300px] rounded-xl" />;
   }
   
   // Check if there's no meaningful mood data
@@ -73,18 +100,16 @@ const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({
   
   if (!hasMoodData) {
     return (
-      <div className="w-full h-[200px] bg-white p-4 rounded-lg border border-gray-200 flex flex-col items-center justify-center">
-        <Heart className="h-8 w-8 text-love-300 mb-2" />
-        <h3 className="text-base font-medium text-gray-700 mb-1">No mood data yet</h3>
-        <p className="text-sm text-gray-500 mb-3 text-center">Track your mood daily to see patterns over time</p>
+      <div className="w-full h-[300px] bg-white p-6 rounded-xl border border-gray-200 flex flex-col items-center justify-center">
+        <Heart className="h-12 w-12 text-love-300 mb-3" />
+        <h3 className="text-lg font-medium text-gray-700 mb-2">No mood data yet</h3>
+        <p className="text-sm text-gray-500 mb-4 text-center">Track your mood daily to see patterns over time</p>
         {onAddMood && (
           <Button 
             onClick={onAddMood}
-            variant="outline" 
-            size="sm"
             className="bg-love-50 text-love-600 border-love-200 hover:bg-love-100"
           >
-            <PlusCircle className="h-4 w-4 mr-1" />
+            <PlusCircle className="h-4 w-4 mr-2" />
             Log Today's Mood
           </Button>
         )}
@@ -92,60 +117,148 @@ const MoodHistoryChart: React.FC<MoodHistoryChartProps> = ({
     );
   }
   
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const value = payload[0].value as number;
+      if (value === null) return null;
+      
+      const mood = moodLabels[value as keyof typeof moodLabels];
+      const emoji = payload[0].payload.emoji;
+      
+      return (
+        <div className="bg-white p-3 border rounded-lg shadow-md">
+          <p className="text-sm font-medium mb-1">{label}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{emoji}</span>
+            <span className="text-sm text-gray-700">{mood}</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+  
+  const CustomActiveDot = (props: any) => {
+    const { cx, cy, stroke, dataKey, value, payload } = props;
+    
+    if (value === null) return null;
+    
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={6} stroke="white" strokeWidth={2} fill={moodColors[value as keyof typeof moodColors]} />
+        <circle cx={cx} cy={cy} r={3} stroke="white" strokeWidth={1} fill={moodColors[value as keyof typeof moodColors]} />
+        <text x={cx} y={cy - 15} textAnchor="middle" fill={moodColors[value as keyof typeof moodColors]} fontSize="12" fontWeight="bold">
+          {payload.emoji}
+        </text>
+      </g>
+    );
+  };
+  
+  const renderGradient = () => (
+    <defs>
+      <linearGradient id="moodColorGradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="5%" stopColor="#fb7185" stopOpacity={0.8}/>
+        <stop offset="95%" stopColor="#fb7185" stopOpacity={0.2}/>
+      </linearGradient>
+    </defs>
+  );
+
   return (
-    <div className="w-full bg-white p-4 rounded-lg border border-gray-200">
-      <h3 className="text-sm font-medium mb-3">Mood Trends</h3>
-      <ChartContainer config={config} className="h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
-            <XAxis 
-              dataKey="formattedDate"
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 12, fill: "#6b7280" }}
-              dy={10}
-            />
-            <YAxis
-              domain={[1, 5]}
-              ticks={[1, 2, 3, 4, 5]}
-              tickFormatter={(value) => moodLabels[value as keyof typeof moodLabels] || ""}
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 12, fill: "#6b7280" }}
-              width={70}
-            />
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (active && payload && payload.length) {
-                  const value = payload[0].value as number;
-                  return (
-                    <ChartTooltipContent
-                      active={active}
-                      payload={payload}
-                      label={label}
-                      formatter={(val) => [
-                        `${moodLabels[Number(val) as keyof typeof moodLabels] || val}`,
-                        "Mood"
-                      ]}
-                    />
-                  );
-                }
-                return null;
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="mood"
-              stroke="#fb7185"
-              strokeWidth={2}
-              dot={{ fill: "#fb7185", strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 6, fill: "#fb7185", stroke: "#fff", strokeWidth: 2 }}
-              connectNulls={true}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartContainer>
+    <div className="space-y-4 w-full">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-love-500" />
+          <h3 className="font-medium text-gray-800">Mood Trends</h3>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Tabs defaultValue="line" className="w-full sm:w-auto" onValueChange={(v) => setChartType(v as 'line' | 'area')}>
+            <TabsList className="w-full sm:w-auto grid grid-cols-2">
+              <TabsTrigger value="line">Line</TabsTrigger>
+              <TabsTrigger value="area">Area</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
+          <Tabs defaultValue="7d" className="w-full sm:w-auto" onValueChange={(v) => setTimeRange(v as '7d' | '14d' | '30d')}>
+            <TabsList className="w-full sm:w-auto grid grid-cols-3">
+              <TabsTrigger value="7d">Week</TabsTrigger>
+              <TabsTrigger value="14d">2 Weeks</TabsTrigger>
+              <TabsTrigger value="30d">Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      </div>
+      
+      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm h-[300px]">
+        <ChartContainer config={config} className="h-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 10 }}>
+              {renderGradient()}
+              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+              <XAxis 
+                dataKey="formattedDate"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 12, fill: "#6b7280" }}
+                dy={10}
+              />
+              <YAxis
+                domain={[1, 5]}
+                ticks={[1, 2, 3, 4, 5]}
+                tickFormatter={(value) => moodLabels[value as keyof typeof moodLabels].substring(0, 3) || ""}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 12, fill: "#6b7280" }}
+                width={35}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              {[1, 2, 3, 4, 5].map((level) => (
+                <ReferenceLine 
+                  key={level} 
+                  y={level} 
+                  stroke="#e5e7eb" 
+                  strokeDasharray="3 3" 
+                  opacity={0.5} 
+                />
+              ))}
+              
+              {chartType === 'area' ? (
+                <Area
+                  type="monotone"
+                  dataKey="mood"
+                  stroke="#fb7185"
+                  strokeWidth={2}
+                  fill="url(#moodColorGradient)"
+                  connectNulls={true}
+                  activeDot={<CustomActiveDot />}
+                />
+              ) : (
+                <Line
+                  type="monotone"
+                  dataKey="mood"
+                  stroke="#fb7185"
+                  strokeWidth={2.5}
+                  dot={{ fill: "#fb7185", strokeWidth: 2, r: 4 }}
+                  activeDot={<CustomActiveDot />}
+                  connectNulls={true}
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </div>
+      
+      <div className="flex justify-between p-2 text-xs text-gray-500">
+        <span>Data from {chartData[0]?.formattedDate} to {chartData[chartData.length-1]?.formattedDate}</span>
+        {onAddMood && (
+          <button 
+            onClick={onAddMood}
+            className="inline-flex items-center text-love-600 hover:text-love-700 font-medium"
+          >
+            <Calendar className="h-3.5 w-3.5 mr-1" />
+            Log Today
+          </button>
+        )}
+      </div>
     </div>
   );
 };

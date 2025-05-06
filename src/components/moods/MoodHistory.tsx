@@ -1,8 +1,11 @@
 
 import React from 'react';
-import { Heart, Loader2 } from "lucide-react";
 import { MoodEntry } from '@/types/check-ins';
-import { format } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar, MessageSquare } from 'lucide-react';
+import { moodEmojis } from '../dashboard/mood/MoodUtils';
 
 interface MoodHistoryProps {
   moodHistory: MoodEntry[];
@@ -10,68 +13,93 @@ interface MoodHistoryProps {
 }
 
 const MoodHistory: React.FC<MoodHistoryProps> = ({ moodHistory, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+    );
+  }
+
+  if (moodHistory.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No mood entries found.</p>
+      </div>
+    );
+  }
+
+  // Group entries by month for better organization
+  const groupedByMonth: Record<string, MoodEntry[]> = {};
+  
+  moodHistory.forEach(entry => {
+    let date = typeof entry.date === 'string' ? entry.date : '';
+    if (!date) return;
+    
+    // Try to parse the date
+    const parsedDate = parseISO(date);
+    if (!isValid(parsedDate)) return;
+    
+    const month = format(parsedDate, 'MMMM yyyy');
+    
+    if (!groupedByMonth[month]) {
+      groupedByMonth[month] = [];
+    }
+    groupedByMonth[month].push(entry);
+  });
+
   return (
-    <div>
-      {isLoading ? (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : moodHistory.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No mood entries yet.</p>
-          <p className="text-sm mt-1">Track your first mood to see your history!</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {moodHistory.map((entry) => {
-            // Ensure mood is a valid number between 1-5
-            const moodValue = Math.max(1, Math.min(5, entry.mood || 0));
-            const emptyHearts = Math.max(0, 5 - moodValue);
-            
-            return (
-              <div key={entry.id} className="border-b border-love-100 pb-3 last:border-0 hover:bg-harmony-50/30 rounded-lg p-2 transition-colors">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-harmony-700">
-                      {new Date(entry.date).toLocaleDateString('en-US', { 
-                        weekday: 'short',
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                      {entry.timestamp && (
-                        <span className="text-xs text-calm-600 ml-2">
-                          {format(new Date(entry.timestamp), 'h:mm a')}
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1 italic">{entry.note}</p>
+    <div className="space-y-6">
+      {Object.entries(groupedByMonth).map(([month, entries]) => (
+        <div key={month} className="space-y-3">
+          <h3 className="text-lg font-medium text-gray-700">{month}</h3>
+          <div className="space-y-3">
+            {entries.map(entry => {
+              const parsedDate = typeof entry.date === 'string' ? parseISO(entry.date) : new Date();
+              const moodInfo = moodEmojis[entry.mood as keyof typeof moodEmojis];
+              
+              return (
+                <Card key={entry.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`text-2xl ${moodInfo?.color || 'text-gray-400'}`}>
+                        {moodInfo?.emoji || '😐'}
+                      </div>
+                      <div>
+                        <h4 className={`font-medium ${moodInfo?.color || 'text-gray-700'}`}>
+                          {moodInfo?.label || 'Neutral'}
+                        </h4>
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          <span>{format(parsedDate, 'EEEE, MMMM d, yyyy')}</span>
+                          {entry.timestamp && (
+                            <span className="ml-2">
+                              at {format(new Date(entry.timestamp), 'h:mm a')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`rounded-full w-10 h-10 flex items-center justify-center ${moodInfo?.bgColor || 'bg-gray-100'}`}>
+                      <span className="text-lg">{entry.mood}</span>
+                    </div>
                   </div>
-                  <div className="flex mt-1">
-                    {/* Filled hearts based on mood value */}
-                    {Array.from({ length: moodValue }).map((_, i) => (
-                      <Heart 
-                        key={i} 
-                        className={`h-4 w-4 ${
-                          moodValue === 1 ? 'text-red-500' :
-                          moodValue === 2 ? 'text-orange-400' :
-                          moodValue === 3 ? 'text-yellow-500' :
-                          moodValue === 4 ? 'text-green-400' :
-                          'text-green-600'
-                        } drop-shadow-sm`}
-                        fill="currentColor"
-                      />
-                    ))}
-                    {/* Empty hearts to fill the remaining space */}
-                    {Array.from({ length: emptyHearts }).map((_, i) => (
-                      <Heart key={`empty-${i}`} className="h-4 w-4 text-gray-200" />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                  {entry.note && (
+                    <div className="mt-3 pl-10">
+                      <div className="flex items-start gap-2">
+                        <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <p className="text-sm text-gray-600">{entry.note}</p>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
         </div>
-      )}
+      ))}
     </div>
   );
 };

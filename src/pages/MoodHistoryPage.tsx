@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import MoodHistory from '@/components/moods/MoodHistory';
 import MoodHistoryChart from '@/components/moods/MoodHistoryChart';
 import { useMoodHistory } from '@/hooks/useMoodHistory';
-import { Loader2, Heart, Calendar, PlusCircle } from 'lucide-react';
+import { Loader2, Heart, Calendar, PlusCircle, ChartBarIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -55,7 +55,7 @@ const MoodHistoryPage = () => {
   }
   
   return (
-    <div className="animate-fade-in space-y-6 pb-8">
+    <div className="animate-fade-in space-y-6 pb-8 max-w-4xl mx-auto px-4 pt-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Mood History</h1>
@@ -63,7 +63,7 @@ const MoodHistoryPage = () => {
         </div>
         <Button 
           onClick={() => setIsMoodDialogOpen(true)}
-          className="bg-gradient-to-r from-love-400 to-harmony-400 text-white"
+          className="bg-gradient-to-r from-love-400 to-harmony-400 text-white hover:from-love-500 hover:to-harmony-500 transition-colors"
         >
           <PlusCircle className="h-4 w-4 mr-2" />
           Log Today's Mood
@@ -71,26 +71,31 @@ const MoodHistoryPage = () => {
       </div>
       
       <div className="grid grid-cols-1 gap-6">
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-0 shadow-md bg-gradient-to-br from-white to-gray-50">
           <Tabs defaultValue="chart" className="w-full">
             <div className="px-6 pt-6">
               <TabsList className="w-full">
-                <TabsTrigger value="chart">Chart View</TabsTrigger>
-                <TabsTrigger value="list">List View</TabsTrigger>
+                <TabsTrigger value="chart" className="flex items-center gap-1.5">
+                  <ChartBarIcon className="h-4 w-4" />
+                  Chart View
+                </TabsTrigger>
+                <TabsTrigger value="list" className="flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4" />
+                  List View
+                </TabsTrigger>
               </TabsList>
             </div>
             
             <CardContent className="p-6">
-              <TabsContent value="chart">
+              <TabsContent value="chart" className="mt-0">
                 <MoodHistoryChart 
                   moodHistory={moodHistory}
                   isLoading={isFetchingHistory}
-                  daysToShow={14}
                   onAddMood={() => setIsMoodDialogOpen(true)}
                 />
               </TabsContent>
               
-              <TabsContent value="list">
+              <TabsContent value="list" className="mt-0">
                 {moodHistory.length > 0 ? (
                   <MoodHistory 
                     moodHistory={moodHistory}

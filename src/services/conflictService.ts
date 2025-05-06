@@ -1,17 +1,28 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Conflict, ConflictStatus } from '@/types/conflicts';
 
-export const fetchUserConflicts = async (userId: string): Promise<Conflict[]> => {
-  // Cast the response data to Conflict[] type
+export const fetchUserConflicts = async (userId: string, limit: number = 3, offset: number = 0): Promise<{conflicts: Conflict[], total: number}> => {
+  // Get total count first
+  const countQuery = await supabase
+    .from('conflicts')
+    .select('id', { count: 'exact' })
+    .or(`initiator_id.eq.${userId},responder_id.eq.${userId}`);
+    
+  const total = countQuery.count || 0;
+  
+  // Then fetch the paginated data
   const { data, error } = await supabase
     .from('conflicts')
     .select('*')
     .or(`initiator_id.eq.${userId},responder_id.eq.${userId}`)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
   
   if (error) throw error;
-  return (data || []) as unknown as Conflict[];
+  return { 
+    conflicts: (data || []) as unknown as Conflict[], 
+    total
+  };
 };
 
 export const getConflictStatus = (conflict: Conflict, userId: string): ConflictStatus => {

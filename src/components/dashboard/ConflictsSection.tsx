@@ -10,30 +10,66 @@ import ConflictCard from '../conflicts/ConflictCard';
 import LoadingState from '../conflicts/LoadingState';
 import EmptyConflictState from '../conflicts/EmptyConflictState';
 import { createNotification } from '@/services/notificationsService';
+import { Button } from "@/components/ui/button";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink } from "@/components/ui/pagination";
+
+// Number of conflicts to load at a time
+const CONFLICTS_PER_PAGE = 3;
 
 const ConflictsSection = () => {
   const { user, profile } = useAuth();
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [loading, setLoading] = useState(true);
   const [archivedIds, setArchivedIds] = useState<string[]>([]);
+  const [totalConflicts, setTotalConflicts] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   
   // This would come from the partner relationship in a real app
   const mockPartnerId = "00000000-0000-0000-0000-000000000000";
   
-  const loadConflicts = async () => {
+  const loadConflicts = async (page = 0, append = false) => {
     if (!user) return;
     
     try {
       setLoading(true);
-      const data = await fetchUserConflicts(user.id);
-      setConflicts(data);
-      const needsAiResolution = data.find(
+      const offset = page * CONFLICTS_PER_PAGE;
+      const { conflicts: fetchedConflicts, total } = await fetchUserConflicts(
+        user.id, 
+        CONFLICTS_PER_PAGE, 
+        offset
+      );
+      
+      setTotalConflicts(total);
+      setHasMore(offset + fetchedConflicts.length < total);
+      
+      if (append) {
+        setConflicts(prevConflicts => [...prevConflicts, ...fetchedConflicts]);
+      } else {
+        setConflicts(fetchedConflicts);
+      }
+      
+      const needsAiResolution = fetchedConflicts.find(
         conflict => conflict.responder_statement && !conflict.ai_resolution_plan
       );
+      
       if (needsAiResolution) {
         await generateAIResolution(needsAiResolution.id);
-        const updatedData = await fetchUserConflicts(user.id);
-        setConflicts(updatedData);
+        const { conflicts: updatedConflicts } = await fetchUserConflicts(
+          user.id, 
+          CONFLICTS_PER_PAGE, 
+          offset
+        );
+        
+        if (append) {
+          setConflicts(prevConflicts => {
+            // Replace the conflicts from the current page
+            const previousConflicts = prevConflicts.slice(0, offset);
+            return [...previousConflicts, ...updatedConflicts];
+          });
+        } else {
+          setConflicts(updatedConflicts);
+        }
       }
     } catch (error) {
       console.error("Error loading conflicts:", error);
@@ -42,9 +78,15 @@ const ConflictsSection = () => {
     }
   };
 
+  const loadMoreConflicts = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    loadConflicts(nextPage, true);
+  };
+
   useEffect(() => {
     if (user) {
-      loadConflicts();
+      loadConflicts(0, false);
     }
   }, [user]);
 
@@ -57,7 +99,8 @@ const ConflictsSection = () => {
   };
 
   const handleConflictSuccess = async (conflictId?: string) => {
-    await loadConflicts();
+    await loadConflicts(0, false);
+    setCurrentPage(0);
     
     // Create notification for new conflict
     if (conflictId && user) {
@@ -82,16 +125,13 @@ const ConflictsSection = () => {
 
   // Split conflicts into active (unresolved, unarchived), resolved, and archived
   const activeAndPending = conflicts
-    .filter(c => !c.resolved_at && !archivedIds.includes(c.id))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .filter(c => !c.resolved_at && !archivedIds.includes(c.id));
   
   const resolved = conflicts
-    .filter(c => !!c.resolved_at && !archivedIds.includes(c.id))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .filter(c => !!c.resolved_at && !archivedIds.includes(c.id));
   
   const archived = conflicts
-    .filter(c => archivedIds.includes(c.id))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .filter(c => archivedIds.includes(c.id));
 
   return (
     <Card>
@@ -113,11 +153,12 @@ const ConflictsSection = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {loading && conflicts.length === 0 ? (
           <LoadingState />
         ) : (
           <>
-            {(activeAndPending.length === 0 && resolved.length === 0) && <EmptyConflictState />}
+            {(activeAndPending.length === 0 && resolved.length === 0 && !hasMore) && <EmptyConflictState />}
+            
             {/* Active/Pending Conflicts */}
             {activeAndPending.length > 0 &&
               <div>
@@ -140,6 +181,7 @@ const ConflictsSection = () => {
                 </div>
               </div>
             }
+            
             {/* Resolved */}
             {resolved.length > 0 && (
               <div className="mt-6">
@@ -162,6 +204,28 @@ const ConflictsSection = () => {
                 </div>
               </div>
             )}
+            
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="mt-6 flex justify-center">
+                <Button 
+                  onClick={loadMoreConflicts}
+                  variant="outline"
+                  className="gap-2"
+                  disabled={loading}
+                >
+                  {loading ? 'Loading...' : 'Load More Conflicts'}
+                </Button>
+              </div>
+            )}
+            
+            {/* Pagination State */}
+            {totalConflicts > CONFLICTS_PER_PAGE && (
+              <div className="mt-4 text-xs text-center text-muted-foreground">
+                Showing {Math.min(conflicts.length, totalConflicts)} of {totalConflicts} conflicts
+              </div>
+            )}
+            
             {/* Archived toggle */}
             {archived.length > 0 && (
               <div className="mt-8">

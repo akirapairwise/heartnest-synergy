@@ -1,4 +1,3 @@
-
 export type CheckIn = {
   id: string;
   mood: string;
@@ -13,6 +12,7 @@ export type MoodOption = {
   label: string;
   icon: React.ReactNode;
   color: string;
+  emoji?: string;  // Added emoji field
 };
 
 // Add a consistent mood tracking type

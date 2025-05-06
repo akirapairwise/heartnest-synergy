@@ -3,7 +3,7 @@ import React from 'react';
 import { format } from "date-fns";
 import { Clock, MessageSquare } from "lucide-react";
 import { CheckIn } from '@/types/check-ins';
-import { getMoodIcon } from './MoodOptions';
+import { getMoodIcon, getMoodEmoji } from './MoodOptions';
 
 interface CheckInDetailsProps {
   checkIn: CheckIn | null;
@@ -12,15 +12,22 @@ interface CheckInDetailsProps {
 const CheckInDetails: React.FC<CheckInDetailsProps> = ({ checkIn }) => {
   if (!checkIn) return null;
 
+  // Get mood value - could be in format "4_connected" or just "happy"
+  const moodValue = checkIn.mood;
+  const moodLabel = moodValue.includes('_') 
+    ? moodValue.split('_')[1] 
+    : moodValue;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="p-2 bg-muted rounded-full">
-          {getMoodIcon(checkIn.mood)}
+      <div className="flex items-center gap-3">
+        <div className="text-3xl" aria-hidden="true">
+          {getMoodEmoji(moodValue)}
         </div>
         <div>
-          <h3 className="font-medium">
-            Feeling {checkIn.mood}
+          <h3 className="font-medium flex items-center gap-2">
+            Feeling {moodLabel}
+            <span className="inline-block ml-1">{getMoodIcon(moodValue)}</span>
           </h3>
           <p className="text-sm text-muted-foreground">
             Satisfaction: {checkIn.satisfaction_rating}/10

@@ -1,9 +1,8 @@
-
 // Define mood emojis and their mapping
 export const moodEmojis = {
   1: { emoji: "😢", label: "Struggling", color: "text-red-500", bgColor: "bg-red-50" },
-  2: { emoji: "😐", label: "Disconnected", color: "text-orange-400", bgColor: "bg-orange-50" },
-  3: { emoji: "🙂", label: "Neutral", color: "text-yellow-500", bgColor: "bg-yellow-50" },
+  2: { emoji: "😔", label: "Disconnected", color: "text-orange-400", bgColor: "bg-orange-50" },
+  3: { emoji: "😐", label: "Neutral", color: "text-yellow-500", bgColor: "bg-yellow-50" },
   4: { emoji: "😊", label: "Connected", color: "text-green-400", bgColor: "bg-green-50" },
   5: { emoji: "🥰", label: "Thriving", color: "text-green-600", bgColor: "bg-green-50" },
 };

@@ -46,7 +46,7 @@ const EmpathyMessages: React.FC<EmpathyMessagesProps> = ({
           <MessageSquare className="text-love-500 mt-1" size={22} />
           <span className="text-base">Your Message to Share</span>
         </div>
-        <ScrollArea className="rounded bg-white/70 px-3 py-2 mb-2 text-[15px] whitespace-pre-line text-calm-800 max-h-[180px] border border-dashed">
+        <ScrollArea className="rounded bg-white/70 px-3 py-2 mb-2 text-base whitespace-pre-line text-calm-800 max-h-[180px] border border-dashed">
           {messageToSend}
         </ScrollArea>
         <div className="flex flex-wrap gap-2 mt-2">

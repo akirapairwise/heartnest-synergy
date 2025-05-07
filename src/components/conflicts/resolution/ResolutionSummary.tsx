@@ -14,7 +14,7 @@ const ResolutionSummary: React.FC<ResolutionSummaryProps> = ({ summary }) => (
         <BrainCircuit className="text-love-500" size={18} />
         <span>AI Summary</span>
       </div>
-      <div className="text-calm-900 leading-relaxed whitespace-pre-line text-sm sm:text-base">
+      <div className="text-calm-900 leading-relaxed whitespace-pre-line text-base">
         {summary.split('\n').map((paragraph, i) => (
           paragraph.trim() ? (
             <p key={`para-${i}`} className="mb-3 last:mb-0">

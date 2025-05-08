@@ -3,7 +3,6 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, UserCog } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
 
 interface TransitionPromptProps {
   onContinue: (e: React.FormEvent) => void;
@@ -11,16 +10,14 @@ interface TransitionPromptProps {
 }
 
 const TransitionPrompt: React.FC<TransitionPromptProps> = ({ onContinue, onSkip }) => {
-  const navigate = useNavigate();
-  
-  const handleGoToDashboard = () => {
+  const handleGoToDashboard = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default form submission
     onSkip();
   };
   
   const handleGoToSettings = (e: React.FormEvent) => {
     e.preventDefault();
     onContinue(e);
-    // The navigate will happen in the handleCompleteBasic function after profile update
   };
 
   return (
@@ -39,6 +36,7 @@ const TransitionPrompt: React.FC<TransitionPromptProps> = ({ onContinue, onSkip 
               <Button 
                 onClick={handleGoToSettings}
                 className="btn-primary-gradient flex-1 gap-2 shadow-md hover:shadow-lg transition-all"
+                type="button"
               >
                 Continue to Personalize <UserCog className="h-4 w-4" />
               </Button>
@@ -46,6 +44,7 @@ const TransitionPrompt: React.FC<TransitionPromptProps> = ({ onContinue, onSkip 
                 variant="outline"
                 onClick={handleGoToDashboard}
                 className="flex-1 gap-2 shadow-sm hover:shadow transition-all"
+                type="button"
               >
                 Go to Dashboard <ArrowRight className="h-4 w-4" />
               </Button>

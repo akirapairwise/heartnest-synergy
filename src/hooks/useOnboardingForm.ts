@@ -211,7 +211,7 @@ export const useOnboardingForm = (totalSteps: number) => {
         duration: 3000
       });
       
-      // Instead of redirecting to dashboard, redirect to profile settings
+      // Navigate to profile settings
       navigate('/profile/settings', { replace: true });
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -271,7 +271,7 @@ export const useOnboardingForm = (totalSteps: number) => {
         duration: 3000
       });
       
-      // Navigate to dashboard (this is unchanged but kept for clarity)
+      // Navigate to dashboard
       navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error('Error updating profile:', error);

@@ -15,7 +15,7 @@ interface StepRendererProps {
   handleChange: (field: string, value: any) => void;
   handleNestedChange: (parentField: string, field: string, value: any) => void;
   nextStep: () => void;
-  completeBasic: () => void;
+  completeBasic: () => Promise<void>;
   skipToComplete: (e: React.FormEvent) => Promise<void>;
 }
 
@@ -44,7 +44,7 @@ const StepRenderer: React.FC<StepRendererProps> = ({
     case 7:
       return (
         <TransitionPrompt 
-          onContinue={(e: React.FormEvent) => skipToComplete(e)} 
+          onContinue={skipToComplete} 
           onSkip={completeBasic} 
         />
       );

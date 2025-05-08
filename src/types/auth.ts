@@ -46,6 +46,7 @@ export type AuthContextType = {
   isOnboardingComplete: boolean | null;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
   signUp: (email: string, password: string) => Promise<{ error: any | null }>;
+  signInWithGoogle: () => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
   updateOnboardingStatus: (isComplete: boolean) => Promise<{ error: any | null } | undefined>;
   updateProfile: (data: Partial<Profile>) => Promise<{ error: any | null } | undefined>;

@@ -1,31 +1,18 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
-import { Profile } from '@/types/auth';
+import { Profile, AuthContextType } from '@/types/auth';
 import { 
   fetchUserProfile as apiFetchUserProfile, 
   signIn as apiSignIn, 
-  signUp as apiSignUp, 
+  signUp as apiSignUp,
+  signInWithGoogle as apiSignInWithGoogle,
   signOut as apiSignOut, 
   updateOnboardingStatus, 
   updateProfile 
 } from '@/services/authService';
 import { toast } from 'sonner';
-
-export type AuthContextType = {
-  session: Session | null;
-  user: User | null;
-  profile: Profile | null;
-  isLoading: boolean;
-  isOnboardingComplete: boolean | null;
-  signIn: (email: string, password: string) => Promise<{ error: any | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: any | null }>;
-  signOut: () => Promise<void>;
-  updateOnboardingStatus: (isComplete: boolean) => Promise<{ error: any | null } | undefined>;
-  updateProfile: (data: Partial<Profile>) => Promise<{ error: any | null } | undefined>;
-  fetchUserProfile: (userId: string) => Promise<void>;
-  refreshSession: () => Promise<void>;
-};
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -144,6 +131,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async () => {
+    setIsLoading(true);
+    try {
+      const result = await apiSignInWithGoogle();
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signOut = async () => {
     setIsLoading(true);
     try {
@@ -197,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isOnboardingComplete,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     updateOnboardingStatus: updateOnboardingStatusContext,
     updateProfile: updateProfileContext,

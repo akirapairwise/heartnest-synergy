@@ -190,7 +190,8 @@ export const updateOnboardingStatus = async (userId: string, isComplete: boolean
   }
 };
 
-export const updateProfile = async (userId: string, data: Partial<Profile>) => {
+// Implementation function with user ID provided
+const updateProfileWithUserId = async (userId: string, data: Partial<Profile>) => {
   try {
     console.log('Updating profile for user:', userId, 'with data:', data);
     
@@ -213,18 +214,23 @@ export const updateProfile = async (userId: string, data: Partial<Profile>) => {
       };
     }
     
-    const finalData = {
+    // Format the date fields properly before saving
+    const formattedData = {
       ...restData,
+      // Format dates if they exist (ISO format for database storage)
+      ...(restData.anniversary_date ? { anniversary_date: new Date(restData.anniversary_date).toISOString().split('T')[0] } : {}),
+      ...(restData.birthday_date ? { birthday_date: new Date(restData.birthday_date).toISOString().split('T')[0] } : {}),
+      ...(restData.partner_birthday_date ? { partner_birthday_date: new Date(restData.partner_birthday_date).toISOString().split('T')[0] } : {}),
       // Only include mood_settings if it has content
       ...(Object.keys(finalMoodSettings).length > 0 ? { mood_settings: finalMoodSettings } : {}),
       updated_at: new Date().toISOString()
     };
     
-    console.log('Final data being sent to database:', finalData);
+    console.log('Final data being sent to database:', formattedData);
     
     const { error } = await supabase
       .from('user_profiles')
-      .update(finalData)
+      .update(formattedData)
       .eq('id', userId);
       
     if (error) {
@@ -237,6 +243,26 @@ export const updateProfile = async (userId: string, data: Partial<Profile>) => {
     }
   } catch (error) {
     console.error('Error updating profile:', error);
+    return { error };
+  }
+};
+
+// Public API function with the existing signature
+export const updateProfile = async (data: Partial<Profile>) => {
+  try {
+    // Get the current user ID
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      const authError = new Error('No authenticated user found');
+      console.error('Error updating profile:', authError);
+      return { error: authError };
+    }
+    
+    // Call the implementation function with the user ID
+    return updateProfileWithUserId(user.id, data);
+  } catch (error) {
+    console.error('Error in updateProfile wrapper:', error);
     return { error };
   }
 };

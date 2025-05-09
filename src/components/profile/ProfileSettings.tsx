@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AvatarUploader from './AvatarUploader';
 import { Separator } from "@/components/ui/separator";
+import { format } from 'date-fns';
 
 const ProfileSettings = () => {
   const { profile, updateProfile } = useAuth();
@@ -25,6 +27,9 @@ const ProfileSettings = () => {
     // Relationship Details
     relationship_status: profile?.relationship_status || '',
     relationship_start_date: profile?.relationship_start_date || '',
+    anniversary_date: profile?.anniversary_date || '',
+    birthday_date: profile?.birthday_date || '',
+    partner_birthday_date: profile?.partner_birthday_date || '',
     living_together: profile?.living_together || '',
     interaction_frequency: profile?.interaction_frequency || '',
     
@@ -212,6 +217,39 @@ const ProfileSettings = () => {
                   name="relationship_start_date"
                   type="date"
                   value={formData.relationship_start_date}
+                  onChange={handleInputChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="anniversary_date">Anniversary Date</Label>
+                <Input
+                  id="anniversary_date"
+                  name="anniversary_date"
+                  type="date"
+                  value={formData.anniversary_date}
+                  onChange={handleInputChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="birthday_date">Your Birthday</Label>
+                <Input
+                  id="birthday_date"
+                  name="birthday_date"
+                  type="date"
+                  value={formData.birthday_date}
+                  onChange={handleInputChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="partner_birthday_date">Partner's Birthday</Label>
+                <Input
+                  id="partner_birthday_date"
+                  name="partner_birthday_date"
+                  type="date"
+                  value={formData.partner_birthday_date}
                   onChange={handleInputChange}
                 />
               </div>

@@ -1,4 +1,5 @@
 
+
 export type OnboardingFormData = {
   full_name: string;
   nickname: string;
@@ -27,6 +28,10 @@ export type OnboardingFormData = {
   love_language_preference?: string;
   conflict_resolution_style?: string;
   shared_goals?: string[];
+  // New date fields
+  anniversary_date?: string;
+  birthday_date?: string;
+  partner_birthday_date?: string;
   [key: string]: any;
 };
 
@@ -57,5 +62,10 @@ export const initialFormData: OnboardingFormData = {
   // Optional personalization
   love_language_preference: "",
   conflict_resolution_style: "",
-  shared_goals: []
+  shared_goals: [],
+  // New date fields with defaults
+  anniversary_date: "",
+  birthday_date: "",
+  partner_birthday_date: ""
 };
+

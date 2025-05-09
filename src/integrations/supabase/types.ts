@@ -500,9 +500,11 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          anniversary_date: string | null
           areas_to_improve: string[] | null
           avatar_url: string | null
           bio: string | null
+          birthday_date: string | null
           communication_style: string | null
           conflict_resolution_style: string | null
           created_at: string
@@ -518,6 +520,7 @@ export type Database = {
           love_language_preference: string | null
           mood_settings: Json | null
           nickname: string | null
+          partner_birthday_date: string | null
           partner_id: string | null
           preferred_communication: string | null
           profile_complete_stage: string | null
@@ -529,9 +532,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          anniversary_date?: string | null
           areas_to_improve?: string[] | null
           avatar_url?: string | null
           bio?: string | null
+          birthday_date?: string | null
           communication_style?: string | null
           conflict_resolution_style?: string | null
           created_at?: string
@@ -547,6 +552,7 @@ export type Database = {
           love_language_preference?: string | null
           mood_settings?: Json | null
           nickname?: string | null
+          partner_birthday_date?: string | null
           partner_id?: string | null
           preferred_communication?: string | null
           profile_complete_stage?: string | null
@@ -558,9 +564,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          anniversary_date?: string | null
           areas_to_improve?: string[] | null
           avatar_url?: string | null
           bio?: string | null
+          birthday_date?: string | null
           communication_style?: string | null
           conflict_resolution_style?: string | null
           created_at?: string
@@ -576,6 +584,7 @@ export type Database = {
           love_language_preference?: string | null
           mood_settings?: Json | null
           nickname?: string | null
+          partner_birthday_date?: string | null
           partner_id?: string | null
           preferred_communication?: string | null
           profile_complete_stage?: string | null
@@ -704,9 +713,11 @@ export type Database = {
       get_partner_profile: {
         Args: { user_id: string }
         Returns: {
+          anniversary_date: string | null
           areas_to_improve: string[] | null
           avatar_url: string | null
           bio: string | null
+          birthday_date: string | null
           communication_style: string | null
           conflict_resolution_style: string | null
           created_at: string
@@ -722,6 +733,7 @@ export type Database = {
           love_language_preference: string | null
           mood_settings: Json | null
           nickname: string | null
+          partner_birthday_date: string | null
           partner_id: string | null
           preferred_communication: string | null
           profile_complete_stage: string | null
@@ -736,9 +748,11 @@ export type Database = {
       get_profile_by_user_id: {
         Args: { user_id: string }
         Returns: {
+          anniversary_date: string | null
           areas_to_improve: string[] | null
           avatar_url: string | null
           bio: string | null
+          birthday_date: string | null
           communication_style: string | null
           conflict_resolution_style: string | null
           created_at: string
@@ -754,6 +768,7 @@ export type Database = {
           love_language_preference: string | null
           mood_settings: Json | null
           nickname: string | null
+          partner_birthday_date: string | null
           partner_id: string | null
           preferred_communication: string | null
           profile_complete_stage: string | null

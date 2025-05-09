@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { unlinkPartner } from '@/services/partners/partnershipService';
+import { format, addYears, isBefore, differenceInDays } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -146,6 +148,40 @@ const PartnerCard = () => {
       .substring(0, 2);
   };
   
+  // Format date for display
+  const formatDisplayDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Not set';
+    try {
+      const date = new Date(dateStr);
+      return format(date, 'MMM d');
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
+  
+  // Calculate days until the next occurrence of a date
+  const getDaysUntilNextOccurrence = (dateStr: string | null | undefined) => {
+    if (!dateStr) return null;
+    
+    try {
+      const today = new Date();
+      const date = new Date(dateStr);
+      
+      // Set the date to this year
+      const thisYear = new Date(today.getFullYear(), date.getMonth(), date.getDate());
+      
+      // If the date has already passed this year, use next year
+      if (isBefore(thisYear, today)) {
+        const nextYear = addYears(thisYear, 1);
+        return differenceInDays(nextYear, today);
+      }
+      
+      return differenceInDays(thisYear, today);
+    } catch (e) {
+      return null;
+    }
+  };
+  
   if (isLoading) {
     return (
       <Card className="shadow-sm">
@@ -206,27 +242,16 @@ const PartnerCard = () => {
       </Card>
     );
   }
+
+  // Format the anniversary date if available
+  const anniversaryDate = profile?.anniversary_date || partnerProfile?.anniversary_date;
+  const anniversaryDisplay = formatDisplayDate(anniversaryDate);
+  const daysUntilAnniversary = getDaysUntilNextOccurrence(anniversaryDate);
   
-  // Calculate upcoming anniversary (using a placeholder date if not available)
-  // In a real app, this would come from relationship data
-  const anniversaryDate = new Date(); // Placeholder
-  anniversaryDate.setMonth(anniversaryDate.getMonth() + 2); // Just set 2 months in the future for demo
-  
-  const today = new Date();
-  const nextAnniversary = new Date(today.getFullYear(), anniversaryDate.getMonth(), anniversaryDate.getDate());
-  
-  if (nextAnniversary < today) {
-    nextAnniversary.setFullYear(today.getFullYear() + 1);
-  }
-  
-  const daysUntilAnniversary = Math.ceil((nextAnniversary.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Calculate upcoming birthday (using a placeholder date if not available)
-  const birthdayDate = new Date();
-  birthdayDate.setMonth(birthdayDate.getMonth() + 1); // Just set 1 month in the future for demo
-  
-  const formattedAnniversary = anniversaryDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-  const formattedBirthday = birthdayDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  // Format the partner's birthday if available
+  const partnerBirthdayDate = profile?.partner_birthday_date || partnerProfile?.birthday_date;
+  const partnerBirthdayDisplay = formatDisplayDate(partnerBirthdayDate);
+  const daysUntilPartnerBirthday = getDaysUntilNextOccurrence(partnerBirthdayDate);
   
   return (
     <Card className="shadow-sm">
@@ -272,12 +297,22 @@ const PartnerCard = () => {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground text-xs">Anniversary</span>
-            <span className="text-xs">{formattedAnniversary} ({daysUntilAnniversary} days)</span>
+            <span className="text-xs">
+              {anniversaryDisplay}
+              {daysUntilAnniversary !== null && (
+                <span className="ml-1 text-gray-500">({daysUntilAnniversary} days)</span>
+              )}
+            </span>
           </div>
           
           <div className="flex justify-between">
             <span className="text-muted-foreground text-xs">Birthday</span>
-            <span className="text-xs">{formattedBirthday}</span>
+            <span className="text-xs">
+              {partnerBirthdayDisplay}
+              {daysUntilPartnerBirthday !== null && (
+                <span className="ml-1 text-gray-500">({daysUntilPartnerBirthday} days)</span>
+              )}
+            </span>
           </div>
           
           {partnerProfile.location && (

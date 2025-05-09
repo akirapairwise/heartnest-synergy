@@ -86,31 +86,6 @@ export const signUp = async (email: string, password: string) => {
   }
 };
 
-export const signInWithGoogle = async () => {
-  try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/auth'
-      }
-    });
-    
-    if (error) {
-      toast.error('Google sign-in failed', {
-        description: error.message
-      });
-    }
-    
-    return { error, data };
-  } catch (error) {
-    console.error('Error signing in with Google:', error);
-    toast.error('Google sign-in failed', {
-      description: 'An unexpected error occurred'
-    });
-    return { error };
-  }
-};
-
 export const signOut = async () => {
   try {
     const { error } = await supabase.auth.signOut();

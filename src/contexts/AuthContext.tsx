@@ -105,26 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
-  // Function to sign in with Google
-  const signInWithGoogle = async () => {
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-      });
-      
-      if (error) {
-        console.error('Google sign-in error:', error);
-        return { error };
-      }
-      
-      // The user will be redirected to Google for authentication
-      return { error: null };
-    } catch (error: any) {
-      console.error('Unexpected Google sign-in error:', error);
-      return { error: { message: error.message || 'An unexpected error occurred.' } };
-    }
-  };
-  
   // Function to sign out
   const signOut = async () => {
     try {
@@ -294,7 +274,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isOnboardingComplete,
     signIn,
     signUp,
-    signInWithGoogle,
     signOut,
     updateOnboardingStatus,
     updateProfile,

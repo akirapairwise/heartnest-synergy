@@ -30,7 +30,7 @@ const TransitionPrompt: React.FC<TransitionPromptProps> = ({ onContinue, onSkip 
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              Would you like to personalize HeartNest even more?
+              Would you like to personalize Usora even more?
             </h2>
             <p className="text-sm text-gray-600 mb-6">
               We can ask a few more optional questions to make your experience even more meaningful — or you can do this later from your profile settings.

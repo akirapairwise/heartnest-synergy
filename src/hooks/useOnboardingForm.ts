@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
@@ -173,6 +174,7 @@ export const useOnboardingForm = (totalSteps: number) => {
       
       // Collect all relevant profile data from the form
       const profileData = {
+        full_name: formData.full_name || null,
         location: formData.location || null,
         bio: formData.bio || null,
         love_language: formData.love_language || null,

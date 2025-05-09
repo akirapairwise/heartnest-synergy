@@ -24,6 +24,7 @@ const OnboardingPage = () => {
         const { data: { user: currentUser }, error } = await supabase.auth.getUser();
         
         if (error || !currentUser) {
+          console.log("No authenticated user found, redirecting to auth");
           toast.error("Authentication required", { 
             description: "Please log in to continue.",
             duration: 3000
@@ -35,6 +36,7 @@ const OnboardingPage = () => {
         // If we have a user but no profile data, try to fetch it
         if (currentUser && !profile && !isLoading) {
           try {
+            console.log("Fetching user profile for:", currentUser.id);
             await fetchUserProfile(currentUser.id);
           } catch (error) {
             console.error("Error fetching profile:", error);
@@ -72,6 +74,8 @@ const OnboardingPage = () => {
         console.log("No user found, redirecting to auth page");
         toast.error("Authentication required. Please log in.");
         navigate('/auth', { replace: true });
+      } else {
+        console.log("User found, onboarding not complete. Showing onboarding form.");
       }
     }
   }, [isOnboardingComplete, isLoading, isVerifying, navigate, user]);

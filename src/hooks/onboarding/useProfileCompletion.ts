@@ -74,8 +74,10 @@ export const useProfileCompletion = (setIsLoading: (value: boolean) => void, for
         duration: 3000
       });
       
-      // Navigate to profile settings
-      navigate('/profile/settings', { replace: true });
+      // Navigate to profile settings - Add a small delay to ensure profile update is processed
+      setTimeout(() => {
+        navigate('/profile/settings', { replace: true });
+      }, 500);
     } catch (error) {
       console.error('Error updating profile:', error);
       useToastHook({
@@ -136,8 +138,10 @@ export const useProfileCompletion = (setIsLoading: (value: boolean) => void, for
         duration: 3000
       });
       
-      // Navigate to dashboard
-      navigate('/dashboard', { replace: true });
+      // Navigate to dashboard - Add a small delay to ensure profile update is processed
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 500);
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast.error("Error", {

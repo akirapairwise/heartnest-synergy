@@ -41,8 +41,9 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
   const navigate = useNavigate();
   const { signOut } = useAuth();
   
-  const handleComplete = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleComplete = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default form behavior
+    console.log("OnboardingNavigation: Complete button clicked");
     await onComplete(e);
   };
   
@@ -114,6 +115,7 @@ const OnboardingNavigation: React.FC<OnboardingNavigationProps> = ({
               className="btn-primary-gradient" 
               onClick={handleComplete}
               disabled={isLoading}
+              type="button"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">

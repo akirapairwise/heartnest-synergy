@@ -10,13 +10,17 @@ interface TransitionPromptProps {
 }
 
 const TransitionPrompt: React.FC<TransitionPromptProps> = ({ onContinue, onSkip }) => {
-  const handleGoToDashboard = () => {
-    // Just call the skip function directly, without any event parameter
+  // Handle click for dashboard navigation (basic completion)
+  const handleGoToDashboard = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default form behavior
+    console.log("TransitionPrompt: Go to dashboard clicked");
     onSkip();
   };
   
+  // Handle click for profile settings navigation (full completion)
   const handleGoToSettings = (e: React.MouseEvent) => {
-    // Pass the event to onContinue
+    e.preventDefault(); // Prevent default form behavior
+    console.log("TransitionPrompt: Continue to personalize clicked");
     onContinue(e);
   };
 

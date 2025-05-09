@@ -156,7 +156,9 @@ export const useOnboardingForm = (totalSteps: number) => {
   
   // Complete with both basic and personalization data
   const handleComplete = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
     setIsLoading(true);
     
     try {
@@ -199,6 +201,8 @@ export const useOnboardingForm = (totalSteps: number) => {
         // Explicitly set the onboarding flag to true
         is_onboarding_complete: true
       };
+      
+      console.log("Completing onboarding with full personalization", profileData);
       
       // Update the profile with all collected data
       const updateResult = await updateProfile(profileData);
@@ -244,6 +248,8 @@ export const useOnboardingForm = (totalSteps: number) => {
         return;
       }
       
+      console.log("Completing onboarding with basic information only");
+      
       // Collect basic profile data
       const profileData = {
         full_name: formData.full_name || null,
@@ -275,7 +281,7 @@ export const useOnboardingForm = (totalSteps: number) => {
       
       // Navigate to dashboard
       navigate('/dashboard', { replace: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
       toast.error("Error", {
         description: error instanceof Error ? error.message : "There was a problem saving your profile. Please try again."

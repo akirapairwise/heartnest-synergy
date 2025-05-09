@@ -10,13 +10,13 @@ interface TransitionPromptProps {
 }
 
 const TransitionPrompt: React.FC<TransitionPromptProps> = ({ onContinue, onSkip }) => {
-  const handleGoToDashboard = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent default form submission
+  const handleGoToDashboard = () => {
+    // Just call the skip function directly, without any event parameter
     onSkip();
   };
   
-  const handleGoToSettings = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoToSettings = (e: React.MouseEvent) => {
+    // Pass the event to onContinue
     onContinue(e);
   };
 

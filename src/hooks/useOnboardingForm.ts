@@ -1,300 +1,33 @@
 
-import { useState, useEffect } from 'react';
-import { useToast } from "@/components/ui/use-toast";
-import { toast } from "sonner";
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useFormState } from './onboarding/useFormState';
+import { useProfileCompletion } from './onboarding/useProfileCompletion';
+import { OnboardingFormData } from '@/types/onboarding';
 
-export type OnboardingFormData = {
-  full_name: string;
-  nickname: string;
-  location: string;
-  bio: string;
-  love_language: string;
-  communication_style: string;
-  emotional_needs: string;
-  relationship_goals: string;
-  financial_attitude: string;
-  notification_preferences: {
-    reminders: boolean;
-    tips: boolean;
-    partner_updates: boolean;
-  };
-  ai_consent: boolean;
-  // New relationship profile fields
-  pronouns?: string;
-  relationship_status?: string;
-  relationship_start_date?: string;
-  living_together?: string;
-  interaction_frequency?: string;
-  preferred_communication?: string;
-  areas_to_improve?: string[];
-  // Optional personalization
-  love_language_preference?: string;
-  conflict_resolution_style?: string;
-  shared_goals?: string[];
-  [key: string]: any;
-};
+export type { OnboardingFormData };
 
 export const useOnboardingForm = (totalSteps: number) => {
+  // Use the form state management hook
+  const {
+    step,
+    progress,
+    isLoading,
+    formData,
+    skippedSteps,
+    setIsLoading,
+    handleChange,
+    handleNestedChange,
+    nextStep,
+    prevStep,
+    skipStep,
+    goToStep,
+    isStepSkipped
+  } = useFormState(totalSteps);
   
-  const [step, setStep] = useState(1);
-  const [progress, setProgress] = useState(20);
-  const [isLoading, setIsLoading] = useState(false);
-  const [skippedSteps, setSkippedSteps] = useState<number[]>([]);
-  const [formData, setFormData] = useState<OnboardingFormData>({
-    full_name: "",
-    nickname: "",
-    location: "",
-    bio: "",
-    love_language: "",
-    communication_style: "",
-    emotional_needs: "",
-    relationship_goals: "",
-    financial_attitude: "",
-    notification_preferences: {
-      reminders: true,
-      tips: true,
-      partner_updates: true
-    },
-    ai_consent: true,
-    // New relationship profile fields with defaults
-    pronouns: "",
-    relationship_status: "",
-    relationship_start_date: "",
-    living_together: "",
-    interaction_frequency: "",
-    preferred_communication: "",
-    areas_to_improve: [],
-    // Optional personalization
-    love_language_preference: "",
-    conflict_resolution_style: "",
-    shared_goals: []
-  });
-  
-  const { toast: useToastHook } = useToast();
-  const navigate = useNavigate();
-  const { updateProfile, fetchUserProfile, user } = useAuth();
-  
-  useEffect(() => {
-    // Update progress based on current step
-    const calculatedProgress = (step / totalSteps) * 100;
-    setProgress(calculatedProgress);
-  }, [step, totalSteps]);
-
-  const handleChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-  
-  const handleNestedChange = (parentField: string, field: string, value: any) => {
-    
-    setFormData(prev => {
-      // Ensure the parent field exists and is an object before spreading it
-      const parentValue = prev[parentField as keyof typeof prev] || {};
-      
-      // Check if parentValue is an object before using spread
-      if (typeof parentValue === 'object' && parentValue !== null) {
-        return {
-          ...prev,
-          [parentField]: {
-            ...parentValue,
-            [field]: value
-          }
-        };
-      }
-      
-      // Fallback if parentValue is not an object
-      return {
-        ...prev,
-        [parentField]: { [field]: value }
-      };
-    });
-  };
-  
-  const nextStep = () => {
-    if (step < totalSteps) {
-      setStep(step + 1);
-      window.scrollTo(0, 0);
-    }
-  };
-  
-  const prevStep = () => {
-    if (step > 1) {
-      setStep(step - 1);
-      window.scrollTo(0, 0);
-    }
-  };
-
-  const skipStep = () => {
-    
-    // Mark current step as skipped if it's not already in the skipped steps array
-    if (!skippedSteps.includes(step)) {
-      setSkippedSteps([...skippedSteps, step]);
-    }
-    
-    // Move to the next step
-    if (step < totalSteps) {
-      setStep(step + 1);
-      window.scrollTo(0, 0);
-    }
-    
-    toast.info("Step skipped", {
-      description: "You can always come back to complete this step later."
-    });
-  };
-
-  const goToStep = (stepNumber: number) => {
-    if (stepNumber >= 1 && stepNumber <= totalSteps) {
-      setStep(stepNumber);
-      window.scrollTo(0, 0);
-    }
-  };
-  
-  // Complete with both basic and personalization data
-  const handleComplete = async (e: React.FormEvent) => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-    setIsLoading(true);
-    
-    try {
-      // Verify user is authenticated before proceeding
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
-      if (!currentUser) {
-        toast.error("Authentication error", {
-          description: "You must be logged in to complete your profile.",
-          duration: 3000
-        });
-        navigate('/auth', { replace: true });
-        return;
-      }
-      
-      // Collect all relevant profile data from the form
-      const profileData = {
-        full_name: formData.full_name || null,
-        location: formData.location || null,
-        bio: formData.bio || null,
-        love_language: formData.love_language || null,
-        communication_style: formData.communication_style || null,
-        emotional_needs: formData.emotional_needs || null,
-        relationship_goals: formData.relationship_goals || null,
-        financial_attitude: formData.financial_attitude || null,
-        // New relationship fields
-        pronouns: formData.pronouns || null,
-        relationship_status: formData.relationship_status || null,
-        relationship_start_date: formData.relationship_start_date || null,
-        living_together: formData.living_together || null,
-        interaction_frequency: formData.interaction_frequency || null,
-        preferred_communication: formData.preferred_communication || null,
-        areas_to_improve: formData.areas_to_improve || null,
-        // Optional personalization
-        love_language_preference: formData.love_language_preference || null,
-        conflict_resolution_style: formData.conflict_resolution_style || null,
-        shared_goals: formData.shared_goals || null,
-        // Mark complete stage - fix the type here
-        profile_complete_stage: 'complete' as 'complete',
-        // Explicitly set the onboarding flag to true
-        is_onboarding_complete: true
-      };
-      
-      console.log("Completing onboarding with full personalization", profileData);
-      
-      // Update the profile with all collected data
-      const updateResult = await updateProfile(profileData);
-      
-      if (updateResult?.error) {
-        throw new Error(updateResult.error.message || "Failed to update profile");
-      }
-      
-      // Show success toast with longer duration
-      toast.success("Profile completed!", {
-        description: "Your profile has been set up. Redirecting to settings page for further personalization...",
-        duration: 3000
-      });
-      
-      // Navigate to profile settings
-      navigate('/profile/settings', { replace: true });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      useToastHook({
-        title: "Error",
-        description: error instanceof Error ? error.message : "There was a problem saving your profile. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Complete with just basic data
-  const handleCompleteBasic = async () => {
-    setIsLoading(true);
-    
-    try {
-      // Verify user is authenticated before proceeding
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
-      if (!currentUser) {
-        toast.error("Authentication error", {
-          description: "You must be logged in to complete your profile.",
-          duration: 3000
-        });
-        navigate('/auth', { replace: true });
-        return;
-      }
-      
-      console.log("Completing onboarding with basic information only");
-      
-      // Collect basic profile data
-      const profileData = {
-        full_name: formData.full_name || null,
-        pronouns: formData.pronouns || null,
-        relationship_status: formData.relationship_status || null,
-        relationship_start_date: formData.relationship_start_date || null,
-        living_together: formData.living_together || null,
-        interaction_frequency: formData.interaction_frequency || null,
-        preferred_communication: formData.preferred_communication || null,
-        areas_to_improve: formData.areas_to_improve || null,
-        // Mark complete stage - fix the type here
-        profile_complete_stage: 'basic' as 'basic',
-        // Explicitly set the onboarding flag to true
-        is_onboarding_complete: true
-      };
-      
-      // Update the profile with basic data
-      const updateResult = await updateProfile(profileData);
-      
-      if (updateResult?.error) {
-        throw new Error(updateResult.error.message || "Failed to update profile");
-      }
-      
-      // Show success toast with longer duration
-      toast.success("Profile basics completed!", {
-        description: "Your profile has been set up. Redirecting to dashboard.",
-        duration: 3000
-      });
-      
-      // Navigate to dashboard
-      navigate('/dashboard', { replace: true });
-    } catch (error: any) {
-      console.error('Error updating profile:', error);
-      toast.error("Error", {
-        description: error instanceof Error ? error.message : "There was a problem saving your profile. Please try again."
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Function to check if a step is skipped
-  const isStepSkipped = (stepNumber: number) => {
-    return skippedSteps.includes(stepNumber);
-  };
+  // Use the profile completion hook
+  const { 
+    handleComplete, 
+    handleCompleteBasic 
+  } = useProfileCompletion(setIsLoading, formData);
 
   return {
     step,

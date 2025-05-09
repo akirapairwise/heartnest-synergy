@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { OnboardingFormData } from '@/hooks/useOnboardingForm';
+import { OnboardingFormData } from '@/types/onboarding';
 import TransitionPrompt from './TransitionPrompt';
 import WelcomeStep from './steps/WelcomeStep';
 import NameStep from './steps/NameStep';

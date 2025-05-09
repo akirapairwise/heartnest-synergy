@@ -61,10 +61,12 @@ export const signIn = async (email: string, password: string) => {
 
 export const signUp = async (email: string, password: string) => {
   try {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      // Removed options with full_name
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth?redirected=confirmation`,
+      }
     });
     
     if (error) {
@@ -77,7 +79,7 @@ export const signUp = async (email: string, password: string) => {
       });
     }
     
-    return { error };
+    return { error, data };
   } catch (error) {
     toast.error('Registration failed', {
       description: 'An unexpected error occurred'
@@ -97,6 +99,54 @@ export const signOut = async () => {
     return { error };
   } catch (error) {
     console.error('Error signing out:', error);
+    return { error };
+  }
+};
+
+export const resetPassword = async (email: string) => {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?redirected=reset-password`,
+    });
+
+    if (error) {
+      toast.error('Password reset failed', {
+        description: error.message
+      });
+      return { error };
+    }
+    
+    toast.success('Password reset email sent', {
+      description: 'Please check your email for the reset link'
+    });
+    return { error: null };
+  } catch (error) {
+    toast.error('Password reset failed', {
+      description: 'An unexpected error occurred'
+    });
+    return { error };
+  }
+};
+
+export const updatePassword = async (newPassword: string) => {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      toast.error('Password update failed', {
+        description: error.message
+      });
+      return { error };
+    }
+    
+    toast.success('Password updated successfully');
+    return { error: null };
+  } catch (error) {
+    toast.error('Password update failed', {
+      description: 'An unexpected error occurred'
+    });
     return { error };
   }
 };

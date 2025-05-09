@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 interface LoginFormProps {
   setError: (error: string | null) => void;
@@ -56,7 +57,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ setError, error }) => {
       } else {
         toast({
           title: "Welcome back!",
-          description: "You've successfully logged in to HeartNest.",
+          description: "You've successfully logged in to Usora.",
         });
       }
     } catch (error) {
@@ -102,9 +103,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ setError, error }) => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password" className="text-gray-700">Password</Label>
-            <Button variant="link" size="sm" className="px-0 text-xs text-harmony-600">
+            <Link 
+              to="/auth#reset" 
+              className="text-xs text-harmony-600 hover:text-harmony-800 hover:underline transition-colors"
+            >
               Forgot password?
-            </Button>
+            </Link>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />

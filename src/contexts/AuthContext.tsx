@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../integrations/supabase/client';
@@ -150,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({ is_onboarding_complete: isComplete })
         .eq('id', user.id);
       
@@ -171,7 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single();
@@ -186,7 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      setProfile(data);
+      setProfile(data as Profile);
       setIsOnboardingComplete(data?.is_onboarding_complete ?? false);
       console.log("Fetched user profile:", data);
     } catch (error: any) {
@@ -200,8 +201,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const createProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .insert([{ id: userId }])
+        .from('user_profiles')
+        .insert([{ 
+          id: userId,
+          is_onboarding_complete: false
+        }])
         .select('*')
         .single();
       
@@ -209,7 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      setProfile(data);
+      setProfile(data as Profile);
       setIsOnboardingComplete(false);
       console.log("Created user profile:", data);
     } catch (error: any) {
@@ -256,7 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update(profileData)
         .eq('id', user.id)
         .select()

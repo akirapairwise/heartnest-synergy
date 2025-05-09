@@ -105,11 +105,23 @@ export const signOut = async () => {
 
 export const resetPassword = async (email: string) => {
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    // Set a longer timeout for this operation
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timed out')), 15000)
+    );
+
+    const resetPromise = supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth?redirected=reset-password`,
     });
 
+    // Race between the API call and the timeout
+    const { error } = await Promise.race([
+      resetPromise,
+      timeoutPromise.then(() => ({ error: { message: 'Request timed out, please try again' } }))
+    ]) as { error: any };
+
     if (error) {
+      console.error('Password reset error:', error);
       toast.error('Password reset failed', {
         description: error.message
       });
@@ -120,9 +132,10 @@ export const resetPassword = async (email: string) => {
       description: 'Please check your email for the reset link'
     });
     return { error: null };
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Password reset exception:', error);
     toast.error('Password reset failed', {
-      description: 'An unexpected error occurred'
+      description: error.message || 'An unexpected error occurred'
     });
     return { error };
   }

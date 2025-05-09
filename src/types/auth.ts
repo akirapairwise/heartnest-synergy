@@ -1,4 +1,3 @@
-
 import { Session, User } from '@supabase/supabase-js';
 
 // User profile type
@@ -24,6 +23,19 @@ export interface Profile {
     isVisibleToPartner?: boolean;
     [key: string]: any;
   };
+  // Additional profile fields
+  pronouns?: string;
+  location?: string;
+  bio?: string;
+  relationship_start_date?: string;
+  living_together?: string;
+  interaction_frequency?: string;
+  preferred_communication?: string;
+  emotional_needs?: string;
+  relationship_goals?: string;
+  areas_to_improve?: string[];
+  financial_attitude?: string;
+  conflict_resolution_style?: string;
 }
 
 // Auth context type

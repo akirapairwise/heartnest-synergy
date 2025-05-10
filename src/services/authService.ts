@@ -204,7 +204,7 @@ const updateProfileWithUserId = async (userId: string, data: Partial<Profile>) =
     const { isMoodVisibleToPartner, ...restData } = updateData;
     
     // Prepare the mood_settings object correctly
-    let finalMoodSettings = updateData.mood_settings || {};
+    let finalMoodSettings = restData.mood_settings || {};
     
     // If isMoodVisibleToPartner is provided, add it to the mood_settings object
     if (isMoodVisibleToPartner !== undefined) {

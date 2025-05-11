@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/types/auth';
 import { toast } from 'sonner';
@@ -199,20 +198,15 @@ const updateProfileWithUserId = async (userId: string, data: Partial<Profile>) =
     // as user_id is a primary key and cannot be changed
     const { id, user_id, ...updateData } = data as any;
     
-    // Extract isMoodVisibleToPartner from the data if it exists
-    // This should not be sent directly to the database column
+    // Extract isMoodVisibleToPartner from updateData first, before doing anything else
     const { isMoodVisibleToPartner, ...restData } = updateData;
     
-    // Prepare the mood_settings object correctly
-    let finalMoodSettings = restData.mood_settings || {};
-    
-    // If isMoodVisibleToPartner is provided, add it to the mood_settings object
-    if (isMoodVisibleToPartner !== undefined) {
-      finalMoodSettings = {
-        ...finalMoodSettings,
-        isVisibleToPartner: isMoodVisibleToPartner
-      };
-    }
+    // Get the existing mood_settings or create an empty object
+    const finalMoodSettings = {
+      ...(restData.mood_settings || {}),
+      // Add isMoodVisibleToPartner to mood_settings if it's defined
+      ...(isMoodVisibleToPartner !== undefined ? { isVisibleToPartner: isMoodVisibleToPartner } : {})
+    };
     
     // Format the date fields properly before saving
     const formattedData = {
@@ -221,7 +215,7 @@ const updateProfileWithUserId = async (userId: string, data: Partial<Profile>) =
       ...(restData.anniversary_date ? { anniversary_date: new Date(restData.anniversary_date).toISOString().split('T')[0] } : {}),
       ...(restData.birthday_date ? { birthday_date: new Date(restData.birthday_date).toISOString().split('T')[0] } : {}),
       ...(restData.partner_birthday_date ? { partner_birthday_date: new Date(restData.partner_birthday_date).toISOString().split('T')[0] } : {}),
-      // Only include mood_settings if it has content
+      // Only include mood_settings if it has entries
       ...(Object.keys(finalMoodSettings).length > 0 ? { mood_settings: finalMoodSettings } : {}),
       updated_at: new Date().toISOString()
     };

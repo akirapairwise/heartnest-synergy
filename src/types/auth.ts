@@ -37,10 +37,9 @@ export interface Profile {
   areas_to_improve?: string[];
   financial_attitude?: string;
   conflict_resolution_style?: string;
-  // New date fields
+  // Date fields
   anniversary_date?: string;
   birthday_date?: string;
-  partner_birthday_date?: string;
 }
 
 // Auth context type

@@ -29,7 +29,6 @@ const ProfileSettings = () => {
     relationship_start_date: profile?.relationship_start_date || '',
     anniversary_date: profile?.anniversary_date || '',
     birthday_date: profile?.birthday_date || '',
-    partner_birthday_date: profile?.partner_birthday_date || '',
     living_together: profile?.living_together || '',
     interaction_frequency: profile?.interaction_frequency || '',
     
@@ -78,8 +77,6 @@ const ProfileSettings = () => {
     setIsSubmitting(true);
     
     try {
-      // No need to manually restructure the mood_settings object here
-      // The updateProfile function will handle it properly
       console.log('Submitting form data:', formData);
       
       const result = await updateProfile(formData);
@@ -239,17 +236,6 @@ const ProfileSettings = () => {
                   name="birthday_date"
                   type="date"
                   value={formData.birthday_date}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="partner_birthday_date">Partner's Birthday</Label>
-                <Input
-                  id="partner_birthday_date"
-                  name="partner_birthday_date"
-                  type="date"
-                  value={formData.partner_birthday_date}
                   onChange={handleInputChange}
                 />
               </div>

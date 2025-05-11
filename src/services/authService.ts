@@ -198,15 +198,24 @@ const updateProfileWithUserId = async (userId: string, data: Partial<Profile>) =
     // as user_id is a primary key and cannot be changed
     const { id, user_id, ...updateData } = data as any;
     
-    // Extract isMoodVisibleToPartner from updateData first, before doing anything else
+    // Fix: Process isMoodVisibleToPartner properly by extracting it and placing inside mood_settings
     const { isMoodVisibleToPartner, ...restData } = updateData;
     
-    // Get the existing mood_settings or create an empty object
-    const finalMoodSettings = {
-      ...(restData.mood_settings || {}),
-      // Add isMoodVisibleToPartner to mood_settings if it's defined
-      ...(isMoodVisibleToPartner !== undefined ? { isVisibleToPartner: isMoodVisibleToPartner } : {})
-    };
+    // Create a proper mood_settings object if isMoodVisibleToPartner was provided
+    let moodSettings = {};
+    
+    // If the user already has mood_settings, maintain those settings
+    if (restData.mood_settings) {
+      moodSettings = { ...restData.mood_settings };
+    }
+    
+    // Only update the isVisibleToPartner property if isMoodVisibleToPartner was provided
+    if (isMoodVisibleToPartner !== undefined) {
+      moodSettings = {
+        ...moodSettings,
+        isVisibleToPartner: isMoodVisibleToPartner
+      };
+    }
     
     // Format the date fields properly before saving
     const formattedData = {
@@ -214,9 +223,8 @@ const updateProfileWithUserId = async (userId: string, data: Partial<Profile>) =
       // Format dates if they exist (ISO format for database storage)
       ...(restData.anniversary_date ? { anniversary_date: new Date(restData.anniversary_date).toISOString().split('T')[0] } : {}),
       ...(restData.birthday_date ? { birthday_date: new Date(restData.birthday_date).toISOString().split('T')[0] } : {}),
-      ...(restData.partner_birthday_date ? { partner_birthday_date: new Date(restData.partner_birthday_date).toISOString().split('T')[0] } : {}),
-      // Only include mood_settings if it has entries
-      ...(Object.keys(finalMoodSettings).length > 0 ? { mood_settings: finalMoodSettings } : {}),
+      // Include mood_settings only if it has properties
+      ...(Object.keys(moodSettings).length > 0 ? { mood_settings: moodSettings } : {}),
       updated_at: new Date().toISOString()
     };
     

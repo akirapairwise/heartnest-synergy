@@ -1,4 +1,5 @@
-import React, { useRef, useEffect } from 'react';
+
+import React, { useRef } from 'react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,7 +13,6 @@ import MilestoneInput from './MilestoneInput';
 import DeadlinePicker from './DeadlinePicker';
 import GoalFormActions from './GoalFormActions';
 import useGoalForm from '@/hooks/useGoalForm';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export interface GoalFormProps {
   goal?: Goal;
@@ -36,7 +36,7 @@ export const GoalForm = (props: GoalFormProps) => {
   };
   
   return (
-    <ScrollArea className="max-h-[calc(100vh-120px)] px-1 overflow-y-auto" style={{ minHeight: 'auto', paddingBottom: '80px' }}>
+    <div className="overflow-y-auto px-1 max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-200px)]">
       <Form {...form}>
         <form 
           ref={formRef}
@@ -181,7 +181,7 @@ export const GoalForm = (props: GoalFormProps) => {
             <MilestoneInput form={form} />
           </div>
           
-          <div className="pt-4 sticky bottom-0 bg-background z-10">
+          <div className="pt-4 sticky bottom-0 bg-background z-10 pb-2">
             <GoalFormActions 
               isSubmitting={isSubmitting} 
               onCancel={onCancel} 
@@ -190,7 +190,7 @@ export const GoalForm = (props: GoalFormProps) => {
           </div>
         </form>
       </Form>
-    </ScrollArea>
+    </div>
   );
 };
 

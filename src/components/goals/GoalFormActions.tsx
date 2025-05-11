@@ -27,7 +27,7 @@ export const GoalFormActions = ({ isSubmitting, onCancel, goal }: GoalFormAction
       <Button 
         type="submit" 
         disabled={isSubmitting}
-        className="w-full sm:w-auto mb-2 sm:mb-0 transition-all hover:scale-[1.02] text-base"
+        className="w-full sm:w-auto mb-2 sm:mb-0 transition-all hover:scale-[1.02] text-base bg-primary"
         aria-label={goal ? "Update goal" : "Create goal"}
         style={{ fontSize: '16px' }}
       >

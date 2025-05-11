@@ -2,7 +2,6 @@
 import React from 'react';
 import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { Goal } from "@/types/goals";
 import GoalForm from './GoalForm';
 import { GoalFormValues } from './GoalFormSchema';
@@ -27,8 +26,8 @@ export function GoalModalContent({
   // The parent component will handle the Dialog/Drawer wrapping
   if (isDesktop) {
     return (
-      <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-4">
+      <DialogContent className="sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[90vh] overflow-hidden">
+        <DialogHeader className="pb-2">
           <DialogTitle className="text-xl font-semibold">{goal ? 'Edit Goal' : 'Create New Goal'}</DialogTitle>
           <DialogDescription className="text-sm md:text-base text-muted-foreground">
             {goal 
@@ -37,20 +36,22 @@ export function GoalModalContent({
           </DialogDescription>
         </DialogHeader>
         
-        <GoalForm 
-          goal={goal}
-          onSubmit={onSubmit}
-          onCancel={onClose}
-          isSubmitting={isSubmitting}
-        />
+        <div className="flex-1 overflow-auto">
+          <GoalForm 
+            goal={goal}
+            onSubmit={onSubmit}
+            onCancel={onClose}
+            isSubmitting={isSubmitting}
+          />
+        </div>
       </DialogContent>
     );
   }
   
   // Mobile drawer version
   return (
-    <DrawerContent className="max-h-[85vh] overflow-y-auto">
-      <DrawerHeader className="pb-4">
+    <DrawerContent className="max-h-[85vh] overflow-hidden">
+      <DrawerHeader className="pb-2">
         <DrawerTitle className="text-xl font-semibold">{goal ? 'Edit Goal' : 'Create New Goal'}</DrawerTitle>
         <DrawerDescription className="text-sm md:text-base text-muted-foreground">
           {goal 
@@ -59,7 +60,7 @@ export function GoalModalContent({
         </DrawerDescription>
       </DrawerHeader>
       
-      <div className="px-4 pb-16">
+      <div className="px-4 flex-1 overflow-hidden">
         <GoalForm 
           goal={goal}
           onSubmit={onSubmit}

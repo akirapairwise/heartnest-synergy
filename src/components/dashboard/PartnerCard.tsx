@@ -248,8 +248,8 @@ const PartnerCard = () => {
   const anniversaryDisplay = formatDisplayDate(anniversaryDate);
   const daysUntilAnniversary = getDaysUntilNextOccurrence(anniversaryDate);
   
-  // Format the partner's birthday if available
-  const partnerBirthdayDate = profile?.partner_birthday_date || partnerProfile?.birthday_date;
+  // Format the partner's birthday if available - get it directly from the partner's profile
+  const partnerBirthdayDate = partnerProfile?.birthday_date;
   const partnerBirthdayDisplay = formatDisplayDate(partnerBirthdayDate);
   const daysUntilPartnerBirthday = getDaysUntilNextOccurrence(partnerBirthdayDate);
   

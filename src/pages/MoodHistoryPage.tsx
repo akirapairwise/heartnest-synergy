@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const MoodHistoryPage = () => {
   const { moodHistory, isFetchingHistory, fetchMoodHistory } = useMoodHistory();
   const { user, isLoading: isAuthLoading } = useAuth();
-  const { dailyMood, fetchDailyMood } = useDailyMood();
+  const { todaysMood, refreshMood } = useDailyMood();
   const [isMoodDialogOpen, setIsMoodDialogOpen] = useState(false);
   const navigate = useNavigate();
   
@@ -33,14 +33,14 @@ const MoodHistoryPage = () => {
   React.useEffect(() => {
     if (user && !isAuthLoading) {
       fetchMoodHistory();
-      fetchDailyMood();
+      refreshMood();
     }
-  }, [user, isAuthLoading, fetchMoodHistory, fetchDailyMood]);
+  }, [user, isAuthLoading, fetchMoodHistory, refreshMood]);
   
   const handleMoodSaved = () => {
     setIsMoodDialogOpen(false);
     fetchMoodHistory();
-    fetchDailyMood();
+    refreshMood();
     toast.success("Mood saved successfully");
   };
   
@@ -102,17 +102,14 @@ const MoodHistoryPage = () => {
                   />
                 ) : !isFetchingHistory ? (
                   <div className="py-16 text-center">
-                    <Heart className="h-16 w-16 mx-auto mb-4 text-love-200" />
-                    <h3 className="text-xl font-medium mb-2">No mood logs yet</h3>
-                    <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                      Start tracking your mood daily to gain insights into your emotional patterns
-                    </p>
+                    <Heart className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                    <p className="text-muted-foreground">No mood entries recorded yet</p>
                     <Button 
+                      variant="outline" 
+                      className="mt-4"
                       onClick={() => setIsMoodDialogOpen(true)}
-                      className="bg-love-500 text-white"
                     >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Log Your First Mood
+                      Record Your First Mood
                     </Button>
                   </div>
                 ) : null}
@@ -123,13 +120,13 @@ const MoodHistoryPage = () => {
       </div>
       
       <Dialog open={isMoodDialogOpen} onOpenChange={setIsMoodDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-xl bg-gradient-to-b from-white to-gray-50">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">How are you feeling today?</DialogTitle>
+            <DialogTitle>Log Today's Mood</DialogTitle>
           </DialogHeader>
           <MoodTracker 
             onMoodSaved={handleMoodSaved} 
-            dailyMood={dailyMood}
+            dailyMood={todaysMood}
           />
         </DialogContent>
       </Dialog>

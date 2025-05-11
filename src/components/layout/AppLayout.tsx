@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -18,10 +19,10 @@ const AppLayout = () => {
   return (
     <>
       <div className="flex min-h-screen">
-        <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+        <Sidebar />
         
         <main className={cn("flex-1 transition-all", isSidebarOpen ? "lg:ml-64" : "")}>
-          <Navbar toggleSidebar={toggleSidebar} />
+          <Navbar />
           
           <div className="px-4 py-6 sm:px-6 lg:px-8">
             <PartnerActivityToast />

@@ -1,9 +1,24 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { MoodEntry } from '@/types/check-ins';
 import { toast } from 'sonner';
 import { notifyPartnerMoodUpdate } from '@/services/partnerNotificationService';
+
+// Define MoodEntry type to match the database structure
+export interface MoodEntry {
+  id: string;
+  user_id: string;
+  mood_date: string;
+  mood_value: number;
+  note?: string;
+  is_visible_to_partner: boolean;
+  created_at?: string;
+  timestamp?: string;
+  // For backwards compatibility
+  date?: string;
+  mood?: number;
+}
 
 export const useDailyMood = () => {
   const { user, profile } = useAuth();
@@ -12,7 +27,7 @@ export const useDailyMood = () => {
   const [error, setError] = useState<Error | null>(null);
 
   // Function to load today's mood entry
-  const loadTodaysMood = async () => {
+  const fetchDailyMood = async () => {
     if (!user) return;
     
     try {
@@ -24,13 +39,23 @@ export const useDailyMood = () => {
         .select('*')
         .eq('user_id', user.id)
         .eq('mood_date', today)
-        .single();
+        .maybeSingle();
       
       if (error && error.code !== 'PGRST116') { // PGRST116 means no rows returned
         throw error;
       }
       
-      setTodaysMood(data || null);
+      if (data) {
+        // Map the data to include backwards compatibility fields
+        const mappedData: MoodEntry = {
+          ...data,
+          date: data.mood_date,
+          mood: data.mood_value
+        };
+        setTodaysMood(mappedData);
+      } else {
+        setTodaysMood(null);
+      }
     } catch (err) {
       console.error('Error loading today\'s mood:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
@@ -44,8 +69,8 @@ export const useDailyMood = () => {
     moodValue: number, 
     note: string = '', 
     isVisibleToPartner: boolean = true
-  ): Promise<boolean> => {
-    if (!user) return false;
+  ): Promise<any> => {
+    if (!user) return { error: "Not authenticated" };
     
     try {
       setIsLoading(true);
@@ -75,13 +100,17 @@ export const useDailyMood = () => {
           );
         }
         
+        // Update state with the new values including backward compatibility fields
         setTodaysMood({
           ...todaysMood,
+          mood_value: moodValue,
           mood: moodValue,
           note,
           is_visible_to_partner: isVisibleToPartner,
           timestamp
         });
+        
+        return { success: true };
       } 
       // Otherwise, create a new mood entry for today
       else {
@@ -111,14 +140,22 @@ export const useDailyMood = () => {
           );
         }
         
-        setTodaysMood(data);
+        if (data) {
+          // Map the data to include backwards compatibility fields
+          const mappedData: MoodEntry = {
+            ...data,
+            date: data.mood_date,
+            mood: data.mood_value
+          };
+          setTodaysMood(mappedData);
+        }
+        
+        return { success: true };
       }
-      
-      return true;
     } catch (err) {
       console.error('Error saving mood:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
-      return false;
+      return { error: err };
     } finally {
       setIsLoading(false);
     }
@@ -143,7 +180,7 @@ export const useDailyMood = () => {
       if (newVisibility && profile?.partner_id) {
         await notifyPartnerMoodUpdate(
           profile.partner_id, 
-          getMoodLabel(todaysMood.mood),
+          getMoodLabel(todaysMood.mood_value),
           newVisibility
         );
       }
@@ -166,11 +203,11 @@ export const useDailyMood = () => {
   // Helper function to convert mood value to text label
   const getMoodLabel = (moodValue: number): string => {
     switch (moodValue) {
-      case 1: return 'Very Sad';
-      case 2: return 'Sad';
+      case 1: return 'Struggling';
+      case 2: return 'Disconnected';
       case 3: return 'Neutral';
-      case 4: return 'Happy';
-      case 5: return 'Very Happy';
+      case 4: return 'Connected';
+      case 5: return 'Thriving';
       default: return 'Unknown';
     }
   };
@@ -178,7 +215,7 @@ export const useDailyMood = () => {
   // Load today's mood on component mount or user change
   useEffect(() => {
     if (user) {
-      loadTodaysMood();
+      fetchDailyMood();
     } else {
       setTodaysMood(null);
       setIsLoading(false);
@@ -187,11 +224,13 @@ export const useDailyMood = () => {
   
   return {
     todaysMood,
+    dailyMood: todaysMood, // Add this for backwards compatibility
     isLoading,
     error,
     saveDailyMood,
+    fetchDailyMood, // Export the function to allow manual refreshes
     toggleMoodVisibility,
-    refreshMood: loadTodaysMood
+    refreshMood: fetchDailyMood
   };
 };
 

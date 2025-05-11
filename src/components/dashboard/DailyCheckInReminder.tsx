@@ -17,7 +17,7 @@ const DailyCheckInReminder = () => {
   const navigate = useNavigate();
   const { showReminder, dismissReminder } = useDailyCheckInReminder();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { dailyMood, fetchDailyMood } = useDailyMood();
+  const { todaysMood, refreshMood } = useDailyMood();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const { user } = useAuth();
   
@@ -32,7 +32,7 @@ const DailyCheckInReminder = () => {
   const handleMoodSaved = () => {
     setIsModalOpen(false);
     dismissReminder();
-    fetchDailyMood();
+    refreshMood();
     
     // Create success notification after mood is saved
     if (user) {
@@ -89,7 +89,7 @@ const DailyCheckInReminder = () => {
             </DialogHeader>
             <MoodTracker 
               onMoodSaved={handleMoodSaved} 
-              dailyMood={dailyMood}
+              dailyMood={todaysMood}
             />
           </DialogContent>
         </Dialog>
@@ -105,7 +105,7 @@ const DailyCheckInReminder = () => {
             <div className="p-4 pt-0">
               <MoodTracker 
                 onMoodSaved={handleMoodSaved} 
-                dailyMood={dailyMood}
+                dailyMood={todaysMood}
               />
             </div>
           </DrawerContent>

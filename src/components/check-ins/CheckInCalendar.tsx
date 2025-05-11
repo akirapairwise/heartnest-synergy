@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { DayContentProps } from 'react-day-picker';
 import CheckInModal from './CheckInModal';
 import { toast } from '@/components/ui/use-toast';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 export interface CheckInCalendarProps {
   selectedDate: Date;
@@ -23,6 +24,7 @@ const CheckInCalendar: React.FC<CheckInCalendarProps> = ({
 }) => {
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   // Function to determine if a date has check-ins
   const hasCheckIn = (date: Date) => {
@@ -68,6 +70,29 @@ const CheckInCalendar: React.FC<CheckInCalendarProps> = ({
           }
         }}
         className="rounded-md border"
+        classNames={{
+          month: "space-y-2 sm:space-y-4",
+          caption: "flex justify-center pt-1 relative items-center",
+          caption_label: "text-sm sm:text-base font-medium",
+          nav: "space-x-1 flex items-center",
+          nav_button: cn(
+            "h-6 w-6 sm:h-7 sm:w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+          ),
+          table: "w-full border-collapse space-y-1",
+          head_row: "flex",
+          head_cell: cn(
+            "text-muted-foreground rounded-md w-8 sm:w-9 font-normal text-[0.8rem] sm:text-xs"
+          ),
+          row: "flex w-full mt-2",
+          cell: cn(
+            "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent",
+            isMobile ? "h-7 w-7 sm:h-9 sm:w-9" : "h-9 w-9"
+          ),
+          day: cn(
+            "h-7 w-7 sm:h-9 sm:w-9 p-0 font-normal aria-selected:opacity-100"
+          ),
+          day_today: "bg-accent text-accent-foreground",
+        }}
         components={{
           DayContent: ({ date }: DayContentProps) => {
             // Only proceed with styling if we have a valid date
@@ -79,7 +104,7 @@ const CheckInCalendar: React.FC<CheckInCalendarProps> = ({
             return (
               <div
                 className={cn(
-                  "relative flex h-9 w-9 items-center justify-center p-0",
+                  "relative flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center p-0 text-xs sm:text-sm",
                   hasCheckInOnDate && !isSelected && "bg-primary/10",
                   isSelected && "bg-primary text-primary-foreground",
                   !isSelected && hasCheckInOnDate && "hover:bg-primary/20"
@@ -90,7 +115,7 @@ const CheckInCalendar: React.FC<CheckInCalendarProps> = ({
                 </time>
                 
                 {hasCheckInOnDate && (
-                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                  <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
                 )}
               </div>
             );

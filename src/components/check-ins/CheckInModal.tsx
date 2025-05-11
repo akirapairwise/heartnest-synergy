@@ -25,8 +25,8 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader className="mb-2">
-            <DialogTitle className="text-xl">Check-In Details</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">Check-In Details</DialogTitle>
+            <DialogDescription className="text-sm">
               Detailed view of your emotional check-in
             </DialogDescription>
           </DialogHeader>
@@ -45,8 +45,8 @@ const CheckInModal: React.FC<CheckInModalProps> = ({
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85vh]">
         <DrawerHeader className="text-left">
-          <DrawerTitle className="text-lg">Check-In Details</DrawerTitle>
-          <DrawerDescription>
+          <DrawerTitle className="text-base sm:text-lg">Check-In Details</DrawerTitle>
+          <DrawerDescription className="text-xs sm:text-sm">
             Detailed view of your emotional check-in
           </DrawerDescription>
         </DrawerHeader>

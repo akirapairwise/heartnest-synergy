@@ -74,72 +74,75 @@ const MoodSettings = () => {
   const hasPartner = !!profile?.partner_id;
   
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between p-4 rounded-lg border">
-        <div className="flex items-center gap-4">
-          <Avatar className={showAvatar ? 'opacity-100' : 'opacity-50'}>
-            <AvatarFallback className="bg-primary text-primary-foreground">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-lg border">
+        <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-0">
+          <Avatar className={`${showAvatar ? 'opacity-100' : 'opacity-50'} h-10 w-10 sm:h-12 sm:w-12`}>
+            <AvatarFallback className="bg-primary text-primary-foreground text-sm sm:text-base">
               {user?.email?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
-          <div className="space-y-1">
-            <h3 className="font-medium">Show Avatar</h3>
-            <p className="text-sm text-muted-foreground">Display your avatar in the app</p>
+          <div className="space-y-0.5 sm:space-y-1">
+            <h3 className="font-medium text-sm sm:text-base">Show Avatar</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">Display your avatar in the app</p>
           </div>
         </div>
         <Switch
           checked={showAvatar}
           onCheckedChange={setShowAvatar}
+          className="mt-2 sm:mt-0"
         />
       </div>
       
-      <div className="space-y-4 p-4 rounded-lg border">
-        <h3 className="font-medium">Default Mood</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Choose your default mood for new check-ins
-        </p>
+      <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 rounded-lg border">
+        <div>
+          <h3 className="font-medium text-sm sm:text-base">Default Mood</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 mb-3 sm:mb-4">
+            Choose your default mood for new check-ins
+          </p>
+        </div>
         
         <RadioGroup
           value={defaultMood}
           onValueChange={setDefaultMood}
-          className="grid gap-4 md:grid-cols-2"
+          className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2"
         >
-          <div className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer hover:bg-accent">
+          <div className="flex items-center space-x-2 rounded-lg border p-2.5 sm:p-3 cursor-pointer hover:bg-accent">
             <RadioGroupItem value="happy" id="happy" />
             <Label htmlFor="happy" className="flex-1 cursor-pointer">
               <div className="flex items-center gap-2">
-                <Smile className="h-5 w-5 text-green-500" />
-                <span>Happy</span>
+                <Smile className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+                <span className="text-sm sm:text-base">Happy</span>
               </div>
             </Label>
           </div>
           
-          <div className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer hover:bg-accent">
+          <div className="flex items-center space-x-2 rounded-lg border p-2.5 sm:p-3 cursor-pointer hover:bg-accent">
             <RadioGroupItem value="excited" id="excited" />
             <Label htmlFor="excited" className="flex-1 cursor-pointer">
               <div className="flex items-center gap-2">
-                <SmilePlus className="h-5 w-5 text-purple-500" />
-                <span>Excited</span>
+                <SmilePlus className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
+                <span className="text-sm sm:text-base">Excited</span>
               </div>
             </Label>
           </div>
           
-          <div className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer hover:bg-accent">
+          <div className="flex items-center space-x-2 rounded-lg border p-2.5 sm:p-3 cursor-pointer hover:bg-accent">
             <RadioGroupItem value="neutral" id="neutral" />
             <Label htmlFor="neutral" className="flex-1 cursor-pointer">
               <div className="flex items-center gap-2">
-                <Meh className="h-5 w-5 text-yellow-500" />
-                <span>Neutral</span>
+                <Meh className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
+                <span className="text-sm sm:text-base">Neutral</span>
               </div>
             </Label>
           </div>
           
-          <div className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer hover:bg-accent">
+          <div className="flex items-center space-x-2 rounded-lg border p-2.5 sm:p-3 cursor-pointer hover:bg-accent">
             <RadioGroupItem value="sad" id="sad" />
             <Label htmlFor="sad" className="flex-1 cursor-pointer">
               <div className="flex items-center gap-2">
-                <Frown className="h-5 w-5 text-blue-500" />
-                <span>Sad</span>
+                <Frown className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                <span className="text-sm sm:text-base">Sad</span>
               </div>
             </Label>
           </div>
@@ -147,17 +150,17 @@ const MoodSettings = () => {
       </div>
       
       {hasPartner && (
-        <div className="flex items-center justify-between p-4 rounded-lg border">
-          <div className="space-y-1">
-            <h3 className="font-medium">Default Mood Visibility</h3>
-            <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-lg border">
+          <div className="space-y-0.5 sm:space-y-1 mb-3 sm:mb-0">
+            <h3 className="font-medium text-sm sm:text-base">Default Mood Visibility</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {isVisibleToPartner 
                 ? "Your mood entries are visible to your partner by default" 
                 : "Your mood entries are private by default"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 mt-2 sm:mt-0">
+            <span className="text-muted-foreground">
               {isVisibleToPartner ? (
                 <Eye className="h-4 w-4" />
               ) : (
@@ -174,7 +177,7 @@ const MoodSettings = () => {
       
       <Button 
         onClick={handleSaveSettings} 
-        className="w-full"
+        className="w-full mt-2 sm:mt-4"
         disabled={isLoading}
       >
         {isLoading ? (

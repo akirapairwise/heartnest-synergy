@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CheckIn } from '@/types/check-ins';
 import CheckInModal from './CheckInModal';
 import CheckInCalendar from './CheckInCalendar';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 const CheckInsByDate = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const CheckInsByDate = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)");
   
   useEffect(() => {
     const fetchCheckIns = async () => {
@@ -55,11 +57,11 @@ const CheckInsByDate = () => {
   };
   
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="md:w-1/2">
-          <Card>
-            <CardContent className="pt-6">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+        <div className="md:w-1/2 w-full">
+          <Card className="shadow-sm">
+            <CardContent className="pt-4 sm:pt-6 px-2 sm:px-4">
               <CheckInCalendar 
                 selectedDate={selectedDate} 
                 onDateChange={setSelectedDate}
@@ -69,36 +71,36 @@ const CheckInsByDate = () => {
           </Card>
         </div>
         
-        <div className="md:w-1/2">
-          <h3 className="text-lg font-medium mb-4">
+        <div className="md:w-1/2 w-full">
+          <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">
             Check-ins for {format(selectedDate, 'MMMM d, yyyy')}
           </h3>
           
           {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
+            <div className="space-y-3 sm:space-y-4">
+              <Skeleton className="h-20 sm:h-24 w-full rounded-lg" />
+              <Skeleton className="h-20 sm:h-24 w-full rounded-lg" />
             </div>
           ) : checkIns.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1 pb-1">
               {checkIns.map((checkIn) => (
                 <Card 
                   key={checkIn.id}
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleCheckInClick(checkIn)}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-3 sm:p-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium">{checkIn.mood}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium text-sm sm:text-base">{checkIn.mood}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {format(new Date(checkIn.timestamp), 'h:mm a')}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm">Satisfaction: {checkIn.satisfaction_rating}/10</p>
+                        <p className="text-xs sm:text-sm">Satisfaction: {checkIn.satisfaction_rating}/10</p>
                         {checkIn.reflection && (
-                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                          <p className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-[200px]">
                             {checkIn.reflection}
                           </p>
                         )}
@@ -109,8 +111,8 @@ const CheckInsByDate = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-muted/30 p-6 rounded-lg text-center">
-              <p>No check-ins recorded for this date</p>
+            <div className="bg-muted/30 p-4 sm:p-6 rounded-lg text-center">
+              <p className="text-sm sm:text-base">No check-ins recorded for this date</p>
             </div>
           )}
         </div>

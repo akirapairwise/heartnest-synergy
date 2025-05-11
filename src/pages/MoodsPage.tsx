@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 
 const MoodsPage = () => {
   const { moodHistory, isFetchingHistory, fetchMoodHistory } = useMoodHistory();
-  const { todaysMood, isLoading: isLoadingDailyMood, refreshMood } = useDailyMood();
+  const { dailyMood, isLoading: isLoadingDailyMood, fetchDailyMood, saveDailyMood } = useDailyMood();
   const { user, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
   
@@ -33,14 +33,14 @@ const MoodsPage = () => {
     if (user && !isAuthLoading) {
       console.log("Fetching mood data for user:", user.id);
       fetchMoodHistory();
-      refreshMood();
+      fetchDailyMood();
     }
-  }, [user, isAuthLoading, fetchMoodHistory, refreshMood]);
+  }, [user, isAuthLoading, fetchMoodHistory, fetchDailyMood]);
   
   const handleMoodSaved = () => {
     console.log("Mood saved, refreshing data");
     fetchMoodHistory();
-    refreshMood(); 
+    fetchDailyMood(); 
   };
   
   // Show loading state while checking auth
@@ -94,7 +94,7 @@ const MoodsPage = () => {
           <div className="lg:col-span-2">
             <MoodTracker 
               onMoodSaved={handleMoodSaved} 
-              dailyMood={todaysMood}
+              dailyMood={dailyMood}
             />
           </div>
           

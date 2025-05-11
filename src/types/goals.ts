@@ -1,4 +1,3 @@
-
 export type Goal = {
   id: string;
   title: string;
@@ -6,7 +5,7 @@ export type Goal = {
   category: string | null;
   status: string;
   is_shared: boolean;
-  goal_type: 'personal' | 'shared' | string; // Allow string to avoid type errors
+  goal_type: 'personal' | 'shared';
   owner_id: string;
   partner_id: string | null;
   created_at: string;

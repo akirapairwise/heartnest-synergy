@@ -14,9 +14,7 @@ export const useGoalManagement = (onRefresh: () => void) => {
   const handleStatusToggle = async (goal: Goal) => {
     try {
       const newStatus = goal.status === 'completed' ? 'in_progress' : 'completed';
-      const result = await updateGoalStatus(goal.id, newStatus);
-      if (result.error) throw result.error;
-      
+      await updateGoalStatus(goal.id, newStatus);
       toast(`Goal ${newStatus === 'completed' ? 'completed' : 'reopened'}`);
       onRefresh();
     } catch (error) {

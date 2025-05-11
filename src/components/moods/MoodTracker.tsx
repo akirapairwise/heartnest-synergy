@@ -9,7 +9,7 @@ import { Heart, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
-import { useDailyMood, MoodEntry } from '@/hooks/useDailyMood';
+import { useDailyMood, DailyMood } from '@/hooks/useDailyMood';
 
 const moodLabels = ["Struggling", "Disconnected", "Neutral", "Connected", "Thriving"];
 const moodDescriptions = [
@@ -22,7 +22,7 @@ const moodDescriptions = [
 
 interface MoodTrackerProps {
   onMoodSaved: () => void;
-  dailyMood: MoodEntry | null;
+  dailyMood: DailyMood | null;
 }
 
 const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => {
@@ -68,8 +68,8 @@ const MoodTracker: React.FC<MoodTrackerProps> = ({ onMoodSaved, dailyMood }) => 
       console.log("Saving mood:", selectedMood, "note:", note, "visible:", isVisibleToPartner);
       
       // Save to daily_moods with upsert
-      const result = await saveDailyMood(selectedMood, note, isVisibleToPartner);
-      if (result.error) throw result.error;
+      const { error } = await saveDailyMood(selectedMood, note, isVisibleToPartner);
+      if (error) throw error;
       
       // Also save to check_ins for backward compatibility
       const moodString = `${selectedMood}_${moodLabels[selectedMood-1].toLowerCase()}`;

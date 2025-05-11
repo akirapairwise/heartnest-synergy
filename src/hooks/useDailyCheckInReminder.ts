@@ -7,14 +7,14 @@ import { startOfDay, isAfter } from 'date-fns';
 export const useDailyCheckInReminder = () => {
   const [showReminder, setShowReminder] = useState(false);
   const { user } = useAuth();
-  const { todaysMood, isLoading } = useDailyMood();
+  const { dailyMood, isLoading } = useDailyMood();
   
   useEffect(() => {
     const checkReminderEligibility = () => {
       if (!user || isLoading) return;
       
       // If user has already completed a daily mood check-in today, don't show reminder
-      if (todaysMood) {
+      if (dailyMood) {
         setShowReminder(false);
         return;
       }
@@ -40,7 +40,7 @@ export const useDailyCheckInReminder = () => {
     if (!isLoading) {
       checkReminderEligibility();
     }
-  }, [user, todaysMood, isLoading]);
+  }, [user, dailyMood, isLoading]);
   
   const dismissReminder = () => {
     setShowReminder(false);

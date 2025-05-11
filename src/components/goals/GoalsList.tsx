@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Goal } from '@/types/goals';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -17,7 +18,7 @@ interface GoalsListProps {
   isSharedView?: boolean;
   isPartnerView?: boolean;
   partnerId?: string | null;
-  isLoading?: boolean;
+  isLoading?: boolean; // Added isLoading prop
 }
 
 export function GoalsList({ 
@@ -28,7 +29,7 @@ export function GoalsList({
   isSharedView = false,
   isPartnerView = false,
   partnerId,
-  isLoading = false
+  isLoading = false // Added with default value
 }: GoalsListProps) {
   const { toast } = useToast();
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -39,9 +40,7 @@ export function GoalsList({
   const handleStatusToggle = async (goal: Goal) => {
     try {
       const newStatus = goal.status === 'completed' ? 'in_progress' : 'completed';
-      const result = await updateGoalStatus(goal.id, newStatus);
-      if (result.error) throw result.error;
-      
+      await updateGoalStatus(goal.id, newStatus);
       toast({
         title: `Goal ${newStatus === 'completed' ? 'completed' : 'reopened'}`,
         description: `The goal has been marked as ${newStatus === 'completed' ? 'completed' : 'in progress'}.`
@@ -57,24 +56,24 @@ export function GoalsList({
     }
   };
 
-  function confirmDelete(goalId: string) {
+  const confirmDelete = (goalId: string) => {
     setGoalToDelete(goalId);
     setDeleteConfirmOpen(true);
-  }
+  };
 
-  function handleDelete() {
+  const handleDelete = () => {
     if (goalToDelete) {
       onDelete(goalToDelete);
       setDeleteConfirmOpen(false);
       setGoalToDelete(null);
     }
-  }
+  };
   
-  function isOwner(goal: Goal) {
+  const isOwner = (goal: Goal) => {
     return goal.owner_id === user?.id;
-  }
+  };
   
-  function getOwnerLabel(goal: Goal) {
+  const getOwnerLabel = (goal: Goal) => {
     if (isOwner(goal)) {
       return "You";
     } else if (goal.owner_id === profile?.partner_id) {
@@ -82,17 +81,17 @@ export function GoalsList({
     } else {
       return "Unknown";
     }
-  }
+  };
 
   // Get initials for avatar fallback
-  function getInitials(name: string) {
+  const getInitials = (name: string) => {
     return name.split(' ')
       .map(part => part[0])
       .join('')
       .toUpperCase()
       .substring(0, 2) || 'PA';
-  }
-
+  };
+  
   // Show loading state or empty state if applicable
   if (isLoading) {
     return (

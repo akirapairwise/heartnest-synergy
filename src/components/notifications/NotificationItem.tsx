@@ -7,8 +7,11 @@ import {
   CalendarCheck, 
   AlertCircle, 
   UserPlus, 
-  Bell, 
-  X 
+  Bell,
+  X,
+  Smile,
+  Target,
+  Calendar
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -59,6 +62,23 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       case 'partner_request':
         navigate('/connect');
         break;
+      case 'partner_mood_update':
+        navigate('/dashboard');
+        break;
+      case 'partner_goal_update':
+        if (notification.relatedId) {
+          navigate(`/goals?highlight=${notification.relatedId}`);
+        } else {
+          navigate('/goals');
+        }
+        break;
+      case 'partner_event_update':
+        if (notification.relatedId) {
+          navigate(`/event-suggestions?highlight=${notification.relatedId}`);
+        } else {
+          navigate('/event-suggestions');
+        }
+        break;
       default:
         // For other types, just mark as read
         break;
@@ -76,6 +96,12 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
         return <AlertCircle className="h-4 w-4 text-amber-500" />;
       case 'partner_request':
         return <UserPlus className="h-4 w-4 text-blue-500" />;
+      case 'partner_mood_update':
+        return <Smile className="h-4 w-4 text-green-500" />;
+      case 'partner_goal_update':
+        return <Target className="h-4 w-4 text-purple-500" />;
+      case 'partner_event_update':
+        return <Calendar className="h-4 w-4 text-cyan-500" />;
       default:
         return <Bell className="h-4 w-4 text-gray-500" />;
     }

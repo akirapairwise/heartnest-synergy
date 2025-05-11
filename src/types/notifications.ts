@@ -4,7 +4,10 @@ export type NotificationType =
   | 'weekly_checkin_reminder' 
   | 'new_conflict'
   | 'partner_request'
-  | 'system_message';
+  | 'system_message'
+  | 'partner_mood_update'   // New notification type
+  | 'partner_goal_update'   // New notification type  
+  | 'partner_event_update'; // New notification type
 
 export interface Notification {
   id: string;

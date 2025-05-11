@@ -1,223 +1,225 @@
+import { supabase } from "@/integrations/supabase/client";
+import { Goal, GoalCategory, GoalStatus } from "@/types/goals";
 
-import { supabase } from '@/integrations/supabase/client';
-import { Goal } from '@/types/goals';
+// Add these lines near the top, after other imports
+import { notifyPartnerGoalUpdate } from './partnerNotificationService';
+
+export const fetchGoals = async (): Promise<Goal[]> => {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .or(`owner_id.eq.${userData.user.id},partner_id.eq.${userData.user.id}`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data.map(goal => ({
+      ...goal,
+      is_self_owned: goal.owner_id === userData.user.id
+    }));
+  } catch (error) {
+    console.error('Error fetching goals:', error);
+    throw error;
+  }
+};
 
 export const fetchMyGoals = async (): Promise<Goal[]> => {
-  const userId = (await supabase.auth.getUser()).data.user?.id;
-  if (!userId) return [];
-
-  const { data, error } = await supabase
-    .from('goals')
-    .select('*')
-    .eq('owner_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) throw new Error('Not authenticated');
+    
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('owner_id', userData.user.id)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    
+    return data.map(goal => ({
+      ...goal,
+      is_self_owned: true
+    }));
+  } catch (error) {
     console.error('Error fetching goals:', error);
-    return [];
+    throw error;
   }
-
-  // Add UI convenience properties
-  return data.map(goal => ({
-    ...goal,
-    progress: getGoalProgress(goal.status),
-    completed: goal.status === 'completed'
-  })) as Goal[];
 };
 
-export const fetchPartnerGoals = async (): Promise<Goal[]> => {
-  const userId = (await supabase.auth.getUser()).data.user?.id;
-  if (!userId) return [];
+export const fetchGoalById = async (id: string): Promise<Goal | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-  // Get user's profile to find partner_id
-  const { data: profileData, error: profileError } = await supabase
-    .from('user_profiles')
-    .select('partner_id')
-    .eq('id', userId)
-    .single();
+    if (error) throw error;
 
-  if (profileError || !profileData?.partner_id) {
-    console.error('Error fetching user profile or no partner found:', profileError);
-    return [];
+    return data || null;
+  } catch (error) {
+    console.error('Error fetching goal by ID:', error);
+    throw error;
   }
-
-  const partnerId = profileData.partner_id;
-
-  // Get goals where:
-  // Partner is the owner AND goal is shared with current user
-  const { data: partnerGoals, error: goalsError } = await supabase
-    .from('goals')
-    .select('*')
-    .eq('owner_id', partnerId)
-    .eq('is_shared', true)
-    .eq('partner_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (goalsError) {
-    console.error('Error fetching partner goals:', goalsError);
-    return [];
-  }
-
-  // Add UI convenience properties
-  return partnerGoals.map(goal => ({
-    ...goal,
-    progress: getGoalProgress(goal.status),
-    completed: goal.status === 'completed'
-  })) as Goal[];
 };
 
-export const fetchSharedGoals = async (): Promise<Goal[]> => {
-  const userId = (await supabase.auth.getUser()).data.user?.id;
-  if (!userId) return [];
+// Modify the createGoal function to send notification for shared goals
+export const createGoal = async (goalData: Omit<Goal, 'id' | 'created_at' | 'updated_at' | 'owner_id' | 'status'>): Promise<{ goal?: Goal; error?: any }> => {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) throw new Error('Not authenticated');
 
-  // Get user's profile to find partner_id
-  const { data: profileData, error: profileError } = await supabase
-    .from('user_profiles')
-    .select('partner_id')
-    .eq('id', userId)
-    .single();
+    const { data, error } = await supabase
+      .from('goals')
+      .insert({
+        ...goalData,
+        owner_id: userData.user.id,
+        status: 'pending'
+      })
+      .select('*')
+      .single();
 
-  if (profileError) {
-    console.error('Error fetching user profile:', profileError);
-    return [];
-  }
+    if (error) throw error;
 
-  const partnerId = profileData?.partner_id;
-  if (!partnerId) {
-    // No partner, so no shared goals
-    return [];
-  }
+    // If the goal is shared and there's a partner_id, send notification
+    if (data.is_shared && data.partner_id) {
+      await notifyPartnerGoalUpdate(
+        data.partner_id,
+        data.id,
+        data.title,
+        'created'
+      );
+    }
 
-  // Get all shared goals:
-  // 1. My goals that are shared with partner
-  // 2. Partner's goals that are shared with me
-  const { data, error } = await supabase
-    .from('goals')
-    .select('*')
-    .eq('goal_type', 'shared')
-    .or(`owner_id.eq.${userId},owner_id.eq.${partnerId}`)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching shared goals:', error);
-    return [];
-  }
-
-  // Get owner names in a separate query
-  const ownerIds = [...new Set(data.map(goal => goal.owner_id))];
-  const { data: ownerProfiles, error: ownersError } = await supabase
-    .from('user_profiles')
-    .select('id, full_name')
-    .in('id', ownerIds);
-
-  if (ownersError) {
-    console.error('Error fetching owner profiles:', ownersError);
-  }
-
-  // Create a map of owner IDs to names for quick lookup
-  const ownerNameMap = new Map();
-  if (ownerProfiles) {
-    ownerProfiles.forEach(profile => {
-      ownerNameMap.set(profile.id, profile.full_name || 'Unknown');
-    });
-  }
-
-  // Format the response and create proper Goal objects
-  return data.map(goalData => {
-    return {
-      ...goalData,
-      owner_name: ownerNameMap.get(goalData.owner_id) || 'Unknown',
-      is_self_owned: goalData.owner_id === userId,
-      progress: getGoalProgress(goalData.status),
-      completed: goalData.status === 'completed'
-    };
-  }) as Goal[];
-};
-
-export const createGoal = async (goal: Partial<Goal>): Promise<{ goal: Goal | null; error: any }> => {
-  const userId = (await supabase.auth.getUser()).data.user?.id;
-  
-  if (!userId) {
-    return { goal: null, error: 'User not authenticated' };
-  }
-
-  // Ensure title is provided as it's required in the database
-  if (!goal.title) {
-    return { goal: null, error: 'Title is required' };
-  }
-
-  // Create a properly typed object for insertion
-  const newGoal = {
-    title: goal.title, // This is required by the database schema
-    description: goal.description || null,
-    category: goal.category || null,
-    status: goal.status || 'pending',
-    is_shared: goal.is_shared || false,
-    goal_type: goal.is_shared ? 'shared' : 'personal', // Set goal_type based on is_shared
-    owner_id: userId,
-    partner_id: goal.is_shared ? goal.partner_id || null : null, // Only set partner_id if is_shared is true
-    milestones: goal.milestones || null,
-    deadline: goal.deadline || null
-  };
-
-  const { data, error } = await supabase
-    .from('goals')
-    .insert(newGoal)
-    .select()
-    .single();
-
-  if (error) {
+    return { goal: data };
+  } catch (error) {
     console.error('Error creating goal:', error);
-    return { goal: null, error };
+    return { error };
   }
-
-  return { 
-    goal: {
-      ...data,
-      progress: getGoalProgress(data.status),
-      completed: data.status === 'completed'
-    } as Goal, 
-    error: null 
-  };
 };
 
-export const updateGoalStatus = async (goalId: string, status: string): Promise<{ success: boolean; error: any }> => {
-  const { error } = await supabase
-    .from('goals')
-    .update({ status })
-    .eq('id', goalId);
+// Modify the updateGoal function to send notification for shared goals
+export const updateGoal = async (goalId: string, updates: Partial<Goal>): Promise<{ success: boolean; error?: any }> => {
+  try {
+    const { data: goalData } = await supabase
+      .from('goals')
+      .select('*, owner_id, partner_id, is_shared, title')
+      .eq('id', goalId)
+      .single();
+      
+    if (!goalData) {
+      throw new Error('Goal not found');
+    }
+    
+    const { error } = await supabase
+      .from('goals')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', goalId);
 
-  if (error) {
-    console.error('Error updating goal status:', error);
+    if (error) throw error;
+
+    // Notify partner of updates if the goal is shared
+    if (goalData.is_shared && goalData.partner_id) {
+      await notifyPartnerGoalUpdate(
+        goalData.partner_id,
+        goalId,
+        goalData.title,
+        'updated'
+      );
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating goal:', error);
     return { success: false, error };
   }
-
-  return { success: true, error: null };
 };
 
-export const updateGoalProgress = async (goalId: string, progressPercent: number): Promise<{ success: boolean; error: any }> => {
-  // Map progress percentage to a status
-  let status = 'pending';
-  if (progressPercent === 100) {
-    status = 'completed';
-  } else if (progressPercent > 0) {
-    status = 'in_progress';
-  }
+// Modify the updateGoalProgress function to send notification for shared goals
+export const updateGoalProgress = async (goalId: string, progress: number): Promise<{ success: boolean; error?: any }> => {
+  try {
+    const { data: goalData } = await supabase
+      .from('goals')
+      .select('*, owner_id, partner_id, is_shared, title')
+      .eq('id', goalId)
+      .single();
+      
+    if (!goalData) {
+      throw new Error('Goal not found');
+    }
+    
+    // Update the status based on progress
+    let status = goalData.status;
+    if (progress === 100) {
+      status = 'completed';
+    } else if (progress > 0) {
+      status = 'in_progress';
+    } else {
+      status = 'pending';
+    }
+    
+    const { error } = await supabase
+      .from('goals')
+      .update({
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', goalId);
 
-  return updateGoalStatus(goalId, status);
+    if (error) throw error;
+
+    // Notify partner of updates if the goal is shared
+    if (goalData.is_shared && goalData.partner_id) {
+      await notifyPartnerGoalUpdate(
+        goalData.partner_id,
+        goalId,
+        goalData.title,
+        progress === 100 ? 'completed' : 'progress'
+      );
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating goal progress:', error);
+    return { success: false, error };
+  }
 };
 
-// Helper function to convert status to a progress percentage for UI
-function getGoalProgress(status: string): number {
-  switch (status) {
-    case 'completed':
-      return 100;
-    case 'in_progress':
-      return 50; // Default mid-progress value
-    case 'cancelled':
-      return 0;
-    case 'pending':
-    default:
-      return 0;
+export const deleteGoal = async (id: string): Promise<{ success: boolean; error?: any }> => {
+  try {
+    const { error } = await supabase
+      .from('goals')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting goal:', error);
+    return { success: false, error };
   }
-}
+};
+
+export const goalCategories: { label: string; value: GoalCategory }[] = [
+  { label: 'Communication', value: 'communication' },
+  { label: 'Quality Time', value: 'quality-time' },
+  { label: 'Adventure', value: 'adventure' },
+  { label: 'Understanding', value: 'understanding' },
+  { label: 'Growth', value: 'growth' },
+  { label: 'Intimacy', value: 'intimacy' },
+];
+
+export const goalStatuses: { label: string; value: GoalStatus }[] = [
+  { label: 'Pending', value: 'pending' },
+  { label: 'In Progress', value: 'in_progress' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
+];

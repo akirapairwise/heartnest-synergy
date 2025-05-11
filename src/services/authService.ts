@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/types/auth';
 import { toast } from 'sonner';
@@ -198,41 +199,45 @@ const updateProfileWithUserId = async (userId: string, data: Partial<Profile>) =
     // as user_id is a primary key and cannot be changed
     const { id, user_id, ...updateData } = data as any;
     
-    // Fix: Process isMoodVisibleToPartner properly by extracting it and placing inside mood_settings
+    // Extract isMoodVisibleToPartner from the data
     const { isMoodVisibleToPartner, ...restData } = updateData;
     
-    // Create a proper mood_settings object if isMoodVisibleToPartner was provided
-    let moodSettings = {};
-    
-    // If the user already has mood_settings, maintain those settings
-    if (restData.mood_settings) {
-      moodSettings = { ...restData.mood_settings };
-    }
-    
-    // Only update the isVisibleToPartner property if isMoodVisibleToPartner was provided
-    if (isMoodVisibleToPartner !== undefined) {
-      moodSettings = {
-        ...moodSettings,
-        isVisibleToPartner: isMoodVisibleToPartner
-      };
-    }
-    
-    // Format the date fields properly before saving
-    const formattedData = {
+    // Create the final data structure for update
+    let finalData: any = {
       ...restData,
-      // Format dates if they exist (ISO format for database storage)
-      ...(restData.anniversary_date ? { anniversary_date: new Date(restData.anniversary_date).toISOString().split('T')[0] } : {}),
-      ...(restData.birthday_date ? { birthday_date: new Date(restData.birthday_date).toISOString().split('T')[0] } : {}),
-      // Include mood_settings only if it has properties
-      ...(Object.keys(moodSettings).length > 0 ? { mood_settings: moodSettings } : {}),
       updated_at: new Date().toISOString()
     };
     
-    console.log('Final data being sent to database:', formattedData);
+    // Handle mood settings properly
+    if (isMoodVisibleToPartner !== undefined || restData.mood_settings) {
+      // Start with existing mood settings or empty object
+      const moodSettings = {
+        ...(restData.mood_settings || {})
+      };
+      
+      // Add isMoodVisibleToPartner to mood_settings if provided
+      if (isMoodVisibleToPartner !== undefined) {
+        moodSettings.isVisibleToPartner = isMoodVisibleToPartner;
+      }
+      
+      // Set the mood_settings in the final data
+      finalData.mood_settings = moodSettings;
+    }
+    
+    // Format date fields if they exist
+    if (finalData.anniversary_date) {
+      finalData.anniversary_date = new Date(finalData.anniversary_date).toISOString().split('T')[0];
+    }
+    
+    if (finalData.birthday_date) {
+      finalData.birthday_date = new Date(finalData.birthday_date).toISOString().split('T')[0];
+    }
+    
+    console.log('Final data being sent to database:', finalData);
     
     const { error } = await supabase
       .from('user_profiles')
-      .update(formattedData)
+      .update(finalData)
       .eq('id', userId);
       
     if (error) {

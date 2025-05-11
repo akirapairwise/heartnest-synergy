@@ -44,8 +44,8 @@ const ProfileSettings = () => {
     financial_attitude: profile?.financial_attitude || '',
     conflict_resolution_style: profile?.conflict_resolution_style || '',
     
-    // Visibility Settings
-    isMoodVisibleToPartner: profile?.mood_settings?.isVisibleToPartner !== false,
+    // Visibility Settings - properly access the nested property
+    isMoodVisibleToPartner: profile?.mood_settings?.isVisibleToPartner !== false, // Default to true if undefined
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,7 +79,19 @@ const ProfileSettings = () => {
     try {
       console.log('Submitting form data:', formData);
       
-      const result = await updateProfile(formData);
+      // Correctly structure the data with isMoodVisibleToPartner inside mood_settings
+      const profileData = {
+        ...formData,
+        mood_settings: {
+          ...(profile?.mood_settings || {}),
+          isVisibleToPartner: formData.isMoodVisibleToPartner
+        }
+      };
+      
+      // Remove the standalone isMoodVisibleToPartner property
+      const { isMoodVisibleToPartner, ...cleanedData } = profileData;
+      
+      const result = await updateProfile(cleanedData);
       
       if (result && result.error) {
         throw new Error(result.error.message || 'Failed to update profile');

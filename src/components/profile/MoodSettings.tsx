@@ -51,7 +51,7 @@ const MoodSettings = () => {
     setIsLoading(true);
     
     try {
-      // Save settings to user profile
+      // Save settings to user profile in the correct format
       const { error } = await updateProfile({
         mood_settings: {
           showAvatar,

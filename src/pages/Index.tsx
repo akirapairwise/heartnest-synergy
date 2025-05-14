@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, ChevronRight, Sparkles, Target, MessageSquare, BarChart4, Calendar } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -214,8 +215,8 @@ const Index = () => {
             </div>
             <div className="flex space-x-6">
               <a href="#" className="text-muted-foreground hover:text-foreground">About</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground">Features</a>
-              <a href="#" className="text-muted-foreground hover:text-foreground">Pricing</a>
+              <a href="#features" className="text-muted-foreground hover:text-foreground">Features</a>
+              <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link>
               <a href="#" className="text-muted-foreground hover:text-foreground">Contact</a>
             </div>
           </div>

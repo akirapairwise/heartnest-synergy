@@ -22,6 +22,7 @@ import AppLayout from "./components/layout/AppLayout";
 import InvitePage from "./pages/InvitePage";
 import ConflictResolutionPage from "./pages/ConflictResolutionPage";
 import EventSuggestionsPage from "./pages/EventSuggestionsPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/invite" element={<InvitePage />} />
           <Route path="/conflicts/:id" element={<ConflictResolutionPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           
           {/* Routes that require authentication and completed onboarding */}
           <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

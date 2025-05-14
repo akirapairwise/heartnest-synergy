@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
+import Footer from './Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -155,6 +156,7 @@ const AppLayout = () => {
       <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto pb-16 md:pb-6 safe-bottom">
         <Outlet />
       </main>
+      <Footer />
     </div>
   );
 };
